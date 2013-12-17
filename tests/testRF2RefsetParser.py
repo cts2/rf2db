@@ -43,7 +43,7 @@ class BasicTestCase(unittest.TestCase):
     def setUp(self):
         testxml.defaultNS = rf2.Namespace
         
-    def test1(self):
+    def ftest1(self):
 
 
         def saveTestData(f, xml):

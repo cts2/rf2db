@@ -58,7 +58,7 @@ charset = utf8""")
     def test_set_parm(self):
         cfg = ConfigManager(config_parms,cfgfile=defaultConfigFile)
         parser = argparse.ArgumentParser()
-        config_parms.addToParser(parser, current=cfg)
+        config_parms.add_to_parser(parser, current=cfg)
         parser.add_argument('-show', dest='show', action="store_true", help="show current configuration")
         parser.add_argument('-upd', dest='update', action="store_true", help="update configuration file")
         parser.add_argument('--create', action="store_true", help="create database if it doesn't exist")

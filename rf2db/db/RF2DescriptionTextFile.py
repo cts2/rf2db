@@ -30,7 +30,7 @@
 from rf2db.schema import rf2
 
 from rf2db.db.RF2FileCommon import RF2FileWrapper
-from rf2db.RF2Exceptions import RF2Exceptions
+from rf2db.exceptions import RF2Exceptions
 from rf2db.parsers.RF2BaseParser import RF2Description
 from rf2db.db.RF2ConceptFile import ConceptDB
 from rf2db.db.RF2DescriptionFile import DescriptionDB

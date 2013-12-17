@@ -36,16 +36,16 @@ class ConfigArgs():
         self.section = section
         self.args = args
 
-    def addToParser(self, parser, current=None):
+    def add_to_parser(self, parser, current=None):
         for arg in self.args:
-            args = ['--' + arg.argName]
-            if arg.argAbbrev:
-                args += ['-' + arg.argAbbrev]
-            kwargs = {'dest' : arg.argName}
-            if arg.argHelp:
-                kwargs['help'] = arg.argHelp
-            if current and current.section().get(arg.argName):
-                kwargs['default'] = current.section().get(arg.argName)
+            args = ['--' + arg.arg_name]
+            if arg.arg_abbrev:
+                args += ['-' + arg.arg_abbrev]
+            kwargs = {'dest' : arg.arg_name}
+            if arg.arg_help:
+                kwargs['help'] = arg.arg_help
+            if current and current.section().get(arg.arg_name):
+                kwargs['default'] = current.section().get(arg.arg_name)
             elif arg.default:
                 kwargs['default'] = arg.default
             if arg.action:
@@ -53,16 +53,16 @@ class ConfigArgs():
             parser.add_argument(*args, **kwargs)
 
     def values(self):
-        return {n.argName : n.default for n in self.args if n.default}
+        return {n.arg_name : n.default for n in self.args if n.default}
 
     def keys(self):
-        return [n.argName for n in self.args]
+        return [n.arg_name for n in self.args]
 
 class ConfigArg():
-    def __init__(self, argName, abbrev=None, help=None, default=None, action=None):
-        self.argName = argName
-        self.argAbbrev = abbrev
-        self.argHelp = help
+    def __init__(self, arg_name, abbrev=None, help=None, default=None, action=None):
+        self.arg_name = arg_name
+        self.arg_abbrev = abbrev
+        self.arg_help = help
         self.default = default
         self.action = action
 

@@ -30,7 +30,7 @@
 
 from rf2db.parsers.RF2BaseParser import *
 from rf2db.parsers.RF2RefsetParser import *
-from rf2db.utils.xmlutils import testxml, defaultNS
+from rf2db.utils import xmlutils
 from rf2db.schema import rf2
 
            
@@ -45,7 +45,7 @@ class RF2ConceptTestCase(unittest.TestCase):
     def test(self):
         c = RF2Concept('10027005	20020131	1	900000000000207008	900000000000074008')
         self.assertTrue(c.isPrimitive)
-        self.assertTrue(testxml(c, """<?xml version="1.0" ?>
+        self.assertTrue(xmlutils.testxml(c, """<?xml version="1.0" ?>
 <Concept xmlns="http://schema.ihtsdo.org/rf2/schema/Concept">
     <id>10027005</id>
     <effectiveTime>20020131</effectiveTime>
@@ -59,11 +59,11 @@ class RF2ConceptTestCase(unittest.TestCase):
 class RF2DescriptionTestCase(unittest.TestCase):
     
     def setUp(self):
-        defaultNS = rf2.Namespace
+        xmlutils.defaultNS = rf2.Namespace
         
     def test(self):    
         d = RF2Description('517048016	20100131	1	900000000000380005	10027005	en	900000000000003001	Patchy (qualifier value)	900000000000022005')
-        self.assertTrue(testxml(d, """<?xml version="1.0" ?>
+        self.assertTrue(xmlutils.testxml(d, """<?xml version="1.0" ?>
 <Description xmlns="http://schema.ihtsdo.org/rf2/schema/Concept">
     <id>517048016</id>
     <effectiveTime>20100131</effectiveTime>
@@ -80,7 +80,7 @@ class RF2DescriptionTestCase(unittest.TestCase):
                                  "typeId:900000000000003001, term:Patchy (qualifier value), caseSignificanceId:900000000000022005)")
      
         d1 = RF2Description('525229014	20100131	1	900000000000380005	145945003	en	900000000000003001	Entire muscular branches of occipital artery (body structure)	900000000000022005')
-        self.assertTrue(testxml(d1, """<?xml version="1.0" ?>
+        self.assertTrue(xmlutils.testxml(d1, """<?xml version="1.0" ?>
 <Description xmlns="http://schema.ihtsdo.org/rf2/schema/Concept">
     <id>525229014</id>
     <effectiveTime>20100131</effectiveTime>
@@ -101,12 +101,11 @@ class RF2DescriptionTestCase(unittest.TestCase):
 class RF2RelationshipTestCase(unittest.TestCase):
     
     def setUp(self):
-        defaultNS = rf2.Namespace
+        xmlutils.defaultNS = rf2.Namespace
         
     def test(self): 
         r = RF2Relationship('452025|20100131|1|900000000000380005|10027005|106234000|0|116680003|900000000000006009|900000000000451002|0','|')
-        print r.toxml()
-        self.assertTrue(testxml(r, """<?xml version="1.0" ?>
+        self.assertTrue(xmlutils.testxml(r, """<?xml version="1.0" ?>
 <Relationship xmlns="http://schema.ihtsdo.org/rf2/schema/Concept">
     <id>452025</id>
     <effectiveTime>20100131</effectiveTime>

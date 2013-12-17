@@ -44,7 +44,7 @@ load_sections = [
     ('moduleversions', (RF2ModuleVersionsFile.ModuleVersionsDB,)),
     ('transitive', (RF2TransitiveClosure.TransitiveClosureDB,))]
 
-def loadFile(loader, opts, cfg):
+def load_file(loader, opts, cfg):
     rf2file = loader(noaction=True)
     ss = not opts.full
     if opts.drop:
@@ -61,7 +61,7 @@ def loadFile(loader, opts, cfg):
 def main(args):
     cfg = ConfigManager(config_parms)
     parser = argparse.ArgumentParser(description="Set up RF2 DB parameters and optionally create a database")
-    config_parms.addToParser(parser, cfg.section())
+    config_parms.add_to_parser(parser, cfg.section())
 
     # loadrf2db.py <path to RF2 DB> <mysql URI> -u --update
     parser.add_argument('--files', nargs='+', help="RF2 files to load. If omitted, all are loaded",
@@ -88,7 +88,7 @@ def main(args):
         for e in load_sections:
             if not opts.files or e[0] in opts.files:
                 for loader in e[1]:
-                    loadFile(loader, opts, cfg)
+                    load_file(loader, opts, cfg)
 
 
 if __name__ == '__main__':

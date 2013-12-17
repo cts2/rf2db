@@ -30,7 +30,6 @@
 """ Function to build the SNOMED CT Transitive Closure File
 """
 
-import sys
 
 from rf2db.db.RF2DBConnection import RF2DBConnection
 from rf2db.db.RF2FileCommon import RF2FileWrapper

@@ -61,8 +61,8 @@ class RF2DBConnection(object):
     def __iter__(self):
         return self
 
-    def newDB(self, config):
-        nondb_config = config.section().copy()
+    def newDB(self, config_mgr):
+        nondb_config = config_mgr.section().copy()
         dbname = nondb_config.pop('db')
         self._connection = db.connect(**nondb_config)
         self._cursor = self._connection.cursor()
