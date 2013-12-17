@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<SimpleReferenceSetEntry xmlns="http://snomed.info/schema/rf2">
+    <id>0061d967-1565-50ee-9dcf-11975018860f</id>
+    <effectiveTime>20050131</effectiveTime>
+    <active>1</active>
+    <moduleId>900000000000207008</moduleId>
+    <refsetId>447565001</refsetId>
+    <referencedComponentId>
+        <sctid>7947003</sctid>
+    </referencedComponentId>
+</SimpleReferenceSetEntry>

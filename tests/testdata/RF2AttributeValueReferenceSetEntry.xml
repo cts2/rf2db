@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<AttributeValueReferenceSetEntry xmlns="http://snomed.info/schema/rf2">
+    <id>0001d24b-d872-5077-8955-b9c7e055b015</id>
+    <effectiveTime>20080731</effectiveTime>
+    <active>0</active>
+    <moduleId>900000000000207008</moduleId>
+    <refsetId>900000000000490003</refsetId>
+    <referencedComponentId>
+        <sctid>527806011</sctid>
+    </referencedComponentId>
+    <valueId>900000000000495008</valueId>
+</AttributeValueReferenceSetEntry>

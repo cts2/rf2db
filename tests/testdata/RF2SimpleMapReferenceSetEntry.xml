@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<SimpleMapReferenceSetEntry xmlns="http://snomed.info/schema/rf2">
+    <id>00019a58-45fa-528d-9eba-ef489ada6797</id>
+    <effectiveTime>20020131</effectiveTime>
+    <active>1</active>
+    <moduleId>900000000000207008</moduleId>
+    <refsetId>900000000000498005</refsetId>
+    <referencedComponentId>
+        <sctid>56417000</sctid>
+    </referencedComponentId>
+    <mapTarget>P3-42300</mapTarget>
+</SimpleMapReferenceSetEntry>

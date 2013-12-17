@@ -1,0 +1,68 @@
+#!/usr/local/bin/python
+# -*- coding: utf-8 -*-
+# Copyright (c) 2013, Mayo Clinic
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification,
+# are permitted provided that the following conditions are met:
+#
+#     Redistributions of source code must retain the above copyright notice, this
+#     list of conditions and the following disclaimer.
+#
+#     Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation
+#     and/or other materials provided with the distribution.
+#
+#     Neither the name of the Mayo Clinic nor the names of its contributors
+#     may be used to endorse or promote products derived from this software
+#     without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+# OF THE POSSIBILITY OF SUCH DAMAGE.
+import sys, argparse
+from config.ConfigManager import ConfigManager, defaultConfigFile
+from rf2db.db import RF2DBConnection
+
+
+def main(argv):
+    """ Create a MySQL database for RF2 files and/or manage the connection parameters
+    """
+
+    # Get the configuration file name established
+    parser = argparse.ArgumentParser(description="Set up RF2 DB parameters and optionally create a database")
+    parser.add_argument('--configfile', help="configuration file location (default: %s)" % defaultConfigFile,
+                        default=defaultConfigFile)
+    fileopt, remargs = parser.parse_known_args(argv)
+
+    # Open the existing configuration file so we know what the defaults should be
+    cfg = ConfigManager(RF2DBConnection.config_parms, cfgfile=fileopt.configfile)
+    parser = argparse.ArgumentParser(description="Set up RF2 DB parameters and optionally create a database")
+    RF2DBConnection.config_parms.addToParser(parser, cfg.section())
+
+    parser.add_argument('-show', dest='show', action="store_true", help="show current configuration")
+    parser.add_argument('-upd', dest='update', action="store_true", help="update configuration file")
+    parser.add_argument('--create', action="store_true", help="create database if it doesn't exist")
+
+    opts = parser.parse_args(remargs)
+
+    cfg.update(vars(opts))
+    if opts.show:
+        print(str(cfg))
+    if opts.update or not opts.show:
+        if cfg.write():
+            print("\nConfiguration file updated")
+    if opts.create:
+        RF2DBConnection.RF2DBConnection().newDB(cfg)
+        print("Database %s created in %s" % (cfg.db, cfg.host + ((':' + cfg.port) if cfg.port else '')))
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

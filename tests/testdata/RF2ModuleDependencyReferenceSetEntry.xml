@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<ModuleDependencyReferenceSetEntry xmlns="http://snomed.info/schema/rf2">
+    <id>1244116f-fdb5-5645-afcc-5281288409da</id>
+    <effectiveTime>20110731</effectiveTime>
+    <active>1</active>
+    <moduleId>900000000000207008</moduleId>
+    <refsetId>900000000000534007</refsetId>
+    <referencedComponentId>
+        <sctid>900000000000012004</sctid>
+    </referencedComponentId>
+    <sourceEffectiveTime>20110731</sourceEffectiveTime>
+    <targetEffectiveTime>20110731</targetEffectiveTime>
+</ModuleDependencyReferenceSetEntry>

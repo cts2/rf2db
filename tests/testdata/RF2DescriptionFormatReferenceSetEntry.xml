@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<DescriptionFormatReferenceSetEntry xmlns="http://snomed.info/schema/rf2">
+    <id>807f775b-1d66-5069-b58e-a37ace985dcf</id>
+    <effectiveTime>20020131</effectiveTime>
+    <active>1</active>
+    <moduleId>900000000000207008</moduleId>
+    <refsetId>900000000000538005</refsetId>
+    <referencedComponentId>
+        <sctid>900000000000550004</sctid>
+    </referencedComponentId>
+    <descriptionFormat>900000000000540000</descriptionFormat>
+    <descriptionLength>1024</descriptionLength>
+</DescriptionFormatReferenceSetEntry>

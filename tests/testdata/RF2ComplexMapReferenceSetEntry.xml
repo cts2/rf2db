@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<ComplexMapReferenceSetEntry xmlns="http://snomed.info/schema/rf2">
+    <id>00104c0f-a218-5882-970c-b2054b8b9f30</id>
+    <effectiveTime>20030731</effectiveTime>
+    <active>0</active>
+    <moduleId>900000000000207008</moduleId>
+    <refsetId>447563008</refsetId>
+    <referencedComponentId>
+        <sctid>359563005</sctid>
+    </referencedComponentId>
+    <mapGroup>1</mapGroup>
+    <mapPriority>1</mapPriority>
+    <mapTarget>593.9</mapTarget>
+    <mapCategory>447558009</mapCategory>
+</ComplexMapReferenceSetEntry>

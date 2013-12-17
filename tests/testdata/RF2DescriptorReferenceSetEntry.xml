@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<DescriptorReferenceSetEntry xmlns="http://snomed.info/schema/rf2">
+    <id>0daa9880-5875-5de0-9650-21fac667afcb</id>
+    <effectiveTime>20020131</effectiveTime>
+    <active>1</active>
+    <moduleId>900000000000207008</moduleId>
+    <refsetId>900000000000456007</refsetId>
+    <referencedComponentId>
+        <sctid>900000000000509007</sctid>
+    </referencedComponentId>
+    <attributeDescription>900000000000510002</attributeDescription>
+    <attributeType>900000000000462002</attributeType>
+    <attributeOrder>0</attributeOrder>
+</DescriptorReferenceSetEntry>

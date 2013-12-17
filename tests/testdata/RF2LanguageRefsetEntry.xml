@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<LanguageReferenceSetEntry xmlns="http://snomed.info/schema/rf2">
+    <id>0000ff2d-c40b-52a5-97b4-375eb94c9479</id>
+    <effectiveTime>20080131</effectiveTime>
+    <active>0</active>
+    <moduleId>900000000000207008</moduleId>
+    <refsetId>900000000000509007</refsetId>
+    <referencedComponentId>
+        <sctid>21351019</sctid>
+    </referencedComponentId>
+    <acceptabilityId>900000000000549004</acceptabilityId>
+</LanguageReferenceSetEntry>

@@ -1,0 +1,842 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://snomed.info/schema/rf2" 
+    targetNamespace="http://snomed.info/schema/rf2" elementFormDefault="qualified">
+
+
+    <!-- ========================================================================
+        =  Field Data Types
+        ======================================================================== -->
+    <xs:simpleType name="SCTID">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]{6,18}"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="UUID">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="String">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="Integer">
+        <xs:restriction base="xs:int"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="Boolean">
+        <xs:restriction base="xs:int">
+            <xs:enumeration value="0">
+                <xs:annotation>
+                    <xs:documentation>False</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="1">
+                <xs:annotation>
+                    <xs:documentation>True</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Time">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+
+    <xs:complexType name="SCTIDorUUID">
+        <xs:choice>
+            <xs:element name="sctid" type="SCTID"/>
+            <xs:element name="uuid" type="UUID"/>
+        </xs:choice>
+    </xs:complexType>
+
+
+    <!-- ========================================================================
+        =  Value Sets
+        ======================================================================== -->
+    <xs:simpleType name="VSModule">
+        <xs:annotation>
+            <xs:documentation>Descendent of 900000000000443000|module|</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="SCTID"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="VSDefinitionStatus">
+        <xs:annotation>
+            <xs:documentation>Child of 900000000000444006|definition status|</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="SCTID">
+            <xs:enumeration value="900000000000073002">
+                <xs:annotation>
+                    <xs:documentation>defined</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="900000000000074008">
+                <xs:annotation>
+                    <xs:documentation>primitive</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="VSDescriptionType">
+        <xs:annotation>
+            <xs:documentation>Child of 900000000000446008|description type|</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="SCTID">
+            <xs:enumeration value="900000000000550004">
+                <xs:annotation>
+                    <xs:documentation>definition</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="900000000000003001">
+                <xs:annotation>
+                    <xs:documentation>fully specified name</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="900000000000187000">
+                <xs:annotation>
+                    <xs:documentation>synonym</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="900000000000013009">
+                <xs:annotation>
+                    <xs:documentation>synonynm (new)</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="VSCaseSignificance">
+        <xs:annotation>
+            <xs:documentation>Child of 900000000000447004|case significance|</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="SCTID">
+            <xs:enumeration value="900000000000448009">
+                <xs:annotation>
+                    <xs:documentation>case insensitive</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="900000000000016001">
+                <xs:annotation>
+                    <xs:documentation>case sensitive</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="900000000000017005">
+                <xs:annotation>
+                    <xs:documentation>case sensitive (new_</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="900000000000022005">
+                <xs:annotation>
+                    <xs:documentation>initial character case insensitive</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="900000000000020002">
+                <xs:annotation>
+                    <xs:documentation>initial character case insensitive(new)</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="VSRelationshipType">
+        <xs:annotation>
+            <xs:documentation>Descendant of 106237007|linkage concept|</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="SCTID"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="VSCharacteristicType">
+        <xs:annotation>
+            <xs:documentation>Descendant of 900000000000449001|characteristic type|</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="SCTID">
+            <!-- Additional relationships are not "semantic" relationships -->
+            <xs:enumeration value="900000000000227009">
+                <xs:annotation>
+                    <xs:documentation>additional relationship</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <!-- Qualifying relationships are not "semantic" -->
+            <xs:enumeration value="900000000000409009">
+                <xs:annotation>
+                    <xs:documentation>qualifying relationship</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="900000000000006009">
+                <xs:annotation>
+                    <xs:documentation>defining relationship</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <!-- all inferred relationships are defining -->
+            <xs:enumeration value="900000000000011006">
+                <xs:annotation>
+                    <xs:documentation>inferred relationship</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <!-- all stated relationships are defining -->
+            <xs:enumeration value="900000000000010007">
+                <xs:annotation>
+                    <xs:documentation>stated relationship</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="VSModifier">
+        <xs:annotation>
+            <xs:documentation>Child of 900000000000450001|modifier|</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="SCTID">
+            <xs:enumeration value="900000000000452009">
+                <xs:annotation>
+                    <xs:documentation>all</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="900000000000451002">
+                <xs:annotation>
+                    <xs:documentation>some</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="VSIdentifierScheme">
+        <xs:annotation>
+            <xs:documentation>Child of 900000000000453004|identifier scheme|</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="SCTID">
+            <xs:enumeration value="900000000000118003">
+                <xs:annotation>
+                    <xs:documentation>SNOMED CT integer ID</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="900000000000002006">
+                <xs:annotation>
+                    <xs:documentation>SNOMED CT UUID</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="VSRefSet">
+        <xs:annotation>
+            <xs:documentation>Descendant of 900000000000455006|reference set|</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="SCTID"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="VSAttributeDescription">
+        <xs:annotation>
+            <xs:documentation>Descendant of 900000000000457003|reference set attribute|</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="SCTID"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="VSAttributeType">
+        <xs:annotation>
+            <xs:documentation>Descendant of 900000000000459000|attribute type|</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="SCTID"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="VSAttributeValue">
+        <xs:annotation>
+            <xs:documentation>Grandchild of 900000000000491004|attribute value|</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="SCTID"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="VSMapCorrelation">
+        <xs:annotation>
+            <xs:documentation>Child of 447247004|SNOMED CT source code to target map code correlation value|</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="SCTID">
+            <xs:enumeration value="447556008">
+                <xs:annotation>
+                    <xs:documentation>SNOMED CT source code not mappable to target coding scheme</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="447557004">
+                <xs:annotation>
+                    <xs:documentation>exact match map from SNOMED CT source code to target code</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="447558009">
+                <xs:annotation>
+                    <xs:documentation>narrow to broad map from SNOMED CT source code to target code</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="447559001">
+                <xs:annotation>
+                    <xs:documentation>broad to narrow map from SNOMED CT source code to target code</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="447560006">
+                <xs:annotation>
+                    <xs:documentation>partial overlap between SNOMED CT source code and target code</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="447561005">
+                <xs:annotation>
+                    <xs:documentation>SNOMED CT source code to target map code correlation not specified</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="VSAcceptability">
+        <xs:annotation>
+            <xs:documentation>Descendant of 900000000000511003|acceptability</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="SCTID">
+            <xs:enumeration value="900000000000549004">
+                <xs:annotation>
+                    <xs:documentation>acceptable</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="900000000000548007">
+                <xs:annotation>
+                    <xs:documentation>preferred</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:simpleType name="VSDescriptionFormat">
+        <xs:annotation>
+            <xs:documentation>Child of 900000000000539002|description format|</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="SCTID">
+            <xs:enumeration value="900000000000543003">
+                <xs:annotation>
+                    <xs:documentation>dITA</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="900000000000541001">
+                <xs:annotation>
+                    <xs:documentation>Limited HTML</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="900000000000540000">
+                <xs:annotation>
+                    <xs:documentation>plain text</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="900000000000542008">
+                <xs:annotation>
+                    <xs:documentation>XHTML</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- ========================================================================
+        =  Interface Definitions
+        ======================================================================== -->
+    <xs:simpleType name="CompleteDirectory">
+        <xs:annotation>
+            <xs:documentation>An indicator that determines whether a <i>Directory</i> contains all of the qualifying entries or only some.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="COMPLETE">
+                <xs:annotation>
+                    <xs:documentation>the <i>Directory</i> contains all of the qualifying entries</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="PARTIAL">
+                <xs:annotation>
+                    <xs:documentation>the directory contains only a partial listing of the qualifying entries</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="SortDirection">
+        <xs:annotation>
+            <xs:documentation>The collating order of a sort.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ASCENDING">
+                <xs:annotation>
+                    <xs:documentation>Sort in ascending collation order.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="DESCENDING">
+                <xs:annotation>
+                    <xs:documentation>Sort in descending collation order.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="Iterator">
+        <xs:attribute name="complete" type="CompleteDirectory" use="required">
+            <xs:annotation>
+                <xs:documentation>an indicator that states whether the complete directory listing is included in <i>entries</i> or whether additional retrievals are needed to get the full listing.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="numEntries" type="xs:nonNegativeInteger" use="required">
+            <xs:annotation>
+                <xs:documentation>the number of entries in this directory segment. Note that this is <i>not</i> the total number of entries in the complete directory listing - just the number of entries in this
+                    segment.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="prev" type="xs:anyURI" use="optional">
+            <xs:annotation>
+                <xs:documentation>a URI that, when de-referenced, produces the preceding set of entries in the directory.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="next" type="xs:anyURI" use="optional">
+            <xs:annotation>
+                <xs:documentation>a URI that, when de-referenced, produces the next set of entries in the directory.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <!-- ========================================================================
+        =  Core Files
+        ======================================================================== -->
+    <xs:complexType name="Base">
+        <xs:sequence>
+            <xs:element name="id" type="SCTID"/>
+            <xs:element name="effectiveTime" type="Time"/>
+            <xs:element name="active" type="Boolean"/>
+            <xs:element name="moduleId" type="VSModule"/>
+        </xs:sequence>
+    </xs:complexType>
+
+
+    <xs:element name="Concept" type="Concept"/>
+    <xs:complexType name="Concept">
+        <xs:complexContent>
+            <xs:extension base="Base">
+                <xs:sequence>
+                    <xs:element name="definitionStatusId" type="VSDefinitionStatus"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:element name="ConceptList">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="Iterator">
+                    <xs:sequence>
+                        <xs:element name="entry" type="Concept" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Description" type="Description"/>
+    <xs:complexType name="Description">
+        <xs:complexContent>
+            <xs:extension base="Base">
+                <xs:sequence>
+                    <xs:element name="conceptId" type="SCTID"/>
+                    <xs:element name="languageCode" type="String"/>
+                    <xs:element name="typeId" type="VSDescriptionType"/>
+                    <xs:element name="term" type="String"/>
+                    <xs:element name="caseSignificanceId" type="VSCaseSignificance"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:element name="DescriptionList">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="Iterator">
+                    <xs:sequence>
+                        <xs:element name="entry" type="Description" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Relationship" type="Relationship"/>
+    <xs:complexType name="Relationship">
+        <xs:complexContent>
+            <xs:extension base="Base">
+                <xs:sequence>
+                    <xs:element name="sourceId" type="SCTID"/>
+                    <xs:element name="destinationId" type="SCTID"/>
+                    <xs:element name="relationshipGroup" type="Integer"/>
+                    <xs:element name="typeId" type="VSRelationshipType"/>
+                    <xs:element name="characteristicTypeId" type="VSCharacteristicType"/>
+                    <xs:element name="modifierId" type="VSModifier"/>
+                    <xs:element name="isCanonical" type="Boolean"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:element name="RelationshipList" type="RelationshipList_"/>
+    <xs:complexType name="RelationshipList_">
+            <xs:complexContent>
+                <xs:extension base="Iterator">
+                    <xs:sequence>
+                        <xs:element name="entry" type="Relationship" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+    </xs:complexType>
+
+    <xs:element name="Identifier" type="Identifier"/>
+    <xs:complexType name="Identifier">
+        <xs:sequence>
+            <xs:element name="identifierSchemeId" type="VSIdentifierScheme"/>
+            <xs:element name="alternateIdentifier" type="String"/>
+            <xs:element name="effectiveTime" type="Time"/>
+            <xs:element name="active" type="Boolean"/>
+            <xs:element name="moduleId" type="VSModule"/>
+            <xs:element name="referenceComponentId" type="SCTID"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="IdentifierList">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="Iterator">
+                    <xs:sequence>
+                        <xs:element name="entry" type="Identifier" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+
+    <xs:element name="TransitiveClosureHistory" type="TransitiveClosureHistory"/>
+    <xs:complexType name="TransitiveClosureHistory">
+        <xs:sequence>
+            <xs:element name="subtypeId" type="SCTID"/>
+            <xs:element name="supertypeId" type="SCTID"/>
+            <xs:element name="effectiveTime" type="Time"/>
+            <xs:element name="active" type="Boolean"/>
+        </xs:sequence>
+    </xs:complexType>
+
+
+    <xs:element name="TransitiveClosureHistoryList">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="Iterator">
+                    <xs:sequence>
+                        <xs:element name="entry" type="TransitiveClosureHistory" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+
+    <!-- ========================================================================
+         =  Reference Sets
+         ======================================================================== -->
+    <xs:complexType name="RefsetBase">
+        <xs:sequence>
+            <xs:element name="id" type="UUID"/>
+            <xs:element name="effectiveTime" type="Time"/>
+            <xs:element name="active" type="Boolean"/>
+            <xs:element name="moduleId" type="VSModule"/>
+            <xs:element name="refsetId" type="VSRefSet"/>
+            <xs:element name="referencedComponentId" type="SCTIDorUUID"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="DescriptorReferenceSetEntry" type="DescriptorReferenceSetEntry"/>
+    <xs:complexType name="DescriptorReferenceSetEntry">
+        <xs:complexContent>
+            <xs:extension base="RefsetBase">
+                <xs:annotation>
+                    <xs:documentation>refSetId must be 900000000000456007</xs:documentation>
+                    <xs:documentation>referencedComponentId must be <i>descendant</i> of 900000000000455006</xs:documentation>
+                </xs:annotation>
+                <xs:sequence>
+                    <xs:element name="attributeDescription" type="VSAttributeDescription"/>
+                    <xs:element name="attributeType" type="VSAttributeType"/>
+                    <xs:element name="attributeOrder">
+                        <xs:simpleType>
+                            <xs:restriction base="Integer">
+                                <xs:minInclusive value="0"/>
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:element name="DescriptorReferenceSet">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="Iterator">
+                    <xs:sequence>
+                        <xs:element name="entry" type="DescriptorReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="SimpleReferenceSetEntry" type="SimpleReferenceSetEntry"/>
+    <xs:complexType name="SimpleReferenceSetEntry">
+        <xs:complexContent>
+            <xs:extension base="RefsetBase"/>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:element name="SimpleReferenceSet">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="Iterator">
+                    <xs:sequence>
+                        <xs:element name="entry" type="SimpleReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="OrderedReferenceSetEntry" type="OrderedReferenceSetEntry"/>
+    <xs:complexType name="OrderedReferenceSetEntry">
+        <xs:complexContent>
+            <xs:extension base="RefsetBase">
+                <xs:sequence>
+                    <xs:element name="order">
+                        <xs:simpleType>
+                            <xs:restriction base="Integer">
+                                <xs:minInclusive value="1"/>
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:element>
+                    <xs:element name="linkedTo" type="SCTID" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:element name="OrderedReferenceSet">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="Iterator">
+                    <xs:sequence>
+                        <xs:element name="entry" type="OrderedReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="AttributeValueReferenceSetEntry" type="AttributeValueReferenceSetEntry"/>
+    <xs:complexType name="AttributeValueReferenceSetEntry">
+        <xs:complexContent>
+            <xs:extension base="RefsetBase">
+                <xs:sequence>
+                    <xs:element name="valueId" type="VSAttributeValue"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:element name="AttributeValueReferenceSet">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="Iterator">
+                    <xs:sequence>
+                        <xs:element name="entry" type="AttributeValueReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+
+    <xs:element name="SimpleMapReferenceSetEntry" type="SimpleMapReferenceSetEntry"/>
+    <xs:complexType name="SimpleMapReferenceSetEntry">
+        <xs:complexContent>
+            <xs:extension base="RefsetBase">
+                <xs:sequence>
+                    <xs:element name="mapTarget" type="String"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:element name="SimpleMapReferenceSet">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="Iterator">
+                    <xs:sequence>
+                        <xs:element name="entry" type="SimpleMapReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="ComplexMapReferenceSetEntry" type="ComplexMapReferenceSetEntry"/>
+    <xs:complexType name="ComplexMapReferenceSetEntry">
+        <xs:complexContent>
+            <xs:extension base="RefsetBase">
+                <xs:sequence>
+                    <xs:element name="mapGroup" type="Integer"/>
+                    <xs:element name="mapPriority" type="Integer"/>
+                    <xs:element name="mapRule" type="String" minOccurs="0"/>
+                    <xs:element name="mapAdvice" type="String" minOccurs="0"/>
+                    <xs:element name="mapTarget" type="String"/>
+                    <xs:element name="mapCategory" type="VSMapCorrelation"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:element name="ComplexMapReferenceSet">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="Iterator">
+                    <xs:sequence>
+                        <xs:element name="entry" type="ComplexMapReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+    
+    <xs:element name="LanguageReferenceSetEntry" type="LanguageReferenceSetEntry"/>
+    <xs:complexType name="LanguageReferenceSetEntry">
+        <xs:complexContent>
+            <xs:extension base="RefsetBase">
+                <xs:sequence>
+                    <xs:element name="acceptabilityId" type="VSAcceptability"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:element name="LanguageReferenceSet">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="Iterator">
+                    <xs:sequence>
+                        <xs:element name="entry" type="LanguageReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+    
+    <xs:element name="QuerySpecificationReferenceSetEntry" type="QuerySpecificationReferenceSetEntry"/>
+    <xs:complexType name="QuerySpecificationReferenceSetEntry">
+        <xs:complexContent>
+            <xs:extension base="RefsetBase">
+                <xs:sequence>
+                    <xs:element name="query" type="String"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:element name="QuerySpecificationReferenceSet">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="Iterator">
+                    <xs:sequence>
+                        <xs:element name="entry" type="QuerySpecificationReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+    
+    <xs:element name="AnnotationReferenceSetEntry" type="AnnotationReferenceSetEntry"/>
+    <xs:complexType name="AnnotationReferenceSetEntry">
+        <xs:complexContent>
+            <xs:extension base="RefsetBase">
+                <xs:sequence>
+                    <xs:element name="annotation" type="String"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:element name="AnnotationReferenceSet">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="Iterator">
+                    <xs:sequence>
+                        <xs:element name="entry" type="AnnotationReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+    
+    <xs:element name="AssociationReferenceSetEntry" type="AssociationReferenceSetEntry"/>
+    <xs:complexType name="AssociationReferenceSetEntry">
+        <xs:complexContent>
+            <xs:extension base="RefsetBase">
+                <xs:sequence>
+                    <xs:element name="targetComponent" type="SCTID"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:element name="AssociationReferenceSet">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="Iterator">
+                    <xs:sequence>
+                        <xs:element name="entry" type="AssociationReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+    
+    <!-- ISSUE: Typo on page 350 - effective times are "String" rather than "Time" -->
+    <xs:element name="ModuleDependencyReferenceSetEntry" type="ModuleDependencyReferenceSetEntry"/>
+    <xs:complexType name="ModuleDependencyReferenceSetEntry">
+        <xs:complexContent>
+            <xs:extension base="RefsetBase">
+                <xs:sequence>
+                    <xs:element name="sourceEffectiveTime" type="Time"/>
+                    <xs:element name="targetEffectiveTime" type="Time"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:element name="ModuleDepencencyReferenceSet">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="Iterator">
+                    <xs:sequence>
+                        <xs:element name="entry" type="ModuleDependencyReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="DescriptionFormatReferenceSetEntry" type="DescriptionFormatReferenceSetEntry"/>
+    <xs:complexType name="DescriptionFormatReferenceSetEntry">
+        <xs:complexContent>
+            <xs:extension base="RefsetBase">
+                <xs:sequence>
+                    <xs:element name="descriptionFormat" type="VSDescriptionFormat"/>
+                    <xs:element name="descriptionLength" type="Integer"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:element name="DescriptionFormatReferenceSet">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="Iterator">
+                    <xs:sequence>
+                        <xs:element name="entry" type="DescriptionFormatReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

@@ -1,0 +1,96 @@
+#!/usr/local/bin/python
+# -*- coding: utf-8 -*-
+# Copyright (c) 2013, Mayo Clinic
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification,
+# are permitted provided that the following conditions are met:
+#
+#     Redistributions of source code must retain the above copyright notice, this
+#     list of conditions and the following disclaimer.
+#
+#     Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation
+#     and/or other materials provided with the distribution.
+#
+#     Neither the name of the Mayo Clinic nor the names of its contributors
+#     may be used to endorse or promote products derived from this software
+#     without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+# OF THE POSSIBILITY OF SUCH DAMAGE.
+import sys, argparse
+from config.ConfigManager import ConfigManager
+
+from rf2db.db import RF2ConceptFile, RF2DescriptionFile, RF2DescriptionTextFile, RF2LanguageFile, RF2RelationshipFile
+from rf2db.db import RF2SimpleMapFile, RF2SimpleReferencesetFile, RF2ModuleVersionsFile, RF2TransitiveClosure
+from rf2db.db.RF2FileCommon import config_parms
+
+load_sections = [
+    ('concept', (RF2ConceptFile.ConceptDB,)),
+    ('description', (RF2DescriptionFile.DescriptionDB,RF2DescriptionTextFile.DescriptionTextDB)),
+    ('language', (RF2LanguageFile.LanguageDB,)),
+    ('relationship',(RF2RelationshipFile.StatedRelationshipDB, RF2RelationshipFile.RelationshipDB)),
+    ('simplemap',(RF2SimpleMapFile.SimpleMapFileDB,)),
+    ('simplerefset',(RF2SimpleReferencesetFile.SimpleReferencesetDB,)),
+    ('moduleversions', (RF2ModuleVersionsFile.ModuleVersionsDB,)),
+    ('transitive', (RF2TransitiveClosure.TransitiveClosureDB,))]
+
+def loadFile(loader, opts, cfg):
+    rf2file = loader(noaction=True)
+    ss = not opts.full
+    if opts.drop:
+        print("Dropping " + rf2file._tname(ss))
+        rf2file.dropTable(ss)
+    print("Creating " + rf2file._tname(ss))
+    rf2file.createTable(ss)
+    if opts.truncate:
+        print("Truncating " + rf2file._tname(ss))
+        rf2file.truncateTable(ss)
+    print("Loading " + rf2file._tname(ss))
+    rf2file.loadTable(rf2file, ss, cfg)
+
+def main(args):
+    cfg = ConfigManager(config_parms)
+    parser = argparse.ArgumentParser(description="Set up RF2 DB parameters and optionally create a database")
+    config_parms.addToParser(parser, cfg.section())
+
+    # loadrf2db.py <path to RF2 DB> <mysql URI> -u --update
+    parser.add_argument('--files', nargs='+', help="RF2 files to load. If omitted, all are loaded",
+                        choices=[e[0] for e in load_sections])
+    parser.add_argument('-t', '--truncate', help="Truncate table(s) if present", action="store_true")
+    parser.add_argument('-d', '--drop', help="Drop table(s) if present", action="store_true")
+    parser.add_argument('--full', help="Operate on full history instead of snapshot", action="store_true")
+
+    parser.add_argument('--show', '-s', dest='show', action="store_true", help="show current configuration")
+    parser.add_argument('--load', '-l', action="store_true", help="load the database")
+
+    opts = parser.parse_args(args)
+    cfg.update(vars(opts))
+    if cfg.write():
+        print("Configuration file updated")
+
+
+    # python RF2TransitiveClosure.py
+
+    opts = parser.parse_args(args)
+    if opts.show:
+        print(str(cfg))
+    if opts.load or opts.files:
+        for e in load_sections:
+            if not opts.files or e[0] in opts.files:
+                for loader in e[1]:
+                    loadFile(loader, opts, cfg)
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
+

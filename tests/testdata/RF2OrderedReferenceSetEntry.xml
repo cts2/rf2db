@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<OrderedReferenceSetEntry xmlns="http://snomed.info/schema/rf2">
+    <id>0008e8f7-b7ea-576a-854e-9256af76ea0a</id>
+    <effectiveTime>20020131</effectiveTime>
+    <active>1</active>
+    <moduleId>900000000000207008</moduleId>
+    <refsetId>447568004</refsetId>
+    <referencedComponentId>
+        <sctid>83678007</sctid>
+    </referencedComponentId>
+    <order>1</order>
+    <linkedTo>263353005</linkedTo>
+</OrderedReferenceSetEntry>
