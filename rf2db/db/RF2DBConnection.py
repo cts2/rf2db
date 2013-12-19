@@ -36,6 +36,7 @@ import sqlalchemy.pool as pool
 
 from config.ConfigArgs import ConfigArg, ConfigArgs
 from config.ConfigManager import ConfigManager
+from rf2db.utils.ParmParser import boolparam
 
 config_parms = ConfigArgs( 'dbparms',
                            [ConfigArg('host', help='MySQL DB Host', default='localhost'),
@@ -79,7 +80,8 @@ class RF2DBConnection(object):
         """ Make sure there is a database connection active """
         if not self._connection:
             parms = config.section().copy()
-            self._connection = db.connect(**config.section())
+            parms.pop('dodecode', None)
+            self._connection = db.connect(**parms)
             # self._connection.set_character_set("utf8")
 
     def _disconnect(self):
@@ -240,10 +242,10 @@ class RF2DBConnection(object):
         # the "decode" part has to do with the fact that some SQL db's won't return in utf8
         try:
             return '\t'.join(map(lambda r: \
-                                (r.decode('utf8') if config.dodecode else r) \
-                                if isinstance(r,str) else str(r),tup)) if tup else None
+                                (r.decode('utf8') if boolparam(config.dodecode, False) else r) \
+                                if isinstance(r,basestring) else str(r),tup)) if tup else None
         except Exception as e:
-            print >> sys.stderr, ("FAILING TUPLE:", tup)
+            print ("FAILING TUPLE:", tup)
             raise e
         
   

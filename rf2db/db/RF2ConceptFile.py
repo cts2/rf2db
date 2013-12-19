@@ -31,7 +31,9 @@
 """
 
 from rf2db.parsers.RF2BaseParser import RF2Concept
+from rf2db.parsers.RF2Iterator import RF2ConceptList
 from rf2db.db.RF2FileCommon import RF2FileWrapper
+from rf2db.utils.ParmParser import boolparam, intparam
 
 from rf2db.utils.lfuCache import lfu_cache
 
@@ -53,7 +55,7 @@ class ConceptDB(RF2FileWrapper):
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
-    @lfu_cache(maxsize=20)
+    @lfu_cache(maxsize=100)
     def getConcept(self, cid, active=True, ss=True):
         """
         Read the concept record
@@ -67,21 +69,47 @@ class ConceptDB(RF2FileWrapper):
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
-    def getAllConcepts(self, active=True, ss=True, limit=None, after=None):
+    def getAllConcepts(self, **kwargs):
         """
-        Retrieve all (or all active) concepts
-        @param active: active concepts only or all
-        @param ss: snapshot table or full table
-        @param limit: maximum number to return (default: all)
-        @param after: sctid to start after (default: start at beginning of the file
-        @return: generator for entries in the concept file
+        @param active: return only active entities C{True} or all C{False}.  Default: C{True}
+        @type active: boolean
+
+        @param page: return starting at M{maxtoreturn*page}. Default: 0
+        @type page: int
+
+        @oaran after: sctid to start after
+        @type after: str
+
+        @param maxtoreturn: number of entries to return.  Default: 100
+        @type maxtoreturn: int
+
+        @param moduleid: constrain to entries in this module.
+        @type moduleid: sctid
         """
-        db = self.connect()
+        active = boolparam(kwargs.pop('active', None), True)
+        page = intparam(kwargs.get('page', 0), 0)
+        order = kwargs.pop('order', 'asc')
+        after = kwargs.pop('after', None)
+        if order.lower() not in ('asc', 'desc'):
+            order = 'asc'
+
+        maxtoreturn = intparam(kwargs.get('maxtoreturn'), 100)
+        start = page * maxtoreturn
+        moduleid = kwargs.get('moduleid')
+        ss = boolparam(kwargs.get('ss'), True)
+
         if not ss:
             raise Exception('FULL table not supported for complete concept list')
-        return db.executeAndReturn("SELECT * FROM %s WHERE %s" % (self._tname(ss), 'ACTIVE=1' if active else 'TRUE') +
-                                   (' AND id > %s' % after if after else "") +
-                                   ' ORDER BY id ASC ' +
-                                   (" LIMIT %s" % limit if limit else ""))
+        db = self.connect()
+        db.execute("SELECT * FROM %s WHERE %s" % (self._tname(ss), 'ACTIVE=1' if active else 'TRUE') +
+                           (' AND id > %s' % after if after else "") +
+                           (' ORDER BY id %s ' % order) +
+                           (" LIMIT %s, %s" % (start, maxtoreturn + 1) if maxtoreturn else ""))
 
-
+        thelist = RF2ConceptList(**kwargs)
+        src = db.ResultsGenerator(db)
+        for d in src:
+            if thelist.at_end:
+                return thelist.finish(True)
+            thelist.append(RF2Concept(d))
+        return thelist.finish(False)

@@ -44,6 +44,7 @@ class ConfigManager(object):
         self._section = parms.section
         self._keys = parms.keys()
         self._config = ConfigParser()
+        self._config.optionxform = str
         self._dirty = False
 
         self._config.setdefault(self._section, {})
@@ -70,7 +71,7 @@ class ConfigManager(object):
             self._dirty = True
 
     def section(self):
-        return dict(self._config.items(self._section))
+        return dict(self._config[self._section].items())
 
     def update(self,values):
         """ Update the contents based using the keys that are present in the values dictionary

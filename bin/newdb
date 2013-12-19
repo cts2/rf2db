@@ -27,10 +27,14 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-import sys, argparse
+import sys, argparse, os
+_curdir = os.path.join(os.getcwd(), os.path.dirname(__file__), '..')
+
+# Get ourselves into the correct directory
+sys.path.append(_curdir)
+
 from config.ConfigManager import ConfigManager, defaultConfigFile
 from rf2db.db import RF2DBConnection
-
 
 def main(argv):
     """ Create a MySQL database for RF2 files and/or manage the connection parameters

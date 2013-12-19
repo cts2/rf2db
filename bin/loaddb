@@ -27,7 +27,12 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-import sys, argparse
+import sys, argparse, os
+_curdir = os.path.join(os.getcwd(), os.path.dirname(__file__), '..')
+
+# Get ourselves into the correct directory
+sys.path.append(_curdir)
+
 from config.ConfigManager import ConfigManager
 
 from rf2db.db import RF2ConceptFile, RF2DescriptionFile, RF2DescriptionTextFile, RF2LanguageFile, RF2RelationshipFile
@@ -61,7 +66,7 @@ def load_file(loader, opts, cfg):
 def main(args):
     cfg = ConfigManager(config_parms)
     parser = argparse.ArgumentParser(description="Set up RF2 DB parameters and optionally create a database")
-    config_parms.add_to_parser(parser, cfg.section())
+    config_parms.add_to_parser(parser, current=cfg)
 
     # loadrf2db.py <path to RF2 DB> <mysql URI> -u --update
     parser.add_argument('--files', nargs='+', help="RF2 files to load. If omitted, all are loaded",

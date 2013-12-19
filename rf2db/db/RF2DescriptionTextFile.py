@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from rf2db.schema import rf2
+from rf2db.parsers import RF2Iterator
 
 from rf2db.db.RF2FileCommon import RF2FileWrapper
 from rf2db.exceptions import RF2Exceptions
@@ -35,6 +35,8 @@ from rf2db.parsers.RF2BaseParser import RF2Description
 from rf2db.db.RF2ConceptFile import ConceptDB
 from rf2db.db.RF2DescriptionFile import DescriptionDB
 from rf2db.utils.listutils import listify
+from rf2db.utils.ParmParser import boolparam, intparam
+
 
 
 class DescriptionTextDB(RF2FileWrapper):
@@ -89,21 +91,27 @@ class DescriptionTextDB(RF2FileWrapper):
     def loadFile(self, fname, ss):
         print(self.table, "must be loaded from", ConceptDB.table, "and", DescriptionDB.table, "tables")
 
-    def getDescriptions(self, active=True, start=0, maxtoreturn=100, matchvalue=None,
-                        moduleid=None, matchalgorithm=None, ss=True, **kwargs):
+    def getDescriptions(self, **kwargs):
         """ 
         Return all descriptions that match the matchvalues(s) using the supplied match algorithm.
         
         @param active: return only active entities C{True} or all C{False}.  Default: C{True}
         @type active: boolean
-        @param start: return starting at M{maxtoreturn*start}. Default: 0
-        @type start: int
+
+        @param page: return starting at M{maxtoreturn*page}. Default: 0
+        @type page: int
+
         @param maxtoreturn: number of entries to return.  Default: 100
         @type maxtoreturn: int
+
         @param matchvalue: match text.
         @type matchvalue: str or list(str)
+
         @param moduleid: constrain to entries in this module.
         @type moduleid: sctid
+
+        @param order: sort order - asc or desc
+
         @param matchalgorithm: match algorithm to use. One of
         - "contains" - match any phrase that contains matchvalue
         - "startswith"
@@ -114,8 +122,19 @@ class DescriptionTextDB(RF2FileWrapper):
         Note: description_ss is the combination of the description and definition snapshots joined
         to active (conceptActive) on the conceptfile
         """
-        matchvalues = listify(matchvalue)
-        matchalgorithms = listify(matchalgorithm, 'contains')
+        active = boolparam(kwargs.pop('active',None), True)
+        page = intparam(kwargs.get('page', 0), 0)
+        matchvalues = listify(kwargs.pop('matchvalue', []))
+        matchalgorithms = listify(kwargs.pop('matchalgorithm', None),'contains')
+        order = kwargs.pop('order', 'asc')
+        if order.lower() not in ('asc', 'desc'):
+            order = 'asc'
+
+        maxtoreturn = intparam(kwargs.get('maxtoreturn'), 100)
+        start = page * maxtoreturn
+        moduleid = kwargs.get('moduleid')
+        ss = boolparam(kwargs.get('ss'), True)
+
         # If we have more algorithms than values, repeat the last value out to match the algorithms
         diff = len(matchalgorithms) - len(matchvalues)
         if diff > 0:
@@ -126,29 +145,39 @@ class DescriptionTextDB(RF2FileWrapper):
         query = "SELECT * FROM %s WHERE 1" % self._tname(ss)
 
         for (v, a) in zip(matchvalues, matchalgorithms):
-            if a == 'contains':
-                query += " AND term LIKE('%%%s%%')" % v
-            elif a == 'startswith':
-                query += " AND (term LIKE ('%% %s%%') OR term LIKE ('%s%%'))" % (v, v)
-            elif a == 'endswith':
-                query += " AND (term LIKE ('%%%s %%') OR term LIKE ('%%%s'))" % (v, v)
-            elif a == 'exactmatch':
-                query += " AND term = '%s'" % v
-            elif a == 'phrase':
-                query += " AND term LIKE('%s%%')" % v
-            else:
-                raise RF2Exceptions.UnknownMatchAlgorithm(
-                    a + ' : valid values are contains, startswith, endswith, exactmatch and phrase')
+            if v:
+                if a == 'contains':
+                    query += " AND term LIKE('%%%s%%')" % v
+                elif a == 'startswith':
+                    query += " AND term LIKE ('%s%%')" % v
+                elif a == 'endswith':
+                    query += " AND term LIKE ('%%%s')" % v
+                elif a == 'exactmatch':
+                    query += " AND term = '%s'" % v
+                elif a == 'word':
+                    query += " AND (term LIKE ('%% %s %%') OR term LIKE('%s %%') OR term LIKE('%% %s') OR term = '%s')" % (v,v,v,v)
+                elif a == 'wordstart':
+                    query += " AND (term LIKE ('%s%%') OR term LIKE ('%% %s%%'))" % (v,v)
+                elif a == 'phrase':
+                    query += " AND term LIKE('%s%%')" % v
+                else:
+                    raise RF2Exceptions.UnknownMatchAlgorithm(
+                        a + ' : valid values are contains, startswith, endswith, exactmatch, word, wordstart and phrase')
         if active:
             query += " AND active = 1 AND conceptActive = 1"
-        query += " ORDER BY length(term)"
+        query += " ORDER BY length(term) %s, term %s" % (order, order)
 
         if maxtoreturn:
-            query += " LIMIT %s, %s" % (int(start), int(maxtoreturn))
+            query += " LIMIT %s, %s" % (start, maxtoreturn + 1)
         db = self.connect()
         db.execute(query)
-        thelist = rf2.DescriptionList()
-        for d in db.ResultsGenerator(db):
-            thelist.entry.append(RF2Description(d))
-        return thelist
+
+        thelist = RF2Iterator.RF2DescriptionList(**kwargs)
+        src = db.ResultsGenerator(db)
+        for d in src:
+            if thelist.at_end:
+                return thelist.finish(True)
+            thelist.append(RF2Description(d))
+        return thelist.finish(False)
+
 

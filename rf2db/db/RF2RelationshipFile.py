@@ -32,7 +32,21 @@
 
 from rf2db.parsers.RF2BaseParser import RF2Relationship
 from rf2db.db.RF2FileCommon import RF2FileWrapper
-from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB
+from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB, canon_filtr, rel_id
+from rf2db.parsers.RF2Iterator import RF2RelationshipList
+from rf2db.utils.ParmParser import KwParms
+
+class rel_parms(object):
+    def __init__(self, **kwargs):
+        self._p = KwParms(**kwargs)
+        self.ss = self._p.bool('ss', True)
+        self.stated = self._p.bool('stated', True)
+        self.inferred = self._p.bool('inferred', True)
+        self.active = self._p.bool('active', True)
+        self.canonical = self._p.bool('canonical', False)
+
+    def __getattr__(self, item):
+        return self._p.__getattr__(item)
 
 class RelationshipDB(RF2FileWrapper):
     directory = 'Terminology'
@@ -50,6 +64,7 @@ class RelationshipDB(RF2FileWrapper):
       typeId bigint(20) NOT NULL,
       characteristicTypeId bigint(20) NOT NULL,
       modifierId bigint(20) NOT NULL,
+      isCanonical tinyint(1) NOT NULL DEFAULT 0,
       KEY source (sourceId) USING HASH,
       KEY target (destinationId) USING HASH,
       KEY predicate (typeId),
@@ -59,74 +74,82 @@ class RelationshipDB(RF2FileWrapper):
         self._srdb = StatedRelationshipDB()
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
-    @staticmethod
-    def relId(r):
-        """ Creates the identity of a relationship record """
-        return r.moduleId, r.sourceId, r.destinationId, r.relationshipGroup, r.typeId, r.modifierId
-
-    def existsSourceRecs(self, sourceId, active=True, inferred=True, ss=True, **_):
+    def _existsRecs(self, filtr, p):
+        if p.stated and self._srcb._existsRecs(filtr, p.active, p.canonical, p.ss):
+            return True
         db = self.connect()
-        return bool(
-            [r for r in db.query(self._tname(ss), 'sourceId = %s' % sourceId, active=active, ss=ss, maxtoreturn=1)])
+        return bool([r for r in db.query(self._tname(p.ss), canon_filtr(filtr, p.canonical),
+                                 active=p.active, ss=p.ss, maxtoreturn=1)])
 
-    def existsTargetRecs(self, targetId, active=True, inferred=True, ss=True, **_):
-        db = self.connect()
-        return bool([r for r in
-                     db.query(self._tname(ss), 'destinationId = %s' % targetId, active=active, ss=ss, maxtoreturn=1)])
 
-    def existsPredicateRecs(self, predicateId, active=True, inferred=True, ss=True, **_):
-        db = self.connect()
-        return bool(
-            [r for r in db.query(self._tname(ss), 'typeId = %s' % predicateId, active=active, ss=ss, maxtoreturn=1)])
+    def existsSourceRecs(self, sourceId, **kwargs):
+        return self._existsRecs('sourceId = %s ' % sourceId, rel_parms(**kwargs))
 
-    def _getRecs(self, filtr, active, inferred, ss=True):
+    def existsPredicateRecs(self, predicateId, **kwargs):
+        return self._existsRecs('typeId = %s ' % predicateId, rel_parms(**kwargs))
+
+    def existsTargetRecs(self, targetId, **kwargs):
+        return self._existsRecs('destinationId = %s ' % targetId, rel_parms(**kwargs))
+
+
+
+    def _getRecs(self, filtr, p, key):
         """ Return all relationship records matching the given filter. Inferred is ignored in the stated relationship file
         """
-        returnRels = self._srdb._getRecs(filtr, active, inferred, ss)
-        if inferred:
-            statedRecs = [self.relId(r) for r in returnRels]
-            db = self.connect()
-            for e in db.query(self._tname(ss), filtr, active=active, ss=ss, sort="relationshipGroup, id"):
-                r = RF2Relationship(e)
-                if self.relId(r) not in statedRecs:
-                    returnRels.append(r)
-        return returnRels
+        rval = {k:v for k,v in map(lambda r:(rel_id(r), r),
+                                   map(lambda r: RF2Relationship(r),
+                                       self.connect().query(self._tname(p.ss),
+                                                            canon_filtr(filtr, p.canonical),
+                                                            active=p.active, ss=p.ss)))} if p.inferred else {}
+        if p.stated:
+            for r in self._srdb._getRecs(filtr, p.active, p.canonical, p.ss):
+                rval[rel_id(r)] = r
+
+        return sorted(rval.values(), key=key)
 
 
-    def getSourceRecs(self, sourceId, active=True, inferred=True, ss=True, **_):
+    def getSourceRecs(self, sourceId, **kwargs):
         """ Return all relationship records with the given sourceId. """
-        if not inferred:
-            return self._srdb.getSourceRecs(sourceId, active, inferred, ss)
-        return self._getRecs("sourceId = '%s'" % sourceId, active, inferred, ss)
-
-    def getPredicateRecs(self, predicateId, active=True, inferred=True, ss=True, **_):
-        if not inferred:
-            return self._srdb.getPredicateRecs(predicateId, active, inferred, ss)
-        return self._getRecs("typeId = '%s'" % predicateId, active, inferred, ss)
+        return self._getRecs('sourceId = %s ' % sourceId, rel_parms(**kwargs), lambda r: (r.relationshipGroup, r.destinationId))
 
 
-    def getTargetRecs(self, targetId, active=True, inferred=True, ss=True, **_):
+    def getPredicateRecs(self, predicateId, **kwargs):
+        return self._getRecs('typeId = %s ' % predicateId, rel_parms(**kwargs), lambda r: (r.sourceId, r.relationshipGroup, r.destinationId))
+
+
+    def getTargetRecs(self, targetId, **kwargs):
         """ Return all Relationship records associated with the given targetId """
-        if not inferred:
-            return self._srdb.getTargetRecs(targetId, active, inferred, ss)
-        return self._getRecs("destinationId = '%s'" % targetId, active, inferred, ss)
+        return self._getRecs('destinationId = %s ' % targetId, rel_parms(**kwargs), lambda r: (r.relationshipGroup, r.sourceId))
 
-    def getSourcesForTarget(self, targetId, active=True, inferred=True, ss=True, **_):
+
+    def getSourcesForTarget(self, targetId, **kwargs):
         """ Return a list of sourceId's connected with the given targetId."""
-        if not inferred:
-            return self._srdb.getSourcesForTarget(targetId, active, inferred, ss)
-        db = self.connect()
-        return map(lambda r: RF2Relationship(r).sourceId,
-                db.query(self._tname(ss), "destinationId = '%s' " % targetId, active=active, ss=ss))
+        p = rel_parms(**kwargs)
 
-    def getRelationship(self, relId, active=False, ss=True, **_):
+        sources = self._srdb.getSourcesForTarget(targetId, active=p.active, canonical=p.canonical, ss=p.ss) if p.stated else set()
+        if p.inferred:
+            db = self.connect()
+            return sources.union(map(lambda r: RF2Relationship(r).sourceId,
+                db.query(self._tname(p.ss), canon_filtr("destinationId = '%s' " % targetId, p.canonical), active=p.active, ss=p.ss)))
+
+    def getRelationship(self, relId, **kwargs):
         """ Return the relationship record identified by relId"""
-        rel = self._srdb.getRelationship(relId, active, ss)
+        p = rel_parms(**kwargs)
+        rel = self._srdb.getRelationship(relId, ss=p.ss)
         if rel:
             return rel
         db = self.connect()
-        rlist = [RF2Relationship(r) for r in db.query(self._tname(ss), "id = '%s'" % relId, active=active, ss=ss)]
+        rlist = [RF2Relationship(r) for r in db.query(self._tname(p.ss), "id = '%s'" % relId, active=False, ss=p.ss)]
         return rlist[0] if len(rlist) else None
+
+    def asRelationshipList(self, rels, **kwargs):
+        """ Format rels as a Relationship List """
+        thelist = RF2RelationshipList(**kwargs)
+        for d in rels:
+            if thelist.at_end:
+                return thelist.finish(True)
+            thelist.append(d)
+        return thelist.finish(False)
 
 
 

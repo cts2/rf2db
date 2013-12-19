@@ -30,7 +30,7 @@
 """ RF2 Description File Access Routines
 """
 
-from rf2db.schema                import rf2
+from rf2db.parsers               import RF2Iterator
 
 from rf2db.db.RF2FileCommon      import RF2FileWrapper
 from rf2db.parsers.RF2BaseParser import RF2Description
@@ -77,9 +77,11 @@ class DescriptionDB(RF2FileWrapper):
         return rlist[0] if len(rlist) else None
 
     @lfu_cache(maxsize=20)
-    def getConceptDescriptionList(self, conceptId, active=True, ss=True):
-        thelist = rf2.DescriptionList()
+    def getConceptDescriptionList(self, conceptId, active=True, ss=True, **kwargs):
+        thelist = RF2Iterator.RF2DescriptionList(**kwargs)
         for d in self.getConceptDescription(conceptId, active, ss):
-            thelist.entry.append(d)
-        return thelist
+            if thelist.at_end:
+                return thelist.finish(True)
+            thelist.append(d)
+        return thelist.finish(False)
 

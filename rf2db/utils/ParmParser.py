@@ -12,7 +12,7 @@
 #     this list of conditions and the following disclaimer in the documentation
 #     and/or other materials provided with the distribution.
 #
-#     Neither the name of the Mayo Clinic nor the names of its contributors
+#     Neither the name of the <ORGANIZATION> nor the names of its contributors
 #     may be used to endorse or promote products derived from this software
 #     without specific prior written permission.
 #
@@ -27,34 +27,28 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-def rf2link(pyxbElement, pyxbType, addlFields=None, linefilter=None):
-    """ This implements the following pattern:
+def boolparam(p, default=False):
+    if p is None: return default
+    if str(p).lower() in ['y','yes','true', '1']: return True
+    if str(p).lower() in ['n', 'no','false', '0']: return False
+    return None
 
-    def <impl_class>(line, sep="\t"):
-        return <pyxbElement>().load(<impl_class name>, line, sep)
+def intparam(p, default=0):
+    if p is None: p = default
+    return int(p)
 
-class <impl_class>(<pyxbType>, RF2Base):
-    _fieldNames  = RF2Base._baseFields + addlFields
-    _nFields     = len(_fieldNames)
-    _baseClass   = rf2.Description_
+class KwParms(object):
+    def __init__(self, **kwargs):
+        self._kwargs = kwargs
 
-    ...
+    def bool(self, arg, default):
+        return boolparam(self._kwargs.get(arg), default)
 
-rf2.Description_._SetSupersedingClass(_RF2Description)
+    def int(self, arg, default):
+        return intparam(self._kwargs.get(arg), default)
 
-    """
+    def str(self, arg, default):
+        return self._kwargs.get(arg, default)
 
-    def impl_link(impl_class):
-        def constructor(line, sep="\t"):
-            return pyxbElement().load(impl_class.__name__, linefilter(line) if linefilter else line, sep)
-
-
-        # This will cause the constructor and __init__ methods to be called in the original class
-        pyxbType._SetSupersedingClass(impl_class)
-        impl_class._baseClass = pyxbType
-        impl_class._fieldNames = impl_class._baseFields + addlFields if addlFields else []
-        impl_class._nFields = len(impl_class._fieldNames)
-        return constructor
-
-    return impl_link
-
+    def __getattr__(self, item):
+        return self._kwargs.get(item)

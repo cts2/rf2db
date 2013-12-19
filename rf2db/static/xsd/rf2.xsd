@@ -419,17 +419,17 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:element name="ConceptList">
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="Iterator">
-                    <xs:sequence>
-                        <xs:element name="entry" type="Concept" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
-    </xs:element>
+    <xs:element name="ConceptList" type="ConceptList"/>
+    <xs:complexType name="ConceptList">
+        <xs:complexContent>
+            <xs:extension base="Iterator">
+                <xs:sequence>
+                    <xs:element name="entry" type="Concept" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
 
     <xs:element name="Description" type="Description"/>
     <xs:complexType name="Description">
@@ -446,17 +446,17 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:element name="DescriptionList">
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="Iterator">
-                    <xs:sequence>
-                        <xs:element name="entry" type="Description" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
-    </xs:element>
+
+    <xs:element name="DescriptionList" type="DescriptionList"/>
+    <xs:complexType name="DescriptionList">
+        <xs:complexContent>
+            <xs:extension base="Iterator">
+                <xs:sequence>
+                    <xs:element name="entry" type="Description" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
 
     <xs:element name="Relationship" type="Relationship"/>
     <xs:complexType name="Relationship">
@@ -475,8 +475,8 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:element name="RelationshipList" type="RelationshipList_"/>
-    <xs:complexType name="RelationshipList_">
+    <xs:element name="RelationshipList" type="RelationshipList"/>
+    <xs:complexType name="RelationshipList">
             <xs:complexContent>
                 <xs:extension base="Iterator">
                     <xs:sequence>
@@ -498,17 +498,17 @@
         </xs:sequence>
     </xs:complexType>
 
-    <xs:element name="IdentifierList">
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="Iterator">
-                    <xs:sequence>
-                        <xs:element name="entry" type="Identifier" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
-    </xs:element>
+    <xs:element name="IdentifierList" type="IdentifierList"/>
+    <xs:complexType name="IdentifierList">
+        <xs:complexContent>
+            <xs:extension base="Iterator">
+                <xs:sequence>
+                    <xs:element name="entry" type="Identifier" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
 
 
     <xs:element name="TransitiveClosureHistory" type="TransitiveClosureHistory"/>
@@ -522,17 +522,17 @@
     </xs:complexType>
 
 
-    <xs:element name="TransitiveClosureHistoryList">
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="Iterator">
-                    <xs:sequence>
-                        <xs:element name="entry" type="TransitiveClosureHistory" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
-    </xs:element>
+    <xs:element name="TransitiveClosureHistoryList" type="TransitiveClosureHistoryList"/>
+    <xs:complexType name="TransitiveClosureHistoryList">
+        <xs:complexContent>
+            <xs:extension base="Iterator">
+                <xs:sequence>
+                    <xs:element name="entry" type="TransitiveClosureHistory" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
 
 
     <!-- ========================================================================
@@ -572,17 +572,17 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:element name="DescriptorReferenceSet">
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="Iterator">
-                    <xs:sequence>
-                        <xs:element name="entry" type="DescriptorReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
-    </xs:element>
+    <xs:element name="DescriptorReferenceSet" type="DescriptorReferenceSet"/>
+    <xs:complexType name="DescriptorReferenceSet">
+        <xs:complexContent>
+            <xs:extension base="Iterator">
+                <xs:sequence>
+                    <xs:element name="entry" type="DescriptorReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
 
     <xs:element name="SimpleReferenceSetEntry" type="SimpleReferenceSetEntry"/>
     <xs:complexType name="SimpleReferenceSetEntry">
@@ -619,17 +619,18 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-    <xs:element name="OrderedReferenceSet">
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="Iterator">
-                    <xs:sequence>
-                        <xs:element name="entry" type="OrderedReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
-    </xs:element>
+
+    <xs:element name="OrderedReferenceSet" type="OrderedReferenceSet"/>
+    <xs:complexType name="OrderedReferenceSet">
+        <xs:complexContent>
+            <xs:extension base="Iterator">
+                <xs:sequence>
+                    <xs:element name="entry" type="OrderedReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
 
     <xs:element name="AttributeValueReferenceSetEntry" type="AttributeValueReferenceSetEntry"/>
     <xs:complexType name="AttributeValueReferenceSetEntry">
@@ -641,17 +642,17 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-    <xs:element name="AttributeValueReferenceSet">
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="Iterator">
-                    <xs:sequence>
-                        <xs:element name="entry" type="AttributeValueReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
-    </xs:element>
+    <xs:element name="AttributeValueReferenceSet" type="AttributeValueReferenceSet"/>
+    <xs:complexType name="AttributeValueReferenceSet">
+        <xs:complexContent>
+            <xs:extension base="Iterator">
+                <xs:sequence>
+                    <xs:element name="entry" type="AttributeValueReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
 
 
     <xs:element name="SimpleMapReferenceSetEntry" type="SimpleMapReferenceSetEntry"/>
@@ -665,17 +666,17 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:element name="SimpleMapReferenceSet">
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="Iterator">
-                    <xs:sequence>
-                        <xs:element name="entry" type="SimpleMapReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
-    </xs:element>
+    <xs:element name="SimpleMapReferenceSet" type="SimpleMapReferenceSet"/>
+    <xs:complexType name="SimpleMapReferenceSet">
+        <xs:complexContent>
+            <xs:extension base="Iterator">
+                <xs:sequence>
+                    <xs:element name="entry" type="SimpleMapReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
 
     <xs:element name="ComplexMapReferenceSetEntry" type="ComplexMapReferenceSetEntry"/>
     <xs:complexType name="ComplexMapReferenceSetEntry">
@@ -692,17 +693,17 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-    <xs:element name="ComplexMapReferenceSet">
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="Iterator">
-                    <xs:sequence>
-                        <xs:element name="entry" type="ComplexMapReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
-    </xs:element>
+    <xs:element name="ComplexMapReferenceSet" type="ComplexMapReferenceSet"/>
+    <xs:complexType name="ComplexMapReferenceSet">
+        <xs:complexContent>
+            <xs:extension base="Iterator">
+                <xs:sequence>
+                    <xs:element name="entry" type="ComplexMapReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
     
     <xs:element name="LanguageReferenceSetEntry" type="LanguageReferenceSetEntry"/>
     <xs:complexType name="LanguageReferenceSetEntry">
@@ -714,17 +715,17 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-    <xs:element name="LanguageReferenceSet">
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="Iterator">
-                    <xs:sequence>
-                        <xs:element name="entry" type="LanguageReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
-    </xs:element>
+    <xs:element name="LanguageReferenceSet" type="LanguageReferenceSet"/>
+    <xs:complexType name="LanguageReferenceSet">
+        <xs:complexContent>
+            <xs:extension base="Iterator">
+                <xs:sequence>
+                    <xs:element name="entry" type="LanguageReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
     
     <xs:element name="QuerySpecificationReferenceSetEntry" type="QuerySpecificationReferenceSetEntry"/>
     <xs:complexType name="QuerySpecificationReferenceSetEntry">
@@ -736,17 +737,17 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-    <xs:element name="QuerySpecificationReferenceSet">
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="Iterator">
-                    <xs:sequence>
-                        <xs:element name="entry" type="QuerySpecificationReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
-    </xs:element>
+    <xs:element name="QuerySpecificationReferenceSet" type="QuerySpecificationReferenceSet"/>
+    <xs:complexType name="QuerySpecificationReferenceSet">
+        <xs:complexContent>
+            <xs:extension base="Iterator">
+                <xs:sequence>
+                    <xs:element name="entry" type="QuerySpecificationReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
     
     <xs:element name="AnnotationReferenceSetEntry" type="AnnotationReferenceSetEntry"/>
     <xs:complexType name="AnnotationReferenceSetEntry">
@@ -758,17 +759,17 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-    <xs:element name="AnnotationReferenceSet">
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="Iterator">
-                    <xs:sequence>
-                        <xs:element name="entry" type="AnnotationReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
-    </xs:element>
+    <xs:element name="AnnotationReferenceSet" type="AnnotationReferenceSet"/>
+    <xs:complexType name="AnnotationReferenceSet">
+        <xs:complexContent>
+            <xs:extension base="Iterator">
+                <xs:sequence>
+                    <xs:element name="entry" type="AnnotationReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
     
     <xs:element name="AssociationReferenceSetEntry" type="AssociationReferenceSetEntry"/>
     <xs:complexType name="AssociationReferenceSetEntry">
@@ -780,17 +781,17 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-    <xs:element name="AssociationReferenceSet">
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="Iterator">
-                    <xs:sequence>
-                        <xs:element name="entry" type="AssociationReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
-    </xs:element>
+    <xs:element name="AssociationReferenceSet" type="AssociationReferenceSet"/>
+    <xs:complexType name="AssociationReferenceSet">
+        <xs:complexContent>
+            <xs:extension base="Iterator">
+                <xs:sequence>
+                    <xs:element name="entry" type="AssociationReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
     
     <!-- ISSUE: Typo on page 350 - effective times are "String" rather than "Time" -->
     <xs:element name="ModuleDependencyReferenceSetEntry" type="ModuleDependencyReferenceSetEntry"/>
@@ -805,17 +806,16 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:element name="ModuleDepencencyReferenceSet">
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="Iterator">
-                    <xs:sequence>
-                        <xs:element name="entry" type="ModuleDependencyReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
-    </xs:element>
+    <xs:element name="ModuleDepencencyReferenceSet" type="ModuleDepencencyReferenceSet"/>
+    <xs:complexType name="ModuleDepencencyReferenceSet">
+        <xs:complexContent>
+            <xs:extension base="Iterator">
+                <xs:sequence>
+                    <xs:element name="entry" type="ModuleDependencyReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
 
     <xs:element name="DescriptionFormatReferenceSetEntry" type="DescriptionFormatReferenceSetEntry"/>
     <xs:complexType name="DescriptionFormatReferenceSetEntry">
@@ -828,15 +828,15 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-    <xs:element name="DescriptionFormatReferenceSet">
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="Iterator">
-                    <xs:sequence>
-                        <xs:element name="entry" type="DescriptionFormatReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
-    </xs:element>
+    <xs:element name="DescriptionFormatReferenceSet" type="DescriptionFormatReferenceSet"/>
+    <xs:complexType name="DescriptionFormatReferenceSet">
+        <xs:complexContent>
+            <xs:extension base="Iterator">
+                <xs:sequence>
+                    <xs:element name="entry" type="DescriptionFormatReferenceSetEntry" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
 </xs:schema>
