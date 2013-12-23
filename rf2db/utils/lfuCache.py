@@ -34,7 +34,7 @@ Created on Sep 14, 2012
 @author: mrf7578 - copied from http://code.activestate.com/recipes/498245-lru-and-lfu-cache-decorators/
 """
 
-import functools
+import functools, collections
 from heapq import nsmallest
 from operator import itemgetter
 
@@ -63,9 +63,18 @@ def lfu_cache(maxsize=100):
 
         @functools.wraps(user_function)
         def wrapper(*args, **kwargs):
-            key = args[1]
+            key = args[1:]
             if kwargs:
-                key += (kwarg_mark,) + tuple(sorted(kwargs.items()))
+                #
+                key += (kwarg_mark,) + tuple(
+                    #
+                    map(lambda e: (e[0], e[1] if isinstance(e[1], collections.Hashable) else str(e[1])),
+                        sorted(
+                            # Parameters with a leading '_' do not determine the outcome
+                            filter(lambda k:not k[0].startswith('_'), kwargs.items())
+                        )
+                    )
+                )
 
             # get cache entry or compute if not found
             try:

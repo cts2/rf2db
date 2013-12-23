@@ -30,11 +30,12 @@
 """ RF2 Description File Access Routines
 """
 
-from rf2db.parsers               import RF2Iterator
+from rf2db.parsers.RF2Iterator import RF2DescriptionList
 
-from rf2db.db.RF2FileCommon      import RF2FileWrapper
+from rf2db.db.RF2FileCommon import RF2FileWrapper
+from rf2db.db.ParameterSets import iter_parms, base_parms
 from rf2db.parsers.RF2BaseParser import RF2Description
-from rf2db.utils.lfuCache        import lfu_cache
+from rf2db.utils.lfuCache import lfu_cache
 
 
     
@@ -62,24 +63,27 @@ class DescriptionDB(RF2FileWrapper):
         self._descTextDB = None
     
     @lfu_cache(maxsize=100)
-    def getConceptDescription(self, conceptId, active=True, ss=True):
+    def getConceptDescription(self, conceptId, **kwargs):
+        p = base_parms(**kwargs)
         db = self.connect()
-        return [RF2Description(d) for d in db.query(self._tname(ss), "conceptId = %s" % conceptId, active=active, ss=ss)]
-        
-    def getConceptForDescription(self, descId, active=True, ss=True):
-        rlist = self.getDescriptionById(descId, active, ss)
+        return [RF2Description(d) for d in db.query(self._tname(p.ss), "conceptId = %s" % conceptId, active=p.active, ss=p.ss)]
+
+    def getConceptIdForDescription(self, descId, **kwargs):
+        rlist = self.getDescriptionById(descId, **kwargs)
         return str(rlist.conceptId) if rlist else None
     
     @lfu_cache(maxsize=20)
-    def getDescriptionById(self, descId, active=False, ss=True):
+    def getDescriptionById(self, descId, **kwargs):
+        p = base_parms(**kwargs)
         db = self.connect()
-        rlist = [RF2Description(d) for d in db.query(self._tname(ss), "id = %s" % descId, active=active, ss=ss)]
+        rlist = [RF2Description(d) for d in db.query(self._tname(p.ss), "id = %s" % descId, active=p.active, ss=p.ss)]
         return rlist[0] if len(rlist) else None
 
-    @lfu_cache(maxsize=20)
-    def getConceptDescriptionList(self, conceptId, active=True, ss=True, **kwargs):
-        thelist = RF2Iterator.RF2DescriptionList(**kwargs)
-        for d in self.getConceptDescription(conceptId, active, ss):
+
+    def asDescriptionList(self, descs, **kwargs):
+        """ Format rels as a Relationship List """
+        thelist = RF2DescriptionList(**kwargs)
+        for d in descs:
             if thelist.at_end:
                 return thelist.finish(True)
             thelist.append(d)

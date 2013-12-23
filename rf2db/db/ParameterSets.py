@@ -26,44 +26,39 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
+from rf2db.utils.ParmParser import KwParms
+#from rf2db.db.RF2ModuleVersionsFile import ModuleVersionsDB
 
-from rf2db.utils.SCTID import SCTID
+#mvdb = ModuleVersionsDB()
 
-def boolparam(p, default=False):
-    if p is None: return default
-    if str(p).lower() in ['y','yes','true', '1', 'on']: return True
-    if str(p).lower() in ['n', 'no','false', '0', 'off']: return False
-    return None
-
-def intparam(p, default=0):
-    if p is None: p = default
-    return int(p)
-
-class KwParms(object):
+class base_parms(object):
+    """ Baseline parameters that control what is retrieved
+    """
     def __init__(self, **kwargs):
-        self._kwargs = kwargs
+        self._p = KwParms(**kwargs)
+        self.ss = True
+        self.active = self._p.bool('active', True)
+        mods = self._p.sctid('moduleid')
+        self.moduleids = str(mods).split() if mods else None
 
-    def bool(self, arg, default=True):
-        return boolparam(self._kwargs.get(arg), default)
+    # TODO: Get the validate calls into the routines
+    def validate(self):
+        #if not mvdb.validModuleids(self.moduleids):
+        #   return False, ' '.join(filter(lambda m: not mvdb.getModuleid(m),self.moduleids))
+        return True,''
 
-    def int(self, arg, default=0):
-        return intparam(self._kwargs.get(arg), default)
 
-    def str(self, arg, default=None):
-        return self._kwargs.get(arg, default)
+orders = ['asc', 'desc']
 
-    def sctid(self, arg, default=None):
-        id = self._kwargs.get(arg, default)
-        if id and SCTID.isValid(id):
-            return SCTID(id)
-        return None
+class iter_parms(base_parms):
+    """ Parameters that controle list iteration
+    """
+    def __init__(self, **kwargs):
+        base_parms.__init__(self, **kwargs)
+        self.page = self._p.int('page', 0)
+        self.maxtoreturn = self._p.int('maxtoreturn', 100)
+        self.start = self.page * self.maxtoreturn
+        self.order = self._p.enum('order', orders)
 
-    def enum(self, arg, list, default=None):
-        rval = self._kwargs.get(arg, default if default else list[0]).lower()
-        return rval if rval in list else None
-
-    def __getattr__(self, item):
-        return self.__dict__[item] if item.startswith('_') else self._kwargs.get(item)
-
-    def __setattr__(self, key, value):
-        self.__dict__[key] = value
+    def validate(self):
+        return base_parms.validate(self)

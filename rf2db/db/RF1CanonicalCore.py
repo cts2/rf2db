@@ -26,44 +26,42 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
+import os
 
-from rf2db.utils.SCTID import SCTID
 
-def boolparam(p, default=False):
-    if p is None: return default
-    if str(p).lower() in ['y','yes','true', '1', 'on']: return True
-    if str(p).lower() in ['n', 'no','false', '0', 'off']: return False
-    return None
+from rf2db.db.RF2FileCommon import RF2FileWrapper
 
-def intparam(p, default=0):
-    if p is None: p = default
-    return int(p)
 
-class KwParms(object):
-    def __init__(self, **kwargs):
-        self._kwargs = kwargs
+class CanonicalCoreDB(RF2FileWrapper):
 
-    def bool(self, arg, default=True):
-        return boolparam(self._kwargs.get(arg), default)
+    directory = os.path.join('OtherResources', 'Canonical Table')
+    prefixes = ['res1_Canonical_Core_']
+    table = 'canonical_core'
+    isRF1File = True
 
-    def int(self, arg, default=0):
-        return intparam(self._kwargs.get(arg), default)
+    createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
+      conceptid1 bigint(20) NOT NULL,
+      relationshiptype bigint(20) NOT NULL,
+      conceptid2 bigint(20) NOT NULL,
+      relationshipgroup int(11) NOT NULL,
+      KEY conceptid1 (conceptid1) USING HASH);"""
 
-    def str(self, arg, default=None):
-        return self._kwargs.get(arg, default)
+    def __init__(self, *args, **kwargs):
+        RF2FileWrapper.__init__(self, *args, **kwargs)
 
-    def sctid(self, arg, default=None):
-        id = self._kwargs.get(arg, default)
-        if id and SCTID.isValid(id):
-            return SCTID(id)
-        return None
+    def loadTable(self, rf2file, ss, cfg):
+        from rf2db.db.RF2RelationshipFile import RelationshipDB
+        from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB
+        rdb = RelationshipDB()
+        srdb = StatedRelationshipDB()
+        if not rdb.hascontent(ss) or not srdb.hascontent(ss):
+            print("Relationship databases must be loaded before loading %s" % self._tname(ss))
+            return
 
-    def enum(self, arg, list, default=None):
-        rval = self._kwargs.get(arg, default if default else list[0]).lower()
-        return rval if rval in list else None
 
-    def __getattr__(self, item):
-        return self.__dict__[item] if item.startswith('_') else self._kwargs.get(item)
+        super(CanonicalCoreDB, self).loadTable(rf2file,ss,cfg)
 
-    def __setattr__(self, key, value):
-        self.__dict__[key] = value
+        print("Updating Stated Relationship File")
+        rdb.updateFromCanonical(self._tname(ss), ss)
+        print("Updating Relationship File")
+        srdb.updateFromCanonical(self._tname(ss), ss)

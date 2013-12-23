@@ -35,6 +35,9 @@ from rf2db.db.RF2ConceptFile import ConceptDB
 from rf2db.db.RF2DescriptionFile import DescriptionDB
 from rf2db.db.RF2RelationshipFile import RelationshipDB
 from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB
+from rf2db.db.RF2LanguageFile import LanguageDB
+from rf2db.constants.RF2ValueSets import acceptable, synonym
+from rf2db.utils.listutils import listify
 
 
 class ModuleVersionsDB(RF2FileWrapper):
@@ -47,6 +50,11 @@ class ModuleVersionsDB(RF2FileWrapper):
        PRIMARY KEY (moduleId,effectiveTime),
        KEY id (moduleId)
     ); """
+
+    createModulesSTMT = """CREATE OR REPLACE VIEW moduleids AS
+        SELECT DISTINCT m.moduleid, d.term, d.languagecode FROM %(mvtable)s m, %(desctable)s d, %(langtable)s l
+        WHERE d.conceptid = m.moduleid AND l.referencedcomponentid=d.id AND
+              l.acceptabilityid=%(acceptable)s AND d.typeid=%(synonym)s;"""
     
     # A list of tables that carry significant version identifiers.  Used to determine possible module changes
     _versionTables = [ConceptDB(),
@@ -64,12 +72,18 @@ class ModuleVersionsDB(RF2FileWrapper):
                 print(vt._tname(ss), "is empty - load it first")
         for vt in self._versionTables:
             # print("Loading", vt.table, '...',end='')
-            print "Loading", vt.table, '...',
+            print('Reading versions from %s ...' % vt.table)
             db = self.connect()
             db.execute('INSERT IGNORE INTO %s (moduleId, effectiveTime) VALUES' % self._tname(ss) + \
                             ','.join(["("+ str(m) + "," +str(e) + ")" for (m,e) in vt.moduleVersions(ss)]))
             db.commit()
-            print()
+        db = self.connect()
+        print "Loading moduleid view"
+        db.execute(self.createModulesSTMT % {'mvtable':self._tname(ss), 'desctable':DescriptionDB()._tname(ss),
+                                             'langtable':LanguageDB()._tname(ss),'acceptable':acceptable,
+                                             'synonym':synonym})
+        db.commit()
+
             
     def loadFile(self, fname, ss):
         print(self.table, "must be loaded from", ConceptDB()._tname(ss), "and", DescriptionDB()._tname(ss), "tables")
@@ -78,7 +92,7 @@ class ModuleVersionsDB(RF2FileWrapper):
         """ Return module id versions in descending order """
         db = self.connect()
         db.execute("SELECT effectiveTime FROM %s WHERE moduleId = %s ORDER by effectiveTime DESC" % (self._tname(ss), moduleId) )
-        return [e for e in db.ResultsGenerator(db)]
+        return list(db.ResultsGenerator(db))
 
 
     def knownVersions(self, refdate=None, ss=True):
@@ -90,6 +104,24 @@ class ModuleVersionsDB(RF2FileWrapper):
         whereStmt = " WHERE effectiveTime <= '%s' " % refdate if refdate else ""
         db = self.connect()
         db.execute("SELECT distinct effectiveTime FROM %s %s ORDER by effectiveTime DESC" % (self._tname(ss), whereStmt))
-        rval = [e for e in db.ResultsGenerator(db)]
-        return rval
+        return list(db.ResultsGenerator(db))
+
+    def getModulesids(self):
+        db = self.connect()
+        return list(db.execute("SELECT * FROM moduleids"))
+
+    def getModuleid(self,moduleid):
+        db = self.connect()
+        rval = list(db.execute("SELECT * FROM moduleids WHERE moduleid=%s" % moduleid))
+        return rval[0] if rval else None
+
+    def validModuleids(self,moduleids):
+        moduleids = set(listify(moduleids))
+        if moduleids:
+            db = self.connect()
+            rval = list(db.execute("SELECT * FROM moduleids WHERE moduleid IN (" + ', '.join(moduleids) + ");"))
+            return len(rval) == len(moduleids)
+
+        return True
+
         

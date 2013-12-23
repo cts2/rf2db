@@ -36,8 +36,16 @@ from rf2db.db.RF2ConceptFile import ConceptDB
 from rf2db.db.RF2DescriptionFile import DescriptionDB
 from rf2db.utils.listutils import listify
 from rf2db.utils.ParmParser import boolparam, intparam
+from rf2db.db.ParameterSets import iter_parms
 
 
+class match_parms(iter_parms):
+    matchalgorithms = ['contains','startswith', 'endswith', 'exact', 'wordstart', 'phrase']
+
+    def __init__(self, **kwargs):
+        iter_parms.__init__(self, **kwargs)
+        self.matchvalue=self._p.str('matchvalue')
+        self.matchalgorithm=self._p.enum('matchalgorithm', self.matchalgorithms)
 
 class DescriptionTextDB(RF2FileWrapper):
     directory = 'Terminology'

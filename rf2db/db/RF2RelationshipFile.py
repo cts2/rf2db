@@ -34,15 +34,13 @@ from rf2db.parsers.RF2BaseParser import RF2Relationship
 from rf2db.db.RF2FileCommon import RF2FileWrapper
 from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB, canon_filtr, rel_id
 from rf2db.parsers.RF2Iterator import RF2RelationshipList
-from rf2db.utils.ParmParser import KwParms
+from rf2db.db.ParameterSets import iter_parms
 
-class rel_parms(object):
+class rel_parms(iter_parms):
     def __init__(self, **kwargs):
-        self._p = KwParms(**kwargs)
-        self.ss = self._p.bool('ss', True)
+        iter_parms.__init__(self, **kwargs)
         self.stated = self._p.bool('stated', True)
         self.inferred = self._p.bool('inferred', True)
-        self.active = self._p.bool('active', True)
         self.canonical = self._p.bool('canonical', False)
 
     def __getattr__(self, item):
@@ -81,6 +79,17 @@ class RelationshipDB(RF2FileWrapper):
         return bool([r for r in db.query(self._tname(p.ss), canon_filtr(filtr, p.canonical),
                                  active=p.active, ss=p.ss, maxtoreturn=1)])
 
+    def loadTable(self, rf2file, ss, cfg):
+        import warnings
+        warnings.filterwarnings("ignore", ".*doesn't contain data for all columns.*")
+        super(RelationshipDB,self).loadTable(rf2file, ss, cfg)
+
+    def updateFromCanonical(self, canon_fname, ss):
+        db = self.connect()
+        db.execute("""UPDATE %s s, %s c SET isCanonical=1
+            WHERE conceptid1 = sourceId AND conceptid2 = destinationId AND relationshiptype = typeId
+            AND s.relationshipgroup=c.relationshipgroup""" % (self._tname(ss), canon_fname))
+        db.commit()
 
     def existsSourceRecs(self, sourceId, **kwargs):
         return self._existsRecs('sourceId = %s ' % sourceId, rel_parms(**kwargs))
@@ -100,7 +109,7 @@ class RelationshipDB(RF2FileWrapper):
                                    map(lambda r: RF2Relationship(r),
                                        self.connect().query(self._tname(p.ss),
                                                             canon_filtr(filtr, p.canonical),
-                                                            active=p.active, ss=p.ss)))} if p.inferred else {}
+                                                            active=p.active, ss=p.ss, start=p.start, maxtoreturn=p.maxtoreturn)))} if p.inferred else {}
         if p.stated:
             for r in self._srdb._getRecs(filtr, p.active, p.canonical, p.ss):
                 rval[rel_id(r)] = r

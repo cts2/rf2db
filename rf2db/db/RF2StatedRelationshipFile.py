@@ -69,6 +69,18 @@ class StatedRelationshipDB(RF2FileWrapper):
         return bool([r for r in db.query(self._tname(ss), canon_filtr(filtr, canonical),
                                          active=active, ss=ss, maxtoreturn=1)])
 
+    def loadTable(self, rf2file, ss, cfg):
+        import warnings
+        warnings.filterwarnings("ignore", ".*doesn't contain data for all columns.*")
+        super(StatedRelationshipDB,self).loadTable(rf2file, ss, cfg)
+
+    def updateFromCanonical(self, canon_fname, ss):
+        db = self.connect()
+        db.execute("""UPDATE %s s, %s c SET isCanonical=1
+            WHERE conceptid1 = sourceId AND conceptid2 = destinationId AND relationshiptype = typeId
+            AND s.relationshipgroup=c.relationshipgroup""" % (self._tname(ss), canon_fname))
+        db.commit()
+
 
     def existsSourceRecs(self, sourceId, active=True, canonical=False, ss=True):
         return self._existsRecs('sourceId = %s ' % sourceId, active, canonical, ss)

@@ -34,10 +34,12 @@
 import os
 import rf2db.db.RF2DBConnection
 from config.ConfigArgs import ConfigArg, ConfigArgs
+from rf2db.utils.ParmParser import KwParms
 
 config_parms = ConfigArgs( 'rf2',
                            [ConfigArg('fileloc', abbrev='f', help='Location of primary RF2 Distribution'),
-                            ConfigArg('addloc', abbrev='a',help='Add the location of a secondary RF2 Distribution')
+                            ConfigArg('addloc', abbrev='a',help='Add the location of a secondary RF2 Distribution'),
+                            ConfigArg('canonical', abbrev='c', help='Add the RF1 Canonical ')
                             ])
 
 # TODO: initialize the PYTHONPATH variable - use WebServer as an example
@@ -47,6 +49,8 @@ config_parms = ConfigArgs( 'rf2',
 #         Index is (SCUI, SAB)
 #         Second index is (TUI, SAB)
 
+
+
 class RF2FileWrapper(object):
     """ Abstract wrapper class for RF2 files """
     # ================== Virtual parameters ===============
@@ -54,6 +58,7 @@ class RF2FileWrapper(object):
     prefixes   = []      # 'sct2_Concept_', 'der2_cRefset_AttributeValue', 'der2_Refset_Simple', etc.
     table      = None    # 'concept', 'description', 'simplemap', etc.
     createSTMT = None    # SQL create statement for table. 'table' is available as a parameter
+    isRF1File  = False   # True means this is an RF1 table w/ different behavior
 
     # Directory layout
     # - py4cts2/RF2/rf2_source
@@ -175,9 +180,9 @@ class RF2FileWrapper(object):
         return self._tabless if ss else self._tablefull
 
     def _filesToLoad(self, ss, cfg):
-        reldir = 'Snapshot' if ss else 'Full'
+        reldir = ('Snapshot' if ss else 'Full') if not self.isRF1File else ''
         if cfg.fileloc:
-            base = os.path.join(cfg.fileloc, 'RF2Release', reldir, self.directory)
+            base = os.path.join(cfg.fileloc, 'RF1Release' if self.isRF1File else 'RF2Release', reldir, self.directory)
             if os.path.exists(base):
                 for fname in os.listdir(base):
                     for p in self.prefixes:

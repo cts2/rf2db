@@ -33,10 +33,14 @@
 from rf2db.parsers.RF2BaseParser import RF2Concept
 from rf2db.parsers.RF2Iterator import RF2ConceptList
 from rf2db.db.RF2FileCommon import RF2FileWrapper
-from rf2db.utils.ParmParser import boolparam, intparam
+from rf2db.db.ParameterSets import iter_parms, base_parms
 
 from rf2db.utils.lfuCache import lfu_cache
 
+class all_conc_parms(iter_parms):
+    def __init__(self, **kwargs):
+        iter_parms.__init__(self, **kwargs)
+        self.after = self._p.str('after')
 
 class ConceptDB(RF2FileWrapper):
     directory = 'Terminology'
@@ -56,60 +60,41 @@ class ConceptDB(RF2FileWrapper):
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
     @lfu_cache(maxsize=100)
-    def getConcept(self, cid, active=True, ss=True):
+    def getConcept(self, cid, **kwargs):
         """
         Read the concept record
         @param cid: concept SCTID
-        @param active: True - only return active concepts
-        @param ss: True - use snapshot tables.  False, use full tables
-        @return: RF2Concept record or None if not found
         """
+        p = base_parms(**kwargs)
         db = self.connect()
-        rlist = [RF2Concept(c) for c in db.query(self._tname(ss), "id=%s" % cid, active=active, ss=ss)]
+        rlist = [RF2Concept(c) for c in db.query(self._tname(p.ss), "id=%s" % cid, active=p.active, ss=p.ss, moduleids=p.moduleids)]
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
     def getAllConcepts(self, **kwargs):
         """
-        @param active: return only active entities C{True} or all C{False}.  Default: C{True}
-        @type active: boolean
-
-        @param page: return starting at M{maxtoreturn*page}. Default: 0
-        @type page: int
-
-        @oaran after: sctid to start after
-        @type after: str
-
-        @param maxtoreturn: number of entries to return.  Default: 100
-        @type maxtoreturn: int
-
-        @param moduleid: constrain to entries in this module.
-        @type moduleid: sctid
+        Read a number of concept records
+        @param after: SCTID to start after
         """
-        active = boolparam(kwargs.pop('active', None), True)
-        page = intparam(kwargs.get('page', 0), 0)
-        order = kwargs.pop('order', 'asc')
-        after = kwargs.pop('after', None)
-        if order.lower() not in ('asc', 'desc'):
-            order = 'asc'
+        p = all_conc_parms(**kwargs)
 
-        maxtoreturn = intparam(kwargs.get('maxtoreturn'), 100)
-        start = page * maxtoreturn
-        moduleid = kwargs.get('moduleid')
-        ss = boolparam(kwargs.get('ss'), True)
-
-        if not ss:
+        if not p.ss:
             raise Exception('FULL table not supported for complete concept list')
         db = self.connect()
-        db.execute("SELECT * FROM %s WHERE %s" % (self._tname(ss), 'ACTIVE=1' if active else 'TRUE') +
-                           (' AND id > %s' % after if after else "") +
-                           (' ORDER BY id %s ' % order) +
-                           (" LIMIT %s, %s" % (start, maxtoreturn + 1) if maxtoreturn else ""))
+        db.execute("SELECT * FROM %s WHERE %s" % (self._tname(p.ss), 'active=1' if p.active else 'TRUE') +
+                   (' AND id > %s' % p.after if p.after else "") +
+                   ((' AND moduleid IN (' + ', '.join([str(m) for m in p.moduleids])) if p.moduleids else '') +
+                   (' ORDER BY id %s ' % p.order) +
+                   (' LIMIT %s, %s' % (p.start, p.maxtoreturn + 1) if p.maxtoreturn else ""))
 
+        return db.ResultsGenerator(db)
+
+    @staticmethod
+    def asConceptList(clist, **kwargs):
         thelist = RF2ConceptList(**kwargs)
-        src = db.ResultsGenerator(db)
-        for d in src:
+        for c in clist:
             if thelist.at_end:
                 return thelist.finish(True)
-            thelist.append(RF2Concept(d))
+            thelist.append(RF2Concept(c))
         return thelist.finish(False)
+

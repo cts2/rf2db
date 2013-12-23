@@ -37,6 +37,7 @@ import sqlalchemy.pool as pool
 from config.ConfigArgs import ConfigArg, ConfigArgs
 from config.ConfigManager import ConfigManager
 from rf2db.utils.ParmParser import boolparam
+from rf2db.utils.listutils import listify
 
 config_parms = ConfigArgs( 'dbparms',
                            [ConfigArg('host', help='MySQL DB Host', default='localhost'),
@@ -52,7 +53,10 @@ config = ConfigManager(config_parms)
 
 db = pool.manage(mysql)
 
-
+sub_flags=re.M+re.S
+sub_subs = [(re.compile(r'^(id|effectiveTime)( |=)',flags=sub_flags), r'tbl.\1\2'),
+            (re.compile(r'( |=)(id|effectiveTime)( |=)',flags=sub_flags),r'\1tbl.\2\3'),
+            (re.compile(r'( |=)(id|effectiveTime)$',flags=sub_flags),r'\1tbl.\2')]
 
 class RF2DBConnection(object):
 
@@ -134,7 +138,8 @@ class RF2DBConnection(object):
                 return RF2DBConnection.tabify(t)
             raise StopIteration
 
-    def build_query(self, table, filter_="", sort=None, active=True, ss=True, start=0, maxtoreturn=0, refdate=None):
+    @staticmethod
+    def build_query(table, filter_="", sort=None, active=True, ss=True, start=0, maxtoreturn=0, refdate=None, moduleids=None):
         """ Query an RF2 table taking the historical information into account.
         
         @param table: table to query
@@ -160,8 +165,11 @@ class RF2DBConnection(object):
         
         @param refdate: reference date - only retrieve records older than or equal to this date
         @type refdate: C{datetime.datetime}
+
+        @param moduleids: list of module ids to constrain the query
+        @type moduleids: C{sctid} or C{list{sctid}}
         
-        @return: number of elements
+        @return: query
         @rtype: C{String}
         """
         start = int(start)
@@ -171,7 +179,7 @@ class RF2DBConnection(object):
         if ss and refdate:
             raise Exception("Cannot use reference date with snapshot")
         if not ss:
-            key_query = "(select id, MAX(effectiveTime) AS effectiveTime from %(table)s WHERE %(filter_)s" % locals()
+            key_query = "(SELECT id, MAX(effectiveTime) AS effectiveTime from %(table)s WHERE %(filter_)s" % locals()
             if refdate:
                 key_query += " AND effectiveTime <= '%s'" % refdate.strftime("%Y%m%d%H%M")
             key_query += " GROUP BY id) as tbl_keys"
@@ -182,17 +190,18 @@ class RF2DBConnection(object):
             query = """ SELECT tbl.* FROM %(table)s tbl, %(key_query)s 
                         WHERE tbl.id = tbl_keys.id AND tbl.effectiveTime = tbl_keys.effectiveTime AND %(tf)s""" % locals()
         else:
-            query = """ SELECT tbl.* from %(table)s tbl WHERE %(filter_)s""" %locals()
+            query = """ SELECT tbl.* FROM %(table)s tbl WHERE %(filter_)s """ %locals()
         if active:
-            query += " AND active = 1"
+            query += " AND active = 1 "
+        if moduleids:
+            query += " AND " + ' AND '.join(['moduleid = %s' % m for m in listify(moduleids)]) + ' '
         if sort:
             query += " ORDER BY tbl.%s ASC " % sort
-
         if maxtoreturn:
-            query += " LIMIT %d, %d " % (start, maxtoreturn)
+            query += " LIMIT %d, %d " % (start, maxtoreturn+1)
         return query
 
-    def query(self, table, filter_="", sort=None, active=True, ss=True, start=0, maxtoreturn=0, refdate=None):
+    def query(self, table, filter_="", sort=None, active=True, ss=True, start=0, maxtoreturn=0, refdate=None, moduleids=None):
         """ Query an RF2 table taking the historical information into account.
 
         @param table: table to query
@@ -219,22 +228,22 @@ class RF2DBConnection(object):
         @param refdate: reference date - only retrieve records older than or equal to this date
         @type refdate: C{datetime.datetime}
 
-        @return: list of records
-        @rtype: list of tuple
+        @param moduleids: list of module ids to constrain query to
+        @type moduleids: C{sctid} or C{list{sctid}}
+
+        @return: record generator
         """
         return self.ResultsGenerator(self) if self.execute(self.build_query(table, filter_, sort, active, ss, start,
-                                                                            maxtoreturn, refdate)) else []
+                                                                            maxtoreturn, refdate, moduleids)) else []
 
     def executeAndReturn(self, query):
         return self if self.execute(query) else []
-    
-    def tweakFilter(self, filt):
+
+
+    @staticmethod
+    def tweakFilter(filt):
         """ Adjust the filter to adjust for the fact that id and effectiveTime occur twice in the call """
-        flags=re.M+re.S
-        subs = [(re.compile(r'^(id|effectiveTime)( |=)',flags=flags), r'tbl.\1\2'), 
-                (re.compile(r'( |=)(id|effectiveTime)( |=)',flags=flags),r'\1tbl.\2\3'),
-                (re.compile(r'( |=)(id|effectiveTime)$',flags=flags),r'\1tbl.\2')]
-        return reduce(lambda text, s_r: s_r[0].sub(s_r[1],text), subs, filt)
+        return reduce(lambda text, s_r: s_r[0].sub(s_r[1],text), sub_subs, filt)
 
             
     @staticmethod
