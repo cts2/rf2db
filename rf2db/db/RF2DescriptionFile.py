@@ -30,13 +30,16 @@
 """ RF2 Description File Access Routines
 """
 
-from rf2db.parsers.RF2Iterator import RF2DescriptionList
-
-from rf2db.db.RF2FileCommon import RF2FileWrapper
-from rf2db.db.ParameterSets import iter_parms, base_parms
 from rf2db.parsers.RF2BaseParser import RF2Description
-from rf2db.utils.lfuCache import lfu_cache
+from rf2db.parsers.RF2Iterator import RF2DescriptionList, iter_parms
+from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms
+from rf2db.utils.lfu_cache import lfu_cache
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList
 
+""" Parameters for description access """
+description_parms = global_rf2_parms
+description_list_parms = ParameterDefinitionList(global_rf2_parms)
+description_list_parms.add(iter_parms)
 
     
 class DescriptionDB(RF2FileWrapper):
@@ -63,29 +66,31 @@ class DescriptionDB(RF2FileWrapper):
         self._descTextDB = None
     
     @lfu_cache(maxsize=100)
-    def getConceptDescription(self, conceptId, **kwargs):
-        p = base_parms(**kwargs)
+    def getConceptDescription(self, conceptId, parmlist):
         db = self.connect()
-        return [RF2Description(d) for d in db.query(self._tname(p.ss), "conceptId = %s" % conceptId, active=p.active, ss=p.ss)]
+        return [RF2Description(d) for d in db.query_p(self._tname(parmlist.ss), "conceptId = %s" % conceptId, parmlist)]
 
-    def getConceptIdForDescription(self, descId, **kwargs):
-        rlist = self.getDescriptionById(descId, **kwargs)
+    def getConceptIdForDescription(self, descId, parmlist):
+        rlist = self.getDescriptionById(descId, parmlist)
         return str(rlist.conceptId) if rlist else None
     
     @lfu_cache(maxsize=20)
-    def getDescriptionById(self, descId, **kwargs):
-        p = base_parms(**kwargs)
+    def getDescriptionById(self, descId, parmlist):
         db = self.connect()
-        rlist = [RF2Description(d) for d in db.query(self._tname(p.ss), "id = %s" % descId, active=p.active, ss=p.ss)]
+        rlist = [RF2Description(d) for d in db.query(self._tname(parmlist.ss), "id = %s" % descId, parmlist)]
         return rlist[0] if len(rlist) else None
 
 
-    def asDescriptionList(self, descs, **kwargs):
-        """ Format rels as a Relationship List """
-        thelist = RF2DescriptionList(**kwargs)
-        for d in descs:
+
+    @staticmethod
+    def asDescriptionList(dlist, parmlist):
+        thelist = RF2DescriptionList(parmlist)
+        if not parmlist.maxtoreturn:
+            return thelist.finish(True, total=list(dlist)[0])
+        for d in dlist:
             if thelist.at_end:
                 return thelist.finish(True)
-            thelist.append(d)
+            thelist.append(RF2Description(d))
         return thelist.finish(False)
+
 

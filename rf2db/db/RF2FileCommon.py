@@ -33,8 +33,8 @@
 
 import os
 import rf2db.db.RF2DBConnection
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, booleanparam, sctidparam
 from config.ConfigArgs import ConfigArg, ConfigArgs
-from rf2db.utils.ParmParser import KwParms
 
 config_parms = ConfigArgs( 'rf2',
                            [ConfigArg('fileloc', abbrev='f', help='Location of primary RF2 Distribution'),
@@ -49,6 +49,35 @@ config_parms = ConfigArgs( 'rf2',
 #         Index is (SCUI, SAB)
 #         Second index is (TUI, SAB)
 
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList
+
+""" Base line parameters used for the REST RF2 Services
+
+Global Parameters
+    - B{C{ss}} - C{True} means dealing with the snapshot db, C{False} means full.  Full is not completely
+    implemented at this point.  When it is, this will be moved to a configuration parameter.  Default: C{True}
+    - B{C{active}} - C{True} means inactive entries will not be visible.  C{False} means that both active
+    and inactive entries are treated as present.  Default: C{True}
+    - B{C{moduleid}} - a list of module id's.  If supplied access will be restricted to the specific modules.
+"""
+global_rf2_parms = ParameterDefinitionList()
+global_rf2_parms.ss = booleanparam(default=True, fixed=True)
+global_rf2_parms.active = booleanparam(default=True)
+
+class moduleidparam(sctidparam):
+
+    def __init__(self, default=None, fixed=False):
+        self._mvdb = None
+        sctidparam.__init__(self, default, fixed)
+
+    def _isValid(self, val):
+        if not self._mvdb:
+            from rf2db.db.RF2ModuleVersionsFile import ModuleVersionsDB
+            self._mvdb = ModuleVersionsDB()
+
+        return self._mvdb.validModuleids(val)
+
+global_rf2_parms.moduleid = moduleidparam()
 
 
 class RF2FileWrapper(object):

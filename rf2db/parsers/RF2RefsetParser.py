@@ -32,7 +32,7 @@
 from rf2db.schema      import rf2
 
 from rf2db.constants import RF2ValueSets
-from rf2db.utils.SCTID import SCTID
+from rf2db.utils.sctid import sctid
 from rf2db.utils.link import rf2link
 
 #from dateutil.parser import parse
@@ -89,11 +89,11 @@ class RF2LanguageRefsetEntry(rf2.LanguageReferenceSetEntry_, RF2RefsetBase):
 
     @property
     def isPreferred(self):
-        return SCTID(self.acceptabilityId) == RF2ValueSets.preferred
+        return sctid(self.acceptabilityId) == RF2ValueSets.preferred
         
     @property
     def isSynonym(self):
-        return SCTID(self.acceptabilityId) == RF2ValueSets.acceptable
+        return sctid(self.acceptabilityId) == RF2ValueSets.acceptable
 
 
 

@@ -12,7 +12,7 @@
 #     this list of conditions and the following disclaimer in the documentation
 #     and/or other materials provided with the distribution.
 #
-#     Neither the name of the Mayo Clinic nor the names of its contributors
+#     Neither the name of the <ORGANIZATION> nor the names of its contributors
 #     may be used to endorse or promote products derived from this software
 #     without specific prior written permission.
 #
@@ -21,9 +21,30 @@
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
 # IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
 # INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
 # DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-__all__ = ['CheckDigit', 'kwutil' 'lfu_cache', 'link', 'listutils', 'sctid', 'urlutil', 'xmlutils']
+import unittest
+
+from rf2db.utils.urlutil import append_params, strip_control_params
+
+class TestAppendParms(unittest.TestCase):
+
+    def test1(self):
+        baseURL  = "http://localhost:8080/cts2/resolvedvalueset/sctid:7400120?bypass=1&page=2&maxtoreturn=500&format=json"
+        parms    = {'page':3, 'maxtoreturn':20}
+        expected = "http://localhost:8080/cts2/resolvedvalueset/sctid:7400120?maxtoreturn=20&page=3&bypass=1&format=json"
+        # there is no guarantee on the order of appendParams
+        # If this gets to be an issue, the test needs diff the query lists instead of this
+        self.assertEqual(append_params(baseURL, parms), expected)
+
+    def test2(self):
+        baseURL  = "http://jim:jimspassword@localhost:8080/cts2/resolvedvalueset/sctid:7400120?bypass=1&page=2&maxtoreturn=500&format=json"
+        expected = "http://localhost:8080/cts2/resolvedvalueset/sctid:7400120?maxtoreturn=500&page=2&format=json"
+        self.assertEqual(strip_control_params(baseURL), expected)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -34,9 +34,13 @@ Created on Sep 14, 2012
 @author: mrf7578 - copied from http://code.activestate.com/recipes/498245-lru-and-lfu-cache-decorators/
 """
 
-import functools, collections
+import functools
+import collections
 from heapq import nsmallest
 from operator import itemgetter
+
+from rf2db.db.RF2DBConnection import dbconfig
+from rf2db.parameterparser.ParmParser import booleanparam
 
 class Counter(dict):
     """Mapping where default values are zero"""
@@ -63,6 +67,8 @@ def lfu_cache(maxsize=100):
 
         @functools.wraps(user_function)
         def wrapper(*args, **kwargs):
+            if booleanparam.v(dbconfig.nocache, False):
+                return user_function(*args, **kwargs)
             key = args[1:]
             if kwargs:
                 #

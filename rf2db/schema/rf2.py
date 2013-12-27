@@ -71,18 +71,18 @@ def CreateFromDOM (node, default_namespace=None):
     return pyxb.binding.basis.element.AnyCreateFromDOM(node, default_namespace)
 
 
-# Atomic simple type: {http://snomed.info/schema/rf2}SCTID
+# Atomic simple type: {http://snomed.info/schema/rf2}sctid
 class SCTID (pyxb.binding.datatypes.string):
 
     """An atomic simple type."""
 
-    _ExpandedName = pyxb.namespace.ExpandedName(Namespace, u'SCTID')
+    _ExpandedName = pyxb.namespace.ExpandedName(Namespace, u'sctid')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 9, 4)
     _Documentation = None
 SCTID._CF_pattern = pyxb.binding.facets.CF_pattern()
 SCTID._CF_pattern.addPattern(pattern=u'[0-9]{6,18}')
 SCTID._InitializeFacetMap(SCTID._CF_pattern)
-Namespace.addCategoryObject('typeBinding', u'SCTID', SCTID)
+Namespace.addCategoryObject('typeBinding', u'sctid', SCTID)
 
 # Atomic simple type: {http://snomed.info/schema/rf2}UUID
 class UUID (pyxb.binding.datatypes.string):

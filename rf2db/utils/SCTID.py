@@ -27,22 +27,24 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from rf2db.utils import CheckDigit
+from . import check_digit
 
 
-class SCTID(object):
-    """ SCTID wrapper - exists because SCTID's wander through this module sometimes as longs and
+class sctid(object):
+    """ sctid wrapper - exists because sctid's wander through this module sometimes as longs and
         sometimes as strings.  This makes sure that long and strings compare.
     """
     def __init__(self, value):
-        assert self.isValid(value), "Invalid SCTID: " + str(value)
+        assert self.isValid(value), "Invalid sctid: " + str(value)
         self._value = long(value)
 
     @staticmethod
     def isValid(sctid):
         """ Determine whether the expression is a legitimate sctid """
+        if len(str(sctid)) == 0:
+            return False
         try:
-            return CheckDigit.validateVerhoeff(sctid)
+            return check_digit.validate_verhoeff(sctid)
         except ValueError:
             return False
 

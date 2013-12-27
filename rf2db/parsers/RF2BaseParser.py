@@ -32,7 +32,7 @@
 from rf2db.schema      import rf2
 
 from rf2db.constants import RF2ValueSets
-from rf2db.utils.SCTID import SCTID
+from rf2db.utils.sctid import sctid
 from rf2db.utils import xmlutils
 from rf2db.utils.link import rf2link
 
@@ -130,21 +130,21 @@ class RF2Relationship(rf2.Relationship_, RF2Base):
 
     @property
     def isDefining(self):
-        return SCTID(self.characteristicTypeId) in [RF2ValueSets.definingRelationship,
+        return sctid(self.characteristicTypeId) in [RF2ValueSets.definingRelationship,
                                                     RF2ValueSets.inferredRelationship, #inferredRelationship
                                                     RF2ValueSets.statedRelationship] #statedRelationship
     
     @property 
     def isInferred(self):
-        return SCTID(self.characteristicTypeId) ==  RF2ValueSets.inferredRelationship
+        return sctid(self.characteristicTypeId) ==  RF2ValueSets.inferredRelationship
         
     @property 
     def isAdditional(self):
-        return SCTID(self.characteristicTypeId) ==  RF2ValueSets.additionalRelationship
+        return sctid(self.characteristicTypeId) ==  RF2ValueSets.additionalRelationship
         
     @property 
     def isQualifying(self):
-        return SCTID(self.characteristicTypeId) ==  RF2ValueSets.qualifyingRelationship
+        return sctid(self.characteristicTypeId) ==  RF2ValueSets.qualifyingRelationship
 
 @rf2link(rf2.Identifier, rf2.Identifier_,
          ['identifierSchemeId', 'alternativeIdentifier', 'effectiveTime', 'moduleId', 'referenceComponentId'])

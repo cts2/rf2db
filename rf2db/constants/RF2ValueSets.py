@@ -26,7 +26,7 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-from rf2db.utils.SCTID import SCTID
+from rf2db.utils.sctid import sctid
 
 
 # This source contains the various metadata constants that are used in the construction
@@ -34,57 +34,57 @@ from rf2db.utils.SCTID import SCTID
 # and Extension identifiers
 
 # The root concept for all things SNOMED CT
-sctRoot         = SCTID(138875005)
+sctRoot         = sctid(138875005)
 
 # The root concept for all predicates
-linkage_concept = SCTID(106237007)
+linkage_concept = sctid(106237007)
 
 # sct_concept.definitionStatusId
-primitive = SCTID(900000000000074008)
-defined   = SCTID(900000000000073002)
+primitive = sctid(900000000000074008)
+defined   = sctid(900000000000073002)
 
 
 # sct_description.typeId
-definition = SCTID(900000000000550004)
-fsn        = SCTID(900000000000003001)
-synonym    = SCTID(900000000000013009)
+definition = sctid(900000000000550004)
+fsn        = sctid(900000000000003001)
+synonym    = sctid(900000000000013009)
 
 
 # sct_language.acceptabilityId
-preferred  = SCTID(900000000000548007)
-acceptable = SCTID(900000000000549004)
+preferred  = sctid(900000000000548007)
+acceptable = sctid(900000000000549004)
 
 # sct_language.refsetId
-us_english = SCTID(900000000000509007)
-gb_english = SCTID(900000000000508004)
-spanish    = SCTID(450828004)
+us_english = sctid(900000000000509007)
+gb_english = sctid(900000000000508004)
+spanish    = sctid(450828004)
 
 # sct_relationship.characteristicTypeId
-some       = SCTID(900000000000451002)
-all_       = SCTID(900000000000452009)
+some       = sctid(900000000000451002)
+all_       = sctid(900000000000452009)
 
 # sct subsumption relationship
-is_a       = SCTID(116680003)
+is_a       = sctid(116680003)
 
 # Root of all modules
-module     = SCTID(900000000000443000)
+module     = sctid(900000000000443000)
 
 # Extension identifiers - there is no SNOMED CT concept code for these
-snomedCTInternational   = SCTID(900000000000207008)
-snomedCTSpanishEdition  = SCTID(450829007)
-snomedCTUSExtension     = SCTID(731000124108)
+snomedCTInternational   = sctid(900000000000207008)
+snomedCTSpanishEdition  = sctid(450829007)
+snomedCTUSExtension     = sctid(731000124108)
 
 # Descendants of the model component module (900000000000443000)
 
-snomedCTtoICD9CMequivalencyMappingModule    = SCTID(449079008)
-snomedCTtoICD10ruleBasedmappingModule       = SCTID(449080006)
-ihtsdoMaintainedModule                      = SCTID(900000000000445007)
-snomedCTSpanishEditionModule                = SCTID(449081005)
-moduloDeLaExtensionDeLaLenguaCastellanaParaLatinoameric = SCTID(450829007)
-usNationalLibraryOfMedicineMaintainedModule = SCTID(731000124108)
-snomedCTcore                                = SCTID(900000000000207008)
-snomedCTtoICD10CMruleBasedMappingModule     =  SCTID(5991000124107)
-snomedCTmodelComponent                      = SCTID(900000000000012004)
+snomedCTtoICD9CMequivalencyMappingModule    = sctid(449079008)
+snomedCTtoICD10ruleBasedmappingModule       = sctid(449080006)
+ihtsdoMaintainedModule                      = sctid(900000000000445007)
+snomedCTSpanishEditionModule                = sctid(449081005)
+moduloDeLaExtensionDeLaLenguaCastellanaParaLatinoameric = sctid(450829007)
+usNationalLibraryOfMedicineMaintainedModule = sctid(731000124108)
+snomedCTcore                                = sctid(900000000000207008)
+snomedCTtoICD10CMruleBasedMappingModule     =  sctid(5991000124107)
+snomedCTmodelComponent                      = sctid(900000000000012004)
 
 # Map from module to extension identifier
 moduleToExtensionMap = {
@@ -99,9 +99,9 @@ moduleToExtensionMap = {
 
 
 # relationship characteristic type
-characteristicType      = SCTID(900000000000449001)
-definingRelationship    = SCTID(900000000000412007)   # (superclass - not actually used)
-inferredRelationship    = SCTID(900000000000011006)   # in relationships file
-statedRelationship      = SCTID(900000000000010007)   # in stated relationships file
-additionalRelationship  = SCTID(900000000000412007)   # (No examples)
-qualifyingRelationship  = SCTID(900000000000409009)   # in relationships file
+characteristicType      = sctid(900000000000449001)
+definingRelationship    = sctid(900000000000412007)   # (superclass - not actually used)
+inferredRelationship    = sctid(900000000000011006)   # in relationships file
+statedRelationship      = sctid(900000000000010007)   # in stated relationships file
+additionalRelationship  = sctid(900000000000412007)   # (No examples)
+qualifyingRelationship  = sctid(900000000000409009)   # in relationships file

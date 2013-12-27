@@ -38,6 +38,8 @@ from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB
 from rf2db.db.RF2LanguageFile import LanguageDB
 from rf2db.constants.RF2ValueSets import acceptable, synonym
 from rf2db.utils.listutils import listify
+from rf2db.utils.lfu_cache import lfu_cache
+from rf2db.parameterparser.ParmParser import sctidparam
 
 
 class ModuleVersionsDB(RF2FileWrapper):
@@ -110,16 +112,20 @@ class ModuleVersionsDB(RF2FileWrapper):
         db = self.connect()
         return list(db.execute("SELECT * FROM moduleids"))
 
+    @lfu_cache(20)
     def getModuleid(self,moduleid):
         db = self.connect()
-        rval = list(db.execute("SELECT * FROM moduleids WHERE moduleid=%s" % moduleid))
+        db.execute("SELECT * FROM moduleids WHERE moduleid=%s" % moduleid)
+        rval = list(db.ResultsGenerator(db))
         return rval[0] if rval else None
 
-    def validModuleids(self,moduleids):
-        moduleids = set(listify(moduleids))
+    @lfu_cache(20)
+    def validModuleids(self, moduleids):
+        moduleids = list(set(listify(moduleids)))
         if moduleids:
             db = self.connect()
-            rval = list(db.execute("SELECT * FROM moduleids WHERE moduleid IN (" + ', '.join(moduleids) + ");"))
+            db.execute("SELECT * FROM moduleids WHERE moduleid IN (" + ', '.join(moduleids) + ");")
+            rval = list(db.ResultsGenerator(db))
             return len(rval) == len(moduleids)
 
         return True

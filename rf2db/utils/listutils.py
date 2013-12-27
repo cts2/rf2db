@@ -26,30 +26,64 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-
+import collections
 
 def listify(item, default=None, itemlen=0):
     """ 
-    Convert C{item} to a list.
+    Convert C{item} to a list if it isn't one already
     
     @param item: thing to be converted to a list if it isn't already
     @type item: any
+
     @param default: default value if not supplied
     @type default: any
-    @param itemlen: number of elements to return. None means length is not checked
+
+    @param itemlen: minimum number of elements to return.
     @type itemlen: int
     """
     if not item:
         item = default
     if not isinstance(item, (list, tuple)):
         item = [item]
-    return item + ([default] * max(itemlen - len(item), 0))
+    return list(item) + ([default] * max(itemlen - len(item), 0))
 
-def flatten(possibleList):
-    """ Flatten a variable that may be a list or a variable """
-    if isinstance(possibleList, (list, tuple)):
-        if len(possibleList) == 0: return None
-        possibleList = reduce(lambda x,y: x if x==y else [x,y], possibleList)
-    return possibleList
+def isList(possible_list):
+    return isinstance(possible_list, collections.Iterable) and not isinstance(possible_list, basestring)
+
+def flatten(possible_list):
+    """ Flatten a list by one level.
+
+    >>> flatten(None)
+
+    >>> flatten([])
+    []
+
+    >>> flatten([None])
+    [None]
+
+    >>> flatten("abc")
+    'abc'
+
+    >>> flatten([1,2,3])
+    [1, 2, 3]
+
+    >>> flatten([[1,2],[3,4,[5]]])
+    [1, 2, 3, 4, [5]]
+
+    @param possible_list: the list to be flattened.
+    @return: flattening
+    """
+    def flatten_(pl):
+        if isList(pl):
+            for e in pl:
+                if isList(e):
+                    for e1 in e:
+                        yield e1
+                else:
+                    yield e
+        else:
+            yield pl
+
+
+    return list(flatten_(possible_list)) if isList(possible_list) else possible_list
+

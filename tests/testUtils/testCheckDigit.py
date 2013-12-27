@@ -26,39 +26,42 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-from rf2db.utils.ParmParser import KwParms
-#from rf2db.db.RF2ModuleVersionsFile import ModuleVersionsDB
+import unittest
+from rf2db.utils.check_digit import *
 
-#mvdb = ModuleVersionsDB()
+class CheckDigitTestCase1(unittest.TestCase):
+    def test1(self):
+        # Some tests and also usage examples)
+        self.assertEqual(calcsum('75872'), 2)
+        self.assertEqual(checksum('758722'), 0)
+        self.assertEqual(calcsum('12345'), 1)
+        self.assertEqual(checksum('123451'), 0)
+        self.assertEqual(calcsum('142857'), 0)
+        self.assertEqual(checksum('1428570'), 0)
+        self.assertEqual(calcsum('123456789012'), 0)
+        self.assertEqual(checksum('1234567890120'), 0)
+        self.assertEqual(calcsum('8473643095483728456789'), 2)
+        self.assertEqual(checksum('84736430954837284567892'), 0)
+        self.assertEqual(generate_verhoeff('12345'), '123451')
+        self.assertTrue(validate_verhoeff('123451'))
+        self.assertFalse(validate_verhoeff('122451'))
+        self.assertFalse(validate_verhoeff('128451'))
 
-class base_parms(object):
-    """ Baseline parameters that control what is retrieved
-    """
-    def __init__(self, **kwargs):
-        self._p = KwParms(**kwargs)
-        self.ss = True
-        self.active = self._p.bool('active', True)
-        mods = self._p.sctid('moduleid')
-        self.moduleids = str(mods).split() if mods else None
 
-    # TODO: Get the validate calls into the routines
-    def validate(self):
-        #if not mvdb.validModuleids(self.moduleids):
-        #   return False, ' '.join(filter(lambda m: not mvdb.getModuleid(m),self.moduleids))
-        return True,''
+class CheckDigitSnomedTestCase(unittest.TestCase):
 
+    def test2(self):
+        """
+        Pass over the concept file validating the check digit on all the entries.
+        Note that this seems simple because sctid does a check digit validation
+        """
+        from rf2db.utils.sctid import sctid
+        self.assertRaises(AssertionError, sctid, 100004)
+        self.assertEqual(long(sctid(100005)), 100005)
 
-orders = ['asc', 'desc']
+        from rf2db.db.RF2DBConnection import RF2DBConnection
 
-class iter_parms(base_parms):
-    """ Parameters that controle list iteration
-    """
-    def __init__(self, **kwargs):
-        base_parms.__init__(self, **kwargs)
-        self.page = self._p.int('page', 0)
-        self.maxtoreturn = self._p.int('maxtoreturn', 100)
-        self.start = self.page * self.maxtoreturn
-        self.order = self._p.enum('order', orders)
-
-    def validate(self):
-        return base_parms.validate(self)
+        db = RF2DBConnection()
+        db.execute('SELECT id FROM concept_ss')
+        for row in db:
+            self.assertEqual(long(sctid(row[0])), row[0])

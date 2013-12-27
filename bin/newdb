@@ -49,12 +49,13 @@ def main(argv):
     # Open the existing configuration file so we know what the defaults should be
     cfg = ConfigManager(RF2DBConnection.config_parms, cfgfile=fileopt.configfile)
     parser = argparse.ArgumentParser(description="Set up RF2 DB parameters and optionally create a database")
-    RF2DBConnection.config_parms.addToParser(parser, cfg.section())
+    RF2DBConnection.config_parms.add_to_parser(parser, cfg)
 
     parser.add_argument('-show', dest='show', action="store_true", help="show current configuration")
     parser.add_argument('-upd', dest='update', action="store_true", help="update configuration file")
     parser.add_argument('--create', action="store_true", help="create database if it doesn't exist")
 
+    # TODO: "-h" doesn't list all the arguments.  Fix this
     opts = parser.parse_args(remargs)
 
     cfg.update(vars(opts))

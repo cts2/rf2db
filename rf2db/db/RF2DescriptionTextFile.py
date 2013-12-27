@@ -27,25 +27,22 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from rf2db.parsers import RF2Iterator
-
-from rf2db.db.RF2FileCommon import RF2FileWrapper
-from rf2db.exceptions import RF2Exceptions
-from rf2db.parsers.RF2BaseParser import RF2Description
 from rf2db.db.RF2ConceptFile import ConceptDB
 from rf2db.db.RF2DescriptionFile import DescriptionDB
+from rf2db.parsers.RF2Iterator import iter_parms
+from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms
+from rf2db.utils.lfu_cache import lfu_cache
 from rf2db.utils.listutils import listify
-from rf2db.utils.ParmParser import boolparam, intparam
-from rf2db.db.ParameterSets import iter_parms
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, strparam, enumparam
 
 
-class match_parms(iter_parms):
-    matchalgorithms = ['contains','startswith', 'endswith', 'exact', 'wordstart', 'phrase']
+""" Parameters for text matching. """
+description_match_parms = ParameterDefinitionList(global_rf2_parms)
+description_match_parms.add(iter_parms)
+description_match_parms.matchvalue = strparam(splitable=True)
+description_match_parms.matchalgorithm = enumparam(['contains','startswith', 'endswith', 'exact', 'wordstart',
+                                                    'wordend', 'phrase'], default='wordstart')
 
-    def __init__(self, **kwargs):
-        iter_parms.__init__(self, **kwargs)
-        self.matchvalue=self._p.str('matchvalue')
-        self.matchalgorithm=self._p.enum('matchalgorithm', self.matchalgorithms)
 
 class DescriptionTextDB(RF2FileWrapper):
     directory = 'Terminology'
@@ -99,59 +96,26 @@ class DescriptionTextDB(RF2FileWrapper):
     def loadFile(self, fname, ss):
         print(self.table, "must be loaded from", ConceptDB.table, "and", DescriptionDB.table, "tables")
 
-    def getDescriptions(self, **kwargs):
+    @lfu_cache(100)
+    def getDescriptions(self, parmlist):
         """ 
         Return all descriptions that match the matchvalues(s) using the supplied match algorithm.
-        
-        @param active: return only active entities C{True} or all C{False}.  Default: C{True}
-        @type active: boolean
-
-        @param page: return starting at M{maxtoreturn*page}. Default: 0
-        @type page: int
-
-        @param maxtoreturn: number of entries to return.  Default: 100
-        @type maxtoreturn: int
-
-        @param matchvalue: match text.
-        @type matchvalue: str or list(str)
-
-        @param moduleid: constrain to entries in this module.
-        @type moduleid: sctid
-
-        @param order: sort order - asc or desc
-
-        @param matchalgorithm: match algorithm to use. One of
-        - "contains" - match any phrase that contains matchvalue
-        - "startswith"
-        - "exactmatch"
-        - "endswith"
-        @type matchalgorithm: localname
         
         Note: description_ss is the combination of the description and definition snapshots joined
         to active (conceptActive) on the conceptfile
         """
-        active = boolparam(kwargs.pop('active',None), True)
-        page = intparam(kwargs.get('page', 0), 0)
-        matchvalues = listify(kwargs.pop('matchvalue', []))
-        matchalgorithms = listify(kwargs.pop('matchalgorithm', None),'contains')
-        order = kwargs.pop('order', 'asc')
-        if order.lower() not in ('asc', 'desc'):
-            order = 'asc'
-
-        maxtoreturn = intparam(kwargs.get('maxtoreturn'), 100)
-        start = page * maxtoreturn
-        moduleid = kwargs.get('moduleid')
-        ss = boolparam(kwargs.get('ss'), True)
 
         # If we have more algorithms than values, repeat the last value out to match the algorithms
+        matchalgorithms = listify(parmlist.matchalgorithm)
+        matchvalues = listify(parmlist.matchvalue)
         diff = len(matchalgorithms) - len(matchvalues)
         if diff > 0:
             matchvalues += matchvalues[-1:] * diff
         elif diff < 0:
             matchalgorithms += matchalgorithms[-1:] * -diff
 
-        query = "SELECT * FROM %s WHERE 1" % self._tname(ss)
-
+        query = "SELECT %s FROM %s WHERE 1" % ('*' if parmlist.maxtoreturn else 'count(*)', self._tname(parmlist.ss))
+        # TODO: Prevent injections here by escaping quotes
         for (v, a) in zip(matchvalues, matchalgorithms):
             if v:
                 if a == 'contains':
@@ -166,26 +130,24 @@ class DescriptionTextDB(RF2FileWrapper):
                     query += " AND (term LIKE ('%% %s %%') OR term LIKE('%s %%') OR term LIKE('%% %s') OR term = '%s')" % (v,v,v,v)
                 elif a == 'wordstart':
                     query += " AND (term LIKE ('%s%%') OR term LIKE ('%% %s%%'))" % (v,v)
+                elif a == 'wordend':
+                    query += " AND (term LIKE ('%%%s') OR term LIKE ('%%%s %%'))" % (v,v)
                 elif a == 'phrase':
                     query += " AND term LIKE('%s%%')" % v
                 else:
                     raise RF2Exceptions.UnknownMatchAlgorithm(
                         a + ' : valid values are contains, startswith, endswith, exactmatch, word, wordstart and phrase')
-        if active:
+        if parmlist.active:
             query += " AND active = 1 AND conceptActive = 1"
-        query += " ORDER BY length(term) %s, term %s" % (order, order)
+        if parmlist.moduleid:
+            query += ' AND ' + ' AND '.join(['moduleid = %s' % m for m in listify(parmlist.moduleid)])
+        query += " ORDER BY length(term) %s, term %s" % (parmlist.order, parmlist.order)
 
-        if maxtoreturn:
-            query += " LIMIT %s, %s" % (start, maxtoreturn + 1)
+        if parmlist.maxtoreturn:
+            query += " LIMIT %s, %s" % (parmlist.start, parmlist.maxtoreturn + 1)
         db = self.connect()
         db.execute(query)
+        return db.ResultsGenerator(db)
 
-        thelist = RF2Iterator.RF2DescriptionList(**kwargs)
-        src = db.ResultsGenerator(db)
-        for d in src:
-            if thelist.at_end:
-                return thelist.finish(True)
-            thelist.append(RF2Description(d))
-        return thelist.finish(False)
 
 

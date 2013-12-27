@@ -28,12 +28,15 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """ This package provides an implementation of the verhoeff dihedral group checksum used by SNOMED CT
-"""
 
-# @see <a href="http://en.wikipedia.org/wiki/Verhoeff_algorithm/">More Info</a>
-# @see <a href="http://en.wikipedia.org/wiki/Dihedral_group">Dihedral Group</a>
-# @see <a href="http://mathworld.wolfram.com/DihedralGroupD5.html">Dihedral Group Order 10</a>
-# @author Hermann Himmelbauer
+    References
+    ==========
+    - U{http://en.wikipedia.org/wiki/Verhoeff_algorithm/} More Info
+    - U{http://en.wikipedia.org/wiki/Dihedral_group} Dihedral Group
+    - U{http://mathworld.wolfram.com/DihedralGroupD5.html} Dihedral Group Order 10
+
+    @author Hermann Himmelbauer
+"""
 
 verhoeff_table_d = (
     (0,1,2,3,4,5,6,7,8,9),
@@ -73,11 +76,11 @@ def checksum(number):
         c = verhoeff_table_d[c][verhoeff_table_p[i % 8][int(item)]]
     return c
 
-def generateVerhoeff(number):
+def generate_verhoeff(number):
     """For a given number returns number + Verhoeff checksum digit"""
     return "%s%s" % (number, calcsum(number))
 
-def validateVerhoeff(number):
+def validate_verhoeff(number):
     """Validate Verhoeff checksummed number (checksum is last digit)"""
     return checksum(number) == 0
 

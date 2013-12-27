@@ -40,6 +40,7 @@ class ConfigManager(object):
         @type parms: C{ConfigArgs}
         @param cfgfile: name of configuration file
         """
+        print "Loading " + cfgfile + " / " + parms.section
         self._configFile = cfgfile
         self._section = parms.section
         self._keys = parms.keys()

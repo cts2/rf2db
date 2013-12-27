@@ -34,7 +34,7 @@ from rf2db.schema                  import rf2
 
 from rf2db.db.RF2FileCommon import RF2FileWrapper
 from rf2db.parsers.RF2RefsetParser import RF2LanguageRefsetEntry
-from rf2db.utils.lfuCache import lfu_cache
+from rf2db.utils.lfu_cache import lfu_cache
 
 
 class LanguageDB(RF2FileWrapper):

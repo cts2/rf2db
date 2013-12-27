@@ -29,15 +29,16 @@
 
 """ SQL Table Connection package
 """
-import sys, re
+import sys
+import re
 from functools import reduce
 import MySQLdb as mysql
 import sqlalchemy.pool as pool
 
 from config.ConfigArgs import ConfigArg, ConfigArgs
 from config.ConfigManager import ConfigManager
-from rf2db.utils.ParmParser import boolparam
 from rf2db.utils.listutils import listify
+from rf2db.parameterparser.ParmParser import booleanparam
 
 config_parms = ConfigArgs( 'dbparms',
                            [ConfigArg('host', help='MySQL DB Host', default='localhost'),
@@ -45,10 +46,15 @@ config_parms = ConfigArgs( 'dbparms',
                             ConfigArg('user', abbrev='u', help='MySQL User Id'),
                             ConfigArg('passwd', abbrev='p', help='MySQL Password'),
                             ConfigArg('db', abbrev='db', help='Database', default='rf2'),
-                            ConfigArg('charset', help='MySQL Character Set', default='utf8'),
-                            ConfigArg('trace', help='Trace SQL Statements', action='store_true')
+                            ConfigArg('charset', help='MySQL Character Set', default='utf8')
                             ])
 config = ConfigManager(config_parms)
+
+debug_parms = ConfigArgs ( 'debug',
+                            [ConfigArg('trace', help='Trace SQL Calls', action='store_true'),
+                             ConfigArg('nocache', help='Turn off cache for debugging', action='store_true')
+                            ])
+dbconfig = ConfigManager(debug_parms)
 # TODO: how to we get the configuration file name into here?  Should we?
 
 db = pool.manage(mysql)
@@ -108,8 +114,8 @@ class RF2DBConnection(object):
         
         @return: Result of cursor.execute(stmt)
         """
-        if config.trace:
-            print("=====", stmt)
+        if booleanparam.v(dbconfig.trace, False):
+            print("===== %s" % stmt)
         try:
             self._connect()
             self._cursor = self._connection.cursor()
@@ -139,7 +145,7 @@ class RF2DBConnection(object):
             raise StopIteration
 
     @staticmethod
-    def build_query(table, filter_="", sort=None, active=True, ss=True, start=0, maxtoreturn=0, refdate=None, moduleids=None):
+    def build_query(table, filter_="", sort=None, active=True, ss=True, start=0, maxtoreturn=100, refdate=None, moduleids=None):
         """ Query an RF2 table taking the historical information into account.
         
         @param table: table to query
@@ -186,11 +192,12 @@ class RF2DBConnection(object):
         
         
         if not ss:
-            tf = self.tweakFilter(filter_)
+            tf = RF2DBConnection.tweakFilter(filter_)
             query = """ SELECT tbl.* FROM %(table)s tbl, %(key_query)s 
                         WHERE tbl.id = tbl_keys.id AND tbl.effectiveTime = tbl_keys.effectiveTime AND %(tf)s""" % locals()
         else:
-            query = """ SELECT tbl.* FROM %(table)s tbl WHERE %(filter_)s """ %locals()
+            sel = 'tbl.*' if maxtoreturn else 'count(tbl.*)'
+            query = """ SELECT %(sel)s FROM %(table)s tbl WHERE %(filter_)s """ %locals()
         if active:
             query += " AND active = 1 "
         if moduleids:
@@ -201,7 +208,15 @@ class RF2DBConnection(object):
             query += " LIMIT %d, %d " % (start, maxtoreturn+1)
         return query
 
-    def query(self, table, filter_="", sort=None, active=True, ss=True, start=0, maxtoreturn=0, refdate=None, moduleids=None):
+    def query_p(self, table, parms, filter=""):
+        """ Alternate query where parameters doen't have to be disassembled """
+        # TODO: add sort column to the parameters list
+        return self.query(table, filter, sort=None, active=parms.active, ss=parms.ss, start=parms.start,
+                          maxtoreturn=parms.maxtoreturn, refdate=parms.refdate, moduleids=parms.moduleid)
+
+
+    def query(self, table, filter_="", sort=None, active=True, ss=True, start=0,
+              maxtoreturn=0, refdate=None, moduleids=None):
         """ Query an RF2 table taking the historical information into account.
 
         @param table: table to query
@@ -251,7 +266,7 @@ class RF2DBConnection(object):
         # the "decode" part has to do with the fact that some SQL db's won't return in utf8
         try:
             return '\t'.join(map(lambda r: \
-                                (r.decode('utf8') if boolparam(config.dodecode, False) else r) \
+                                (r.decode('utf8') if booleanparam.v(config.dodecode, False) else r) \
                                 if isinstance(r,basestring) else str(r),tup)) if tup else None
         except Exception as e:
             print ("FAILING TUPLE:", tup)
