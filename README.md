@@ -22,4 +22,4 @@ There are three executables in the bin directory
 * newdb - this can be used to maintain the database configuration variables as well as create the database itself.
           (Note: there is currently a bug in this module such that the "-h" option does not show all of the available
            options.  Use "-?" returns a list of the options.)
-* loaddb -
+* loaddb - database load scripts.
