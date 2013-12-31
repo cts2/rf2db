@@ -178,8 +178,8 @@ class RF2DBConnection(object):
         @return: query
         @rtype: C{String}
         """
-        start = int(start)
-        maxtoreturn = int(maxtoreturn)
+        start = int(start) if start is not None else 0
+        maxtoreturn = int(maxtoreturn) if maxtoreturn is not None else 100
         if not filter_:
             filter_ = "1"
         if ss and refdate:
@@ -196,7 +196,7 @@ class RF2DBConnection(object):
             query = """ SELECT tbl.* FROM %(table)s tbl, %(key_query)s 
                         WHERE tbl.id = tbl_keys.id AND tbl.effectiveTime = tbl_keys.effectiveTime AND %(tf)s""" % locals()
         else:
-            sel = 'tbl.*' if maxtoreturn else 'count(tbl.*)'
+            sel = 'tbl.*' if maxtoreturn else 'count(*)'
             query = """ SELECT %(sel)s FROM %(table)s tbl WHERE %(filter_)s """ %locals()
         if active:
             query += " AND active = 1 "

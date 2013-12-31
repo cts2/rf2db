@@ -30,17 +30,18 @@
 from rf2db.db.RF2ConceptFile import ConceptDB
 from rf2db.db.RF2DescriptionFile import DescriptionDB
 from rf2db.parsers.RF2Iterator import iter_parms
+from rf2db.parsers.RF2BaseParser import RF2Description
 from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms
 from rf2db.utils.lfu_cache import lfu_cache
 from rf2db.utils.listutils import listify
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, strparam, enumparam
-
+from rf2db.exceptions import RF2Exceptions
 
 """ Parameters for text matching. """
 description_match_parms = ParameterDefinitionList(global_rf2_parms)
 description_match_parms.add(iter_parms)
 description_match_parms.matchvalue = strparam(splitable=True)
-description_match_parms.matchalgorithm = enumparam(['contains','startswith', 'endswith', 'exact', 'wordstart',
+description_match_parms.matchalgorithm = enumparam(['contains','startswith', 'endswith', 'exactmatch', 'wordstart',
                                                     'wordend', 'phrase'], default='wordstart')
 
 
@@ -147,7 +148,7 @@ class DescriptionTextDB(RF2FileWrapper):
             query += " LIMIT %s, %s" % (parmlist.start, parmlist.maxtoreturn + 1)
         db = self.connect()
         db.execute(query)
-        return db.ResultsGenerator(db)
+        return [RF2Description(d) for d in db.ResultsGenerator(db)] if parmlist.maxtoreturn else list(db.ResultsGenerator(db))
 
 
 

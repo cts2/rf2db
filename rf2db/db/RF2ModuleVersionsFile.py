@@ -110,7 +110,8 @@ class ModuleVersionsDB(RF2FileWrapper):
 
     def getModulesids(self):
         db = self.connect()
-        return list(db.execute("SELECT * FROM moduleids"))
+        db.execute("SELECT * FROM moduleids")
+        return list(db.ResultsGenerator(db))
 
     @lfu_cache(20)
     def getModuleid(self,moduleid):

@@ -34,7 +34,9 @@ def canon_filtr(filtr, canonical):
     return (filtr + ' AND isCanonical=1 ') if canonical else filtr
 
 def rel_id(r):
-    """ Creates the identity of a relationship record """
+    """ Creates the identity of a relationship record.  Note that a given record cannot be
+        simultaneously canonical and not, so this isn't included in the identity
+    """
     return r.moduleId, r.sourceId, r.destinationId, r.relationshipGroup, r.typeId, r.modifierId
 
     
@@ -64,10 +66,12 @@ class StatedRelationshipDB(RF2FileWrapper):
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
-    def _existsRecs(self, filtr, active, canonical, ss):
+    def _existsRecs(self, filtr, parmlist):
         db = self.connect()
-        return bool([r for r in db.query(self._tname(ss), canon_filtr(filtr, canonical),
-                                         active=active, ss=ss, maxtoreturn=1)])
+        return bool([r for r in db.query(self._tname(parmlist.ss),
+                                         canon_filtr(filtr, parmlist.canonical),
+                                         active=parmlist.active, ss=parmlist.ss,maxtoreturn=1)])
+
 
     def loadTable(self, rf2file, ss, cfg):
         import warnings
@@ -82,47 +86,52 @@ class StatedRelationshipDB(RF2FileWrapper):
         db.commit()
 
 
-    def existsSourceRecs(self, sourceId, active=True, canonical=False, ss=True):
-        return self._existsRecs('sourceId = %s ' % sourceId, active, canonical, ss)
+    def existsSourceRecs(self, sourceId, parmlist):
+        return self._existsRecs('sourceId = %s ' % sourceId, parmlist)
      
-    def existsTargetRecs(self, targetId, active=True, canonical=False, ss=True):
-        return self._existsRecs('destinationId = %s ' % targetId, active, canonical, ss)
+    def existsTargetRecs(self, targetId, parmlist):
+        return self._existsRecs('destinationId = %s ' % targetId, parmlist)
     
-    def existsPredicateRecs(self, predicateId, active=True, canonical=False, ss=True):
-        return self._existsRecs('typeId = %s ' % predicateId, active, canonical, ss)
+    def existsPredicateRecs(self, predicateId, parmlist):
+        return self._existsRecs('typeId = %s ' % predicateId, parmlist)
 
 
-    def _getRecs(self, filtr, active, canonical, ss):
+    def _getRecs(self, filtr, parmlist):
         """ Return all relationship records matching the given filter. Inferred is ignored in the stated relationship file
         """
         db = self.connect()
-        return map(lambda r:RF2Relationship(r), db.query(self._tname(ss), canon_filtr(filtr, canonical), 
-                                                         active=active, ss=ss, sort="relationshipGroup, id"))
+        if not parmlist.maxtoreturn:    # we're getting counts
+            return int(list(self.connect().query_p(self._tname(parmlist.ss),
+                                           parmlist,
+                                           filter=canon_filtr(filtr, parmlist.canonical)))[0])
+        return map(lambda r:RF2Relationship(r), db.query_p(self._tname(parmlist.ss),
+                                                           parmlist,
+                                                           filter=canon_filtr(filtr, parmlist.canonical)))
         
         
-    def getSourceRecs(self, sourceId, active=True, canonical=False, ss=True):
+    def getSourceRecs(self, sourceId, parmlist):
         """ Return all relationship records with the given sourceId. """
-        return self._getRecs("sourceId = '%s'" % sourceId, active, canonical, ss)
+        return self._getRecs("sourceId = '%s'" % sourceId, parmlist)
     
-    def getPredicateRecs(self, predicateId, active=True, canonical=False, ss=True):
-        return self._getRecs("typeId = '%s'" % predicateId, active, canonical, ss)
+    def getPredicateRecs(self, predicateId, parmlist):
+        return self._getRecs("typeId = '%s'" % predicateId, parmlist)
 
 
-    def getTargetRecs(self, targetId, active=True, canonical=False, ss=True):
+    def getTargetRecs(self, targetId, parmlist):
         """ Return all Relationship records associated with the given targetId """
-        return self._getRecs("destinationId = '%s'" %targetId, active, canonical, ss)
+        return self._getRecs("destinationId = '%s'" %targetId, parmlist)
     
-    def getSourcesForTarget(self, targetId, active=True, canonical=False, ss=True):
+    def getSourcesForTarget(self, targetId, parmlist):
         """ Return a list of sourceId's connected with the given targetId.  Inferred is ignored"""
         db = self.connect()
-        return set(map(lambda r:RF2Relationship(r).sourceId,  db.query(self._tname(ss),
-                                                                   canon_filtr("destinationId = '%s' " % targetId, canonical), 
-                                                                   active=active, ss=ss)))
+        return set(map(lambda r:RF2Relationship(r).sourceId,  db.query_p(self._tname(ss),
+                                                                   parmlist,
+                                                                   filter=canon_filtr("destinationId = '%s' " % targetId, parmlist.canonical))))
 
-    def getRelationship(self, relId, ss=True):
+    def getRelationship(self, relId, parmlist):
         """ Return the relationship record identified by relId"""
         db = self.connect()
-        rlist = [RF2Relationship(r) for r in db.query(self._tname(ss), "id = '%s'" % relId, active=False, ss=ss)]
+        rlist = [RF2Relationship(r) for r in db.query_p(self._tname(parmlist.ss),  parmlist, filter="id = '%s'" % relId)]
         return rlist[0] if len(rlist) else None
 
 

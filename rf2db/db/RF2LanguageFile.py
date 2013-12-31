@@ -30,15 +30,19 @@
 """ RF2 Language Refset access routines
 """
 
-from rf2db.schema                  import rf2
-
-from rf2db.db.RF2FileCommon import RF2FileWrapper
 from rf2db.parsers.RF2RefsetParser import RF2LanguageRefsetEntry
+from rf2db.parsers.RF2Iterator import RF2LanguageReferenceSet, iter_parms
+from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms
 from rf2db.utils.lfu_cache import lfu_cache
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList
+
+""" Parameters for language file access """
+language_parms = global_rf2_parms
+language_list_parms = ParameterDefinitionList(global_rf2_parms)
+language_list_parms.add(iter_parms)
 
 
 class LanguageDB(RF2FileWrapper):
-   
     directory   = 'Refset/Language'
     prefixes    = ['der2_cRefset_Language']
     table       = 'language'
@@ -78,22 +82,24 @@ class LanguageDB(RF2FileWrapper):
         db.commit()
 
 
-    @lfu_cache(maxsize=20)
-    def getEntry(self, descId, active=True, ss=True):
+    @lfu_cache(maxsize=100)
+    def get_entries_for_description(self, descId, parmlist):
         db = self.connect()
-        return [RF2LanguageRefsetEntry(d) for d in db.query(self._tname(ss), "referencedComponentId = %s" % descId, active=active, ss=ss)]
+        return [RF2LanguageRefsetEntry(d) for d in db.query_p(self._tname(parmlist.ss), parmlist, "referencedComponentId = %s" % descId)]
+
 
     @lfu_cache(maxsize=20)
-    def getEntryList(self, descId, active=True, ss=True):
-        langs = self.getEntry(descId, active, ss)
-        rval = rf2.LanguageReferenceSet()
-        if langs:
-            for e in langs: rval.append(e)
-            return rval
-        return None
-
-    @lfu_cache(maxsize=20)
-    def getEntriesForConcept(self, conceptId, active=True, ss=True):
+    def get_entries_for_concept(self, conceptId, parmlist):
         db = self.connect()
-        return [RF2LanguageRefsetEntry(d) for d in db.query(self._tname(ss), "conceptId = %s" % conceptId, active=active, ss=ss)]
+        return [RF2LanguageRefsetEntry(d) for d in db.query_p(self._tname(parmlist.ss), parmlist, "conceptId = %s" % conceptId)]
 
+    @staticmethod
+    def as_reference_set(llist, parmlist):
+        thelist=RF2LanguageReferenceSet(parmlist)
+        if not parmlist.maxtoreturn:
+            return thelist.finish(True, total=list(llist)[0])
+        for l in llist:
+            if thelist.at_end:
+                return thelist.finish(True)
+            thelist.append(l)
+        return thelist.finish(False)

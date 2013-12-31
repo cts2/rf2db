@@ -36,6 +36,7 @@ from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms
 from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB, canon_filtr, rel_id
 from rf2db.parsers.RF2Iterator import RF2RelationshipList
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, booleanparam
+from rf2db.utils.lfu_cache import lfu_cache
 
 """ Parameters for relationship file query
     - C{B{stated}}: stated relationships are included in queries
@@ -78,6 +79,7 @@ class RelationshipDB(RF2FileWrapper):
         self._srdb = StatedRelationshipDB()
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
+    @lfu_cache(maxsize=100)
     def _existsRecs(self, filtr, parmlist):
         if parmlist.stated and self._srcb._existsRecs(filtr, parmlist.active, parmlist.canonical, parmlist.ss):
             return True
@@ -107,21 +109,28 @@ class RelationshipDB(RF2FileWrapper):
         return self._existsRecs('destinationId = %s ' % targetId, parmlist)
 
 
-
+    @lfu_cache(maxsize=100)
     def _getRecs(self, filtr, parmlist, key):
         """ Return all relationship records matching the given filter. Inferred is ignored in the stated relationship file
         """
+        if not parmlist.maxtoreturn:    # we're getting counts
+            infcount = int(list(self.connect().query_p(self._tname(parmlist.ss),
+                                           parmlist,
+                                           filter=canon_filtr(filtr, parmlist.canonical)))[0]) \
+            if parmlist.inferred else 0
+            statedcount = self._srdb._getRecs(filtr, parmlist) if parmlist.stated else 0
+            # TODO: the count is not accurate unless we subtract out both inferred and stated...
+            return [infcount + statedcount]
+
+
         rval = {k:v for k,v in map(lambda r:(rel_id(r), r),
                                    map(lambda r: RF2Relationship(r),
-                                       self.connect().query(self._tname(p.ss),
-                                                            canon_filtr(filtr, p.canonical),
-                                                            active=parmlist.active,
-                                                            ss=parmlist.ss,
-                                                            start=parmlist.start,
-                                                            maxtoreturn=parmlist.maxtoreturn)))} \
+                                       self.connect().query_p(self._tname(parmlist.ss),
+                                                              parmlist,
+                                                              filter=canon_filtr(filtr, parmlist.canonical))))} \
             if parmlist.inferred else {}
         if parmlist.stated:
-            for r in self._srdb._getRecs(filtr, parmlist.active, parmlist.canonical, parmlist.ss):
+            for r in self._srdb._getRecs(filtr, parmlist):
                 rval[rel_id(r)] = r
 
         return sorted(rval.values(), key=key)
@@ -157,6 +166,7 @@ class RelationshipDB(RF2FileWrapper):
                                      parmlist.canonical),
                          active=parmlist.active, ss=parmlist.ss)))
 
+    @lfu_cache(maxsize=100)
     def getRelationship(self, relId, parmlist):
         """ Return the relationship record identified by relId"""
         rel = self._srdb.getRelationship(relId, ss=parmlist.ss)
@@ -172,6 +182,8 @@ class RelationshipDB(RF2FileWrapper):
     def asRelationshipList(self, rels, parmlist):
         """ Format rels as a Relationship List """
         thelist = RF2RelationshipList(parmlist)
+        if not parmlist.maxtoreturn:
+            return thelist.finish(True, total=list(rels)[0])
         for d in rels:
             if thelist.at_end:
                 return thelist.finish(True)

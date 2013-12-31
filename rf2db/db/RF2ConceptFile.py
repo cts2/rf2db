@@ -69,9 +69,12 @@ class ConceptDB(RF2FileWrapper):
         @param cid: concept sctid
         """
         db = self.connect()
-        rlist = [RF2Concept(c) for c in db.query_p(self._tname(parmlist.ss), "id=%s" % cid, parmlist)]
+        rlist = [RF2Concept(c) for c in db.query_p(self._tname(parmlist.ss), parmlist, filter="id=%s" % cid)]
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
+
+    def getAllConcepts_p(self, active=1, order='asc', page=0, maxtoreturn=100, after=0):
+        return self.getAllConcepts(concept_list_parms.parse(**{'active':active,'order':order,'page':page,'maxtoreturn':maxtoreturn,'after':after}))
 
     def getAllConcepts(self, parmlist):
         """
@@ -95,7 +98,11 @@ class ConceptDB(RF2FileWrapper):
             query += ' LIMIT %s, %s' % (parmlist.start, parmlist.maxtoreturn + 1)
         db.execute(query)
 
-        return db.ResultsGenerator(db)
+        return [RF2Concept(d) for c in db.ResultsGenerator(db)]
+
+    @staticmethod
+    def asConceptList_p(clist, active=1, order='asc', page=0, maxtoreturn=100, after=0):
+        return ConceptDB.asConceptList(clist, concept_list_parms.parse(**{'active':active,'order':order,'page':page,'maxtoreturn':maxtoreturn,'after':after}))
 
     @staticmethod
     def asConceptList(clist, parmlist):
@@ -105,6 +112,6 @@ class ConceptDB(RF2FileWrapper):
         for c in clist:
             if thelist.at_end:
                 return thelist.finish(True)
-            thelist.append(RF2Concept(c))
+            thelist.append(c)
         return thelist.finish(False)
 
