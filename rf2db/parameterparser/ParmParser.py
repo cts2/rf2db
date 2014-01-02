@@ -76,7 +76,7 @@ class ParameterDefinitionList(object):
         if base:
             self.add(base)
 
-    def __setattr__(self, key, value):
+    def __setattr__(self, key, value, ignoredups=False):
         """ Add a new parameter definition or parameter definition list to the list
         @param key: parameter name
         @param value: parameter definition(s)
@@ -86,16 +86,21 @@ class ParameterDefinitionList(object):
             assert isinstance(value, ParameterDefinition)
             if not self._caseSensitive:
                 key = key.lower()
-            assert self.__dict__.get(key) is None, "Parameter %s defined more than once" % key
+            if not ignoredups:
+                assert self.__dict__.get(key) is None, "Parameter %s defined more than once" % key
         self.__dict__[key] = value
 
-    def add(self, other):
+    def replace(self, key, value):
+        self.__setattr__(key, value, ignoredups=True)
+
+    def add(self, other, ignoredups=False):
         """ Merge another set of definitions with this one
         @param other: Set of definitions to join
         @type other: C{ParameterDefinitionList}
+        @param ignoredups: True means don't worry about double definitions
         """
         for k,v in other.definitions():
-            self.__setattr__(k,v)
+            self.__setattr__(k,v,ignoredups)
 
     def definitions(self):
         """ Return the parameter definitions in the list
@@ -109,7 +114,7 @@ class ParameterDefinitionList(object):
         @return: C{True} if all arguments are valid, C{False} otherwise
         """
         for arg,val in kwargs.items():
-            if not arg.startswith('_'):
+            if not (arg.startswith('_') or val  == ''):
                 if not self._caseSensitive:
                     arg = arg.lower()
                 if isinstance(val, str) and ' ' in val and self._splitable:

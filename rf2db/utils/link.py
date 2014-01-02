@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-def rf2link(pyxbElement, pyxbType, addlFields=None, linefilter=None):
+def rf2link(pyxbElement, pyxbType, addlFields=None, addlSctids=None, linefilter=None):
     """ This implements the following pattern:
 
     def <impl_class>(line, sep="\t"):
@@ -53,6 +53,7 @@ rf2.Description_._SetSupersedingClass(_RF2Description)
         pyxbType._SetSupersedingClass(impl_class)
         impl_class._baseClass = pyxbType
         impl_class._fieldNames = impl_class._baseFields + addlFields if addlFields else []
+        impl_class._sctidFields = impl_class._sctidFieldNames + addlSctids if addlSctids else []
         impl_class._nFields = len(impl_class._fieldNames)
         return constructor
 

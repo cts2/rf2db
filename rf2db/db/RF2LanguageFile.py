@@ -32,17 +32,35 @@
 
 from rf2db.parsers.RF2RefsetParser import RF2LanguageRefsetEntry
 from rf2db.parsers.RF2Iterator import RF2LanguageReferenceSet, iter_parms
-from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms
+from rf2db.db.RF2FileCommon import global_rf2_parms
+from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
+from rf2db.db.RF2DescriptionFile import DescriptionDB
 from rf2db.utils.lfu_cache import lfu_cache
-from rf2db.parameterparser.ParmParser import ParameterDefinitionList
+from rf2db.utils.listutils import listify
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, enumparam
+from rf2db.constants.RF2ValueSets import us_english, gb_english, spanish, preferred, synonym
+
+# Note: the following gyrations are needed because the language file is used to build other refset names, so
+#       it can't actually depend on the RF2RefsetWrapper
+
 
 """ Parameters for language file access """
 language_parms = global_rf2_parms
 language_list_parms = ParameterDefinitionList(global_rf2_parms)
 language_list_parms.add(iter_parms)
+language_list_parms.language=enumparam(['en'])
+
+""" Map from short form of language to refset id """
+language_map = {'en':us_english,
+                'en-us':us_english,
+                'en-gb':gb_english,
+                'es':spanish}
+
+""" Default parameters to use of the caller doesn't know them """
+default_parmlist = language_list_parms.parse(**{'active':True, 'language':'en', 'ss':True})
 
 
-class LanguageDB(RF2FileWrapper):
+class LanguageDB(RF2RefsetWrapper):
     directory   = 'Refset/Language'
     prefixes    = ['der2_cRefset_Language']
     table       = 'language'
@@ -64,9 +82,20 @@ class LanguageDB(RF2FileWrapper):
         INNER JOIN description_ss d
         ON d.id = l.referencedcomponentid
         SET l.conceptid = d.conceptid"""
+
+    descdb = DescriptionDB()
     
     def __init__(self, *args, **kwargs):
-        RF2FileWrapper.__init__(self, *args, **kwargs)
+        RF2RefsetWrapper.__init__(self, *args, **kwargs)
+
+    """ We have to override the refset wrapper because the call would be recursive otherwise """
+    def _build_knowns(self, language, ss):
+        self._known_refsets = self.valid_refsets(self._tname(ss))
+        self._refset_names = {k:v[0] for k,v in self.preferred_term_for_concepts(self._known_refsets.items(),
+                                                                                 language=language)}
+        for k,v in list(language_map.items()):
+            if v not in self._known_refsets:
+                language_map.pop(k)
 
     def loadTable(self, rf2file, ss, cfg):
         from rf2db.db.RF2DescriptionFile import DescriptionDB
@@ -81,17 +110,55 @@ class LanguageDB(RF2FileWrapper):
         db.execute(self.updateSTMT % {'table':self._tname(ss)})
         db.commit()
 
+    @staticmethod
+    def _languageFilter(fltr, parmlist):
+        return fltr + " AND refsetId=%s " % language_map[parmlist.language] if parmlist.language in language_map else ''
 
     @lfu_cache(maxsize=100)
     def get_entries_for_description(self, descId, parmlist):
         db = self.connect()
-        return [RF2LanguageRefsetEntry(d) for d in db.query_p(self._tname(parmlist.ss), parmlist, "referencedComponentId = %s" % descId)]
+        return [RF2LanguageRefsetEntry(d) for d in db.query_p(self._tname(parmlist.ss),
+                                                              parmlist,
+                                                              self._languageFilter("referencedComponentId = %s" % descId, parmlist)
+        )]
 
 
     @lfu_cache(maxsize=20)
     def get_entries_for_concept(self, conceptId, parmlist):
         db = self.connect()
-        return [RF2LanguageRefsetEntry(d) for d in db.query_p(self._tname(parmlist.ss), parmlist, "conceptId = %s" % conceptId)]
+        return [RF2LanguageRefsetEntry(d) for d in db.query_p(self._tname(parmlist.ss),
+                                                              parmlist,
+                                                              self._languageFilter("conceptId = %s" % conceptId, parmlist)
+        )]
+
+    # This can't be cached because it returns a list...
+    def preferred_term_for_concepts(self, conceptIds, language=None, parmlist=None):
+        """
+        @param conceptIds: concept id(s) too lookup
+        @param language: limit language
+        @param parmlist: parameters.  We use active, moduleid, language.
+        @return: dictionary - key is concept id, value is (prefname/description id) tuple
+        """
+        if not parmlist:
+            parmlist = default_parmlist
+        if language:
+            parmlist.language = language
+        db = self.connect()
+        conceptIds = listify(conceptIds)
+        stmt = "SELECT l.conceptId, d.id, d.term FROM %s l, %s d WHERE l.conceptId IN(%s) AND l.referencedComponentId = d.id " \
+               "AND l.acceptabilityId = %s AND d.typeid = %s" % \
+               (self._tname(parmlist.ss),
+                self.descdb._tname(parmlist.ss),
+               ', '.join(str(c) for c in conceptIds),
+                preferred,
+                synonym)
+        stmt += ' AND l.active=1 AND d.active=1' if parmlist.active else 'True '
+        if parmlist.moduleid:
+            stmt += "AND moduleId in (" + ', '.join(str(m) for m in parmlist.moduleid)
+        stmt += self._languageFilter('', parmlist)
+        db.execute(stmt)
+        return {e[0]:(e[2],e[1]) for e in map(lambda r: r.split('\t',2), db.ResultsGenerator(db))}
+
 
     @staticmethod
     def as_reference_set(llist, parmlist):
@@ -103,3 +170,5 @@ class LanguageDB(RF2FileWrapper):
                 return thelist.finish(True)
             thelist.append(l)
         return thelist.finish(False)
+
+

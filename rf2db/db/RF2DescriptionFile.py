@@ -81,7 +81,6 @@ class DescriptionDB(RF2FileWrapper):
         return rlist[0] if len(rlist) else None
 
 
-
     @staticmethod
     def asDescriptionList(dlist, parmlist):
         thelist = RF2DescriptionList(parmlist)

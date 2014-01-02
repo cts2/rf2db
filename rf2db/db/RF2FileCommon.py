@@ -118,6 +118,7 @@ class RF2FileWrapper(object):
 
 
 
+
     def __init__(self, load=False, noaction=False):
         self._existsss     = self._existsfull = False
         self._hascontentss = self._hascontentfull = False
@@ -204,6 +205,7 @@ class RF2FileWrapper(object):
             return rval
         db.close()
         return []
+
 
     def _tname(self, ss):
         return self._tabless if ss else self._tablefull

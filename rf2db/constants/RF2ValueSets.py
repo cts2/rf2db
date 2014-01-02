@@ -74,8 +74,12 @@ snomedCTInternational   = sctid(900000000000207008)
 snomedCTSpanishEdition  = sctid(450829007)
 snomedCTUSExtension     = sctid(731000124108)
 
-# Descendants of the model component module (900000000000443000)
+# Simple map refsets from SCT International
+icdoSimpleMap = sctid(446608001)
+ctv3simplemap = sctid(900000000000497000)
+snomedrtSimpleMap = sctid(900000000000498005)
 
+# Descendants of the model component module (900000000000443000)
 snomedCTtoICD9CMequivalencyMappingModule    = sctid(449079008)
 snomedCTtoICD10ruleBasedmappingModule       = sctid(449080006)
 ihtsdoMaintainedModule                      = sctid(900000000000445007)

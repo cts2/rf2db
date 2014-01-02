@@ -31,9 +31,14 @@
 """
 
 
-from rf2db.db.RF2FileCommon import RF2FileWrapper
+from rf2db.db.RF2FileCommon import global_rf2_parms
+from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
+from rf2db.parsers.RF2RefsetParser import RF2SimpleMapReferenceSetEntry
+from rf2db.parsers.RF2Iterator import RF2SimpleMapReferenceSet, iter_parms
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, sctidparam, strparam, enumparam
+
    
-class SimpleMapFileDB(RF2FileWrapper):
+class SimpleMapDB(RF2RefsetWrapper):
       
     directory   = 'Refset/Map'
     prefixes    = ['der2_sRefset_SimpleMap']
@@ -48,16 +53,42 @@ class SimpleMapFileDB(RF2FileWrapper):
       referencedComponentId bigint(20) NOT NULL,
       mapTarget varchar(255) COLLATE utf8_bin NOT NULL,
       %(primkey)s );"""
+
+    _simplemap_list_parms = ParameterDefinitionList(global_rf2_parms)
+    _simplemap_list_parms.add(iter_parms)
+    _simplemap_list_parms.component = sctidparam()
+    _simplemap_list_parms.target = strparam()
+
     
     def __init__(self, *args, **kwargs):
-        RF2FileWrapper.__init__(self, *args, **kwargs)
-        
-    def getMapEntries(self, refsetId, start=0, maxtoreturn=100, ss=True):
-        """ Return maxtoreturn entries from the map file refset identified by refsetId """
-        start       = int(start)
-        maxtoreturn = int(maxtoreturn)
+        RF2RefsetWrapper.__init__(self, *args, **kwargs)
+
+    def get_simple_map(self, parmlist):
+        filtr = 'refsetId=%s' % parmlist.refset if parmlist.refset else 'True'
+        filtr += (' AND referencedComponentId = %s ' % parmlist.component) if parmlist.component else ' '
+        filtr += (" AND mapTarget = '%s' " % parmlist.target) if parmlist.target else ' '
         db = self.connect()
-        return db.query(self._tname(ss), "refsetId=%s" % refsetId, active=True, ss=ss,
-                             start=start*maxtoreturn, maxtoreturn=maxtoreturn, sort='mapTarget')
-        
+        # TODO: Sort
+        return [RF2SimpleMapReferenceSetEntry(e) for e in db.query_p(self._tname(parmlist.ss),
+                                                                     parmlist,
+                                                                     filter=filtr)]
+
+    @classmethod
+    def simplemap_list_parms(cls):
+        return cls._simplemap_list_parms
+
+
+    @staticmethod
+    def as_reference_set(mlist, parmlist):
+        thelist=RF2SimpleMapReferenceSet(parmlist)
+        if not parmlist.maxtoreturn:
+            return thelist.finish(True, total=list(mlist)[0])
+        for m in mlist:
+            if thelist.at_end:
+                return thelist.finish(True)
+            thelist.append(m)
+        return thelist.finish(False)
+
+
+
 

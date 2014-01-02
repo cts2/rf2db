@@ -42,7 +42,9 @@ from rf2db.utils.link import rf2link
 
 class RF2Base(rf2.Base, object):
     _baseFields  = ['id', 'effectiveTime', 'active', 'moduleId']
+    _sctidFieldNames = ['moduleId']
     _fieldNames  = _baseFields
+    _sctidFields = _sctidFieldNames
     _nFields     = len(_fieldNames)
     _baseClass   = rf2.Base
 
@@ -77,6 +79,9 @@ class RF2Base(rf2.Base, object):
     def strify(self, key):
         return str(getattr(self, key))
 
+    def issctid(self,key):
+        return key in self._sctidFields
+
     def isActive(self):
         return self.active == 1
 
@@ -85,7 +90,7 @@ class RF2Base(rf2.Base, object):
         return cls._fieldNames == headerfields
         
 
-@rf2link(rf2.Concept, rf2.Concept_, ['definitionStatusId'])
+@rf2link(rf2.Concept, rf2.Concept_, ['definitionStatusId'], ['definitionStatusId'])
 class RF2Concept(rf2.Concept_, RF2Base):
 
     @property
@@ -97,7 +102,8 @@ class RF2Concept(rf2.Concept_, RF2Base):
         return self.definitionStatusId == RF2ValueSets.defined
 
 
-@rf2link(rf2.Description, rf2.Description_, ['conceptId', 'languageCode', 'typeId', 'term', 'caseSignificanceId'], xmlutils.cleanxml)
+@rf2link(rf2.Description, rf2.Description_, ['conceptId', 'languageCode', 'typeId', 'term', 'caseSignificanceId'],
+         ['conceptId', 'typeId', 'caseSignificanceId'], linefilter=xmlutils.cleanxml)
 class RF2Description(rf2.Description_, RF2Base):
 
     def strify(self, key):       
@@ -117,7 +123,8 @@ class RF2Description(rf2.Description_, RF2Base):
 
    
 @rf2link(rf2.Relationship, rf2.Relationship_, ['sourceId', 'destinationId', 'relationshipGroup',
-                                          'typeId', 'characteristicTypeId', 'modifierId', 'isCanonical'])
+                                          'typeId', 'characteristicTypeId', 'modifierId', 'isCanonical'],
+         ['sourceId', 'destinationId', 'typeId', 'characteristicTypeId', 'modifierId'])
 class RF2Relationship(rf2.Relationship_, RF2Base):
 
     @property
@@ -146,6 +153,7 @@ class RF2Relationship(rf2.Relationship_, RF2Base):
     def isQualifying(self):
         return sctid(self.characteristicTypeId) ==  RF2ValueSets.qualifyingRelationship
 
+
 @rf2link(rf2.Identifier, rf2.Identifier_,
          ['identifierSchemeId', 'alternativeIdentifier', 'effectiveTime', 'moduleId', 'referenceComponentId'])
 class RF2Identifier(rf2.Identifier_, RF2Base):
@@ -153,7 +161,7 @@ class RF2Identifier(rf2.Identifier_, RF2Base):
 
 
 @rf2link(rf2.TransitiveClosureHistory, rf2.TransitiveClosureHistory_,
-         ['typeId', 'supertypeId', 'effectiveTime', 'active'])
+         ['typeId', 'supertypeId', 'effectiveTime', 'active'], ['typeId', 'supertypeId'])
 class _RF2TransitiveClosureHistory(rf2.TransitiveClosureHistory_, RF2Base):
     pass
 
