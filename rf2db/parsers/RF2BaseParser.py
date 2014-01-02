@@ -92,6 +92,11 @@ class RF2Base(rf2.Base, object):
 
 @rf2link(rf2.Concept, rf2.Concept_, ['definitionStatusId'], ['definitionStatusId'])
 class RF2Concept(rf2.Concept_, RF2Base):
+    def __init__(self):
+        pass
+
+    def load(self, *args, **kwargs):
+        return RF2Base.load(*arg, **kwargs)
 
     @property
     def isPrimitive(self):

@@ -36,6 +36,8 @@ sys.path.append(_curdir)
 from config.ConfigManager import ConfigManager, defaultConfigFile
 from rf2db.db import RF2DBConnection
 
+helpargs = set(['-h','-?'])
+
 def main(argv):
     """ Create a MySQL database for RF2 files and/or manage the connection parameters
     """
@@ -44,7 +46,11 @@ def main(argv):
     parser = argparse.ArgumentParser(description="Set up RF2 DB parameters and optionally create a database")
     parser.add_argument('--configfile', help="configuration file location (default: %s)" % defaultConfigFile,
                         default=defaultConfigFile)
-    fileopt, remargs = parser.parse_known_args(argv)
+
+    args = set(argv)
+    holdargs = list(args.intersection(helpargs))
+    args.difference_update(helpargs)
+    fileopt, remargs = parser.parse_known_args(list(args))
 
     # Open the existing configuration file so we know what the defaults should be
     cfg = ConfigManager(RF2DBConnection.config_parms, cfgfile=fileopt.configfile)
@@ -55,8 +61,7 @@ def main(argv):
     parser.add_argument('-upd', dest='update', action="store_true", help="update configuration file")
     parser.add_argument('--create', action="store_true", help="create database if it doesn't exist")
 
-    # TODO: "-h" doesn't list all the arguments.  Fix this
-    opts = parser.parse_args(remargs)
+    opts = parser.parse_args(remargs + holdargs)
 
     cfg.update(vars(opts))
     if opts.show:
