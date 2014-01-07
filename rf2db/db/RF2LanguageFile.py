@@ -107,6 +107,7 @@ class LanguageDB(RF2RefsetWrapper):
         warnings.filterwarnings("ignore", ".*doesn't contain data for all columns.*")
         super(LanguageDB,self).loadTable(rf2file,ss,cfg)
         db = self.connect()
+        print("\t...adding concept identifiers")
         db.execute(self.updateSTMT % {'table':self._tname(ss)})
         db.commit()
 
@@ -133,7 +134,8 @@ class LanguageDB(RF2RefsetWrapper):
 
     # This can't be cached because it returns a list...
     def preferred_term_for_concepts(self, conceptIds, language=None, parmlist=None):
-        """
+        """ Return a list of concept id to prefname/desc id.  Note: If you just want the PN or FSN, use RF2PnAndFSN instead
+
         @param conceptIds: concept id(s) too lookup
         @param language: limit language
         @param parmlist: parameters.  We use active, moduleid, language.

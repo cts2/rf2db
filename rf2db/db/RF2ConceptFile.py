@@ -74,7 +74,8 @@ class ConceptDB(RF2FileWrapper):
         return rlist[0] if len(rlist) else None
 
     def getAllConcepts_p(self, active=1, order='asc', page=0, maxtoreturn=100, after=0):
-        return self.getAllConcepts(concept_list_parms.parse(**{'active':active,'order':order,'page':page,'maxtoreturn':maxtoreturn,'after':after}))
+        return self.getAllConcepts(concept_list_parms.parse(
+            **{'active': active, 'order': order, 'page': page, 'maxtoreturn': maxtoreturn, 'after': after}))
 
     def getAllConcepts(self, parmlist):
         """
@@ -82,12 +83,11 @@ class ConceptDB(RF2FileWrapper):
         @param after: sctid to start after
         """
 
-
         if not parmlist.ss:
             raise Exception('FULL table not supported for complete concept list')
         db = self.connect()
         query = 'SELECT %s FROM %s' % ('*' if parmlist.maxtoreturn else 'count(*)', self._tname(parmlist.ss))
-        query +=  ' WHERE %s ' % ('active=1' if parmlist.active else 'TRUE')
+        query += ' WHERE %s ' % ('active=1' if parmlist.active else 'TRUE')
         if parmlist.after:
             query += ' AND id > %s' % parmlist.after
         if parmlist.moduleid:
@@ -98,15 +98,16 @@ class ConceptDB(RF2FileWrapper):
             query += ' LIMIT %s, %s' % (parmlist.start, parmlist.maxtoreturn + 1)
         db.execute(query)
 
-        return [RF2Concept(d) for c in db.ResultsGenerator(db)]
+        return [RF2Concept(c) for c in db.ResultsGenerator(db)]
 
     @staticmethod
     def asConceptList_p(clist, active=1, order='asc', page=0, maxtoreturn=100, after=0):
-        return ConceptDB.asConceptList(clist, concept_list_parms.parse(**{'active':active,'order':order,'page':page,'maxtoreturn':maxtoreturn,'after':after}))
+        return ConceptDB.asConceptList(clist, concept_list_parms.parse(
+            **{'active': active, 'order': order, 'page': page, 'maxtoreturn': maxtoreturn, 'after': after}))
 
     @staticmethod
     def asConceptList(clist, parmlist):
-        thelist=RF2ConceptList(parmlist)
+        thelist = RF2ConceptList(parmlist)
         if not parmlist.maxtoreturn:
             return thelist.finish(True, total=list(clist)[0])
         for c in clist:

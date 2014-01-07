@@ -27,9 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from collections import Iterable
 import re
-import datetime
 
 from rf2db.utils.sctid import sctid
 
@@ -114,7 +112,7 @@ class ParameterDefinitionList(object):
         @return: C{True} if all arguments are valid, C{False} otherwise
         """
         for arg,val in kwargs.items():
-            if not (arg.startswith('_') or val  == ''):
+            if not (arg.startswith('_')):
                 if not self._caseSensitive:
                     arg = arg.lower()
                 if isinstance(val, str) and ' ' in val and self._splitable:

@@ -29,7 +29,7 @@
 
 """ Convert RF2 Tab seperated values into the equivalent XML format
 """
-from rf2db.schema      import rf2
+from rf2db.schema import rf2
 
 from rf2db.constants import RF2ValueSets
 from rf2db.utils.sctid import sctid
@@ -41,12 +41,12 @@ from rf2db.utils.link import rf2link
 
 
 class RF2Base(rf2.Base, object):
-    _baseFields  = ['id', 'effectiveTime', 'active', 'moduleId']
+    _baseFields = ['id', 'effectiveTime', 'active', 'moduleId']
     _sctidFieldNames = ['moduleId']
-    _fieldNames  = _baseFields
+    _fieldNames = _baseFields
     _sctidFields = _sctidFieldNames
-    _nFields     = len(_fieldNames)
-    _baseClass   = rf2.Base
+    _nFields = len(_fieldNames)
+    _baseClass = rf2.Base
 
 
     def load(self, name, line, sep="\t"):
@@ -56,9 +56,9 @@ class RF2Base(rf2.Base, object):
         self.valid = nFields == self._nFields
         if nFields < self._nFields:
             fields += [None] * (self._nFields - nFields)
-        self._baseClass.__init__(self, **dict(zip(self._fieldNames, fields)) )
+        self._baseClass.__init__(self, **dict(zip(self._fieldNames, fields)))
         return self
-                    
+
     def __str__(self):
         return self._name + "(" + \
                ', '.join(k + ":" + self.strify(k) for k in self._fieldNames) + ")"
@@ -79,7 +79,7 @@ class RF2Base(rf2.Base, object):
     def strify(self, key):
         return str(getattr(self, key))
 
-    def issctid(self,key):
+    def issctid(self, key):
         return key in self._sctidFields
 
     def isActive(self):
@@ -88,21 +88,15 @@ class RF2Base(rf2.Base, object):
     @classmethod
     def validateHeader(cls, headerfields):
         return cls._fieldNames == headerfields
-        
+
 
 @rf2link(rf2.Concept, rf2.Concept_, ['definitionStatusId'], ['definitionStatusId'])
 class RF2Concept(rf2.Concept_, RF2Base):
-    def __init__(self):
-        pass
-
-    def load(self, *args, **kwargs):
-        return RF2Base.load(*arg, **kwargs)
-
     @property
     def isPrimitive(self):
         return self.definitionStatusId == RF2ValueSets.primitive
 
-    @property    
+    @property
     def isFullyDefined(self):
         return self.definitionStatusId == RF2ValueSets.defined
 
@@ -110,32 +104,30 @@ class RF2Concept(rf2.Concept_, RF2Base):
 @rf2link(rf2.Description, rf2.Description_, ['conceptId', 'languageCode', 'typeId', 'term', 'caseSignificanceId'],
          ['conceptId', 'typeId', 'caseSignificanceId'], linefilter=xmlutils.cleanxml)
 class RF2Description(rf2.Description_, RF2Base):
-
-    def strify(self, key):       
+    def strify(self, key):
         return getattr(self, key).encode('utf-8') if key == 'term' else RF2Base.strify(self, key)
-        
-    @property  
+
+    @property
     def isDefinition(self):
         return self.typeId == RF2ValueSets.definition
-        
+
     @property
     def isFsn(self):
         return self.typeId == RF2ValueSets.fsn
-        
+
     @property
     def isSynonym(self):
-        return self.typeId == RF2ValueSets.synonym 
+        return self.typeId == RF2ValueSets.synonym
 
-   
+
 @rf2link(rf2.Relationship, rf2.Relationship_, ['sourceId', 'destinationId', 'relationshipGroup',
-                                          'typeId', 'characteristicTypeId', 'modifierId', 'isCanonical'],
+                                               'typeId', 'characteristicTypeId', 'modifierId', 'isCanonical'],
          ['sourceId', 'destinationId', 'typeId', 'characteristicTypeId', 'modifierId'])
 class RF2Relationship(rf2.Relationship_, RF2Base):
-
     @property
     def isAll(self):
         return self.modifierId == RF2ValueSets.all_
-        
+
     @property
     def isSome(self):
         return self.modifierId == RF2ValueSets.some
@@ -145,18 +137,18 @@ class RF2Relationship(rf2.Relationship_, RF2Base):
         return sctid(self.characteristicTypeId) in [RF2ValueSets.definingRelationship,
                                                     RF2ValueSets.inferredRelationship, #inferredRelationship
                                                     RF2ValueSets.statedRelationship] #statedRelationship
-    
-    @property 
+
+    @property
     def isInferred(self):
-        return sctid(self.characteristicTypeId) ==  RF2ValueSets.inferredRelationship
-        
-    @property 
+        return sctid(self.characteristicTypeId) == RF2ValueSets.inferredRelationship
+
+    @property
     def isAdditional(self):
-        return sctid(self.characteristicTypeId) ==  RF2ValueSets.additionalRelationship
-        
-    @property 
+        return sctid(self.characteristicTypeId) == RF2ValueSets.additionalRelationship
+
+    @property
     def isQualifying(self):
-        return sctid(self.characteristicTypeId) ==  RF2ValueSets.qualifyingRelationship
+        return sctid(self.characteristicTypeId) == RF2ValueSets.qualifyingRelationship
 
 
 @rf2link(rf2.Identifier, rf2.Identifier_,

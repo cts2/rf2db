@@ -40,32 +40,32 @@ from config.ConfigManager import ConfigManager
 from rf2db.utils.listutils import listify
 from rf2db.parameterparser.ParmParser import booleanparam
 
-config_parms = ConfigArgs( 'dbparms',
-                           [ConfigArg('host', help='MySQL DB Host', default='localhost'),
-                            ConfigArg('port', help='MySQL DB Port'),
-                            ConfigArg('user', abbrev='u', help='MySQL User Id'),
-                            ConfigArg('passwd', abbrev='p', help='MySQL Password'),
-                            ConfigArg('db', abbrev='db', help='Database', default='rf2'),
-                            ConfigArg('charset', help='MySQL Character Set', default='utf8')
-                            ])
+config_parms = ConfigArgs('dbparms',
+                          [ConfigArg('host', help='MySQL DB Host', default='localhost'),
+                           ConfigArg('port', help='MySQL DB Port'),
+                           ConfigArg('user', abbrev='u', help='MySQL User Id'),
+                           ConfigArg('passwd', abbrev='p', help='MySQL Password'),
+                           ConfigArg('db', abbrev='db', help='Database', default='rf2'),
+                           ConfigArg('charset', help='MySQL Character Set', default='utf8')
+                          ])
 config = ConfigManager(config_parms)
 
-debug_parms = ConfigArgs ( 'debug',
-                            [ConfigArg('trace', help='Trace SQL Calls', action='store_true'),
-                             ConfigArg('nocache', help='Turn off cache for debugging', action='store_true')
-                            ])
+debug_parms = ConfigArgs('debug',
+                         [ConfigArg('trace', help='Trace SQL Calls', action='store_true'),
+                          ConfigArg('nocache', help='Turn off cache for debugging', action='store_true')
+                         ])
 dbconfig = ConfigManager(debug_parms)
 # TODO: how to we get the configuration file name into here?  Should we?
 
 db = pool.manage(mysql)
 
-sub_flags=re.M+re.S
-sub_subs = [(re.compile(r'^(id|effectiveTime)( |=)',flags=sub_flags), r'tbl.\1\2'),
-            (re.compile(r'( |=)(id|effectiveTime)( |=)',flags=sub_flags),r'\1tbl.\2\3'),
-            (re.compile(r'( |=)(id|effectiveTime)$',flags=sub_flags),r'\1tbl.\2')]
+sub_flags = re.M + re.S
+sub_subs = [(re.compile(r'^(id|effectiveTime)( |=)', flags=sub_flags), r'tbl.\1\2'),
+            (re.compile(r'( |=)(id|effectiveTime)( |=)', flags=sub_flags), r'\1tbl.\2\3'),
+            (re.compile(r'( |=)(id|effectiveTime)$', flags=sub_flags), r'\1tbl.\2')]
+
 
 class RF2DBConnection(object):
-
     def __init__(self):
         self._connection = None
 
@@ -75,6 +75,7 @@ class RF2DBConnection(object):
     def newDB(self, config_mgr):
         nondb_config = config_mgr.section().copy()
         dbname = nondb_config.pop('db')
+        nondb_config.pop('dodecode')
         self._connection = db.connect(**nondb_config)
         self._cursor = self._connection.cursor()
         self._cursor.execute("CREATE DATABASE IF NOT EXISTS %s" % dbname)
@@ -125,19 +126,20 @@ class RF2DBConnection(object):
             if retryCount == 0 and e.args[0] == 2006:
                 print >> sys.stderr, ("Database timeout error - reconnecting")
                 self._connect()
-                return self.execute(stmt, retryCount+1)
+                return self.execute(stmt, retryCount + 1)
             else:
                 print >> sys.stderr, ("**********", stmt)
                 raise e
-            
+
     class ResultsGenerator(object):
         """ Generator wrapper for sql cursor.  Returns tab separated value list for the query """
+
         def __init__(self, dbconnection):
             self._db = dbconnection
 
         def __iter__(self):
             return self
-    
+
         def next(self):
             t = self._db.next()
             if t:
@@ -145,7 +147,8 @@ class RF2DBConnection(object):
             raise StopIteration
 
     @staticmethod
-    def build_query(table, filter_="", sort=None, active=True, ss=True, start=0, maxtoreturn=100, refdate=None, moduleids=None):
+    def build_query(table, filter_="", sort=None, active=True, ss=True, start=0, maxtoreturn=100, refdate=None,
+                    moduleids=None):
         """ Query an RF2 table taking the historical information into account.
         
         @param table: table to query
@@ -189,15 +192,14 @@ class RF2DBConnection(object):
             if refdate:
                 key_query += " AND effectiveTime <= '%s'" % refdate.strftime("%Y%m%d%H%M")
             key_query += " GROUP BY id) as tbl_keys"
-        
-        
+
         if not ss:
             tf = RF2DBConnection.tweakFilter(filter_)
             query = """ SELECT tbl.* FROM %(table)s tbl, %(key_query)s 
                         WHERE tbl.id = tbl_keys.id AND tbl.effectiveTime = tbl_keys.effectiveTime AND %(tf)s""" % locals()
         else:
             sel = 'tbl.*' if maxtoreturn else 'count(*)'
-            query = """ SELECT %(sel)s FROM %(table)s tbl WHERE %(filter_)s """ %locals()
+            query = """ SELECT %(sel)s FROM %(table)s tbl WHERE %(filter_)s """ % locals()
         if active:
             query += " AND active = 1 "
         if moduleids:
@@ -205,7 +207,7 @@ class RF2DBConnection(object):
         if sort:
             query += " ORDER BY tbl.%s ASC " % sort
         if maxtoreturn:
-            query += " LIMIT %d, %d " % (start, maxtoreturn+1)
+            query += " LIMIT %d, %d " % (start, maxtoreturn + 1)
         return query
 
     def query_p(self, table, parms, filter=""):
@@ -258,21 +260,21 @@ class RF2DBConnection(object):
     @staticmethod
     def tweakFilter(filt):
         """ Adjust the filter to adjust for the fact that id and effectiveTime occur twice in the call """
-        return reduce(lambda text, s_r: s_r[0].sub(s_r[1],text), sub_subs, filt)
+        return reduce(lambda text, s_r: s_r[0].sub(s_r[1], text), sub_subs, filt)
 
-            
+
     @staticmethod
     def tabify(tup):
         # the "decode" part has to do with the fact that some SQL db's won't return in utf8
         try:
             return '\t'.join(map(lambda r: \
-                                (r.decode('utf8') if booleanparam.v(config.dodecode, False) else r) \
-                                if isinstance(r,basestring) else str(r),tup)) if tup else None
+                                     (r.decode('utf8') if booleanparam.v(config.dodecode, False) else r) \
+                                         if isinstance(r, basestring) else str(r), tup)) if tup else None
         except Exception as e:
             print ("FAILING TUPLE:", tup)
             raise e
-        
-  
+
+
     def commit(self, disconnect=True):
         self._connection.commit()
         if disconnect:
