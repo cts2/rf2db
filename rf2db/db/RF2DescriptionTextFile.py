@@ -41,7 +41,7 @@ from rf2db.exceptions import RF2Exceptions
 description_match_parms = ParameterDefinitionList(global_rf2_parms)
 description_match_parms.add(iter_parms)
 description_match_parms.matchvalue = strparam(splitable=True)
-description_match_parms.matchalgorithm = enumparam(['contains','startswith', 'endswith', 'exactmatch', 'wordstart',
+description_match_parms.matchalgorithm = enumparam(['contains', 'startswith', 'endswith', 'exactmatch', 'wordstart',
                                                     'wordend', 'phrase'], default='wordstart')
 
 
@@ -97,6 +97,11 @@ class DescriptionTextDB(RF2FileWrapper):
     def loadFile(self, fname, ss):
         print(self.table, "must be loaded from", ConceptDB.table, "and", DescriptionDB.table, "tables")
 
+    def getDescriptions_p(self, matchvalues, matchalgorithm='wordstart', maxtoreturn=100):
+        return self.getDescriptions(description_match_parms.parse(**{'matchvalue': matchvalues,
+                                                                     'matchalgorithm': matchalgorithm,
+                                                                     'maxtoreturn': maxtoreturn}))
+
     @lfu_cache(100)
     def getDescriptions(self, parmlist):
         """ 
@@ -128,11 +133,12 @@ class DescriptionTextDB(RF2FileWrapper):
                 elif a == 'exactmatch':
                     query += " AND term = '%s'" % v
                 elif a == 'word':
-                    query += " AND (term LIKE ('%% %s %%') OR term LIKE('%s %%') OR term LIKE('%% %s') OR term = '%s')" % (v,v,v,v)
+                    query += " AND (term LIKE ('%% %s %%') OR term LIKE('%s %%') OR term LIKE('%% %s') OR term = '%s')" % (
+                    v, v, v, v)
                 elif a == 'wordstart':
-                    query += " AND (term LIKE ('%s%%') OR term LIKE ('%% %s%%'))" % (v,v)
+                    query += " AND (term LIKE ('%s%%') OR term LIKE ('%% %s%%'))" % (v, v)
                 elif a == 'wordend':
-                    query += " AND (term LIKE ('%%%s') OR term LIKE ('%%%s %%'))" % (v,v)
+                    query += " AND (term LIKE ('%%%s') OR term LIKE ('%%%s %%'))" % (v, v)
                 elif a == 'phrase':
                     query += " AND term LIKE('%s%%')" % v
                 else:
@@ -148,7 +154,8 @@ class DescriptionTextDB(RF2FileWrapper):
             query += " LIMIT %s, %s" % (parmlist.start, parmlist.maxtoreturn + 1)
         db = self.connect()
         db.execute(query)
-        return [RF2Description(d) for d in db.ResultsGenerator(db)] if parmlist.maxtoreturn else list(db.ResultsGenerator(db))
+        return [RF2Description(d) for d in db.ResultsGenerator(db)] if parmlist.maxtoreturn else list(
+            db.ResultsGenerator(db))
 
 
 

@@ -85,7 +85,7 @@ class RelationshipDB(RF2FileWrapper):
             return True
         db = self.connect()
         return bool([r for r in db.query(self._tname(parmlist.ss), canon_filtr(filtr, parmlist.canonical),
-                                 active=parmlist.active, ss=parmlist.ss, maxtoreturn=1)])
+                                         active=parmlist.active, ss=parmlist.ss)])
 
     def loadTable(self, rf2file, ss, cfg):
         import warnings
@@ -169,13 +169,14 @@ class RelationshipDB(RF2FileWrapper):
     @lfu_cache(maxsize=100)
     def getRelationship(self, relId, parmlist):
         """ Return the relationship record identified by relId"""
-        rel = self._srdb.getRelationship(relId, ss=parmlist.ss)
+        rel = self._srdb.getRelationship(relId, parmlist)
         if rel:
             return rel
         db = self.connect()
         rlist = [RF2Relationship(r) for r in db.query(self._tname(parmlist.ss),
                                                       "id = '%s'" % relId,
                                                       active=parmlist.active,
+                                                      maxtoreturn=1,
                                                       ss=parmlist.ss)]
         return rlist[0] if len(rlist) else None
 

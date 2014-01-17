@@ -97,8 +97,8 @@ class ConceptDB(RF2FileWrapper):
         if parmlist.maxtoreturn:
             query += ' LIMIT %s, %s' % (parmlist.start, parmlist.maxtoreturn + 1)
         db.execute(query)
-
-        return [RF2Concept(c) for c in db.ResultsGenerator(db)]
+        return [RF2Concept(c) for c in db.ResultsGenerator(db)] if parmlist.maxtoreturn else list(
+            db.ResultsGenerator(db))
 
     @staticmethod
     def asConceptList_p(clist, active=1, order='asc', page=0, maxtoreturn=100, after=0):

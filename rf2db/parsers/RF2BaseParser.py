@@ -90,7 +90,7 @@ class RF2Base(rf2.Base, object):
         return cls._fieldNames == headerfields
 
 
-@rf2link(rf2.Concept, rf2.Concept_, ['definitionStatusId'], ['definitionStatusId'])
+@rf2link(rf2.Concept, rf2.Concept_, ['definitionStatusId'], ['id', 'definitionStatusId'])
 class RF2Concept(rf2.Concept_, RF2Base):
     @property
     def isPrimitive(self):

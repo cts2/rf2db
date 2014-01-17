@@ -1,19 +1,20 @@
 # ../rf2db/schema/rf2.py
 # -*- coding: utf-8 -*-
 # PyXB bindings for NM:a62023a1e63ecb635c8d1a3482d1f64c6fb3e0f6
-# Generated 2013-12-18 15:07:50.743084 by PyXB version 1.2.3
+# Generated 2014-01-16 15:39:30.292642 by PyXB version 1.2.3
 # Namespace http://snomed.info/schema/rf2
+
+import io
 
 import pyxb
 import pyxb.binding
 import pyxb.binding.saxer
-import io
 import pyxb.utils.utility
 import pyxb.utils.domutils
-import sys
+
 
 # Unique identifier for bindings created at the same time
-_GenerationUID = pyxb.utils.utility.UniqueIdentifier('urn:uuid:7401401e-6828-11e3-b758-c82a1438c957')
+_GenerationUID = pyxb.utils.utility.UniqueIdentifier('urn:uuid:4c73b2ae-7eee-11e3-a1f8-e4ce8f1167a8')
 
 # Version of PyXB used to generate the bindings
 _PyXBVersion = '1.2.3'
@@ -71,18 +72,18 @@ def CreateFromDOM (node, default_namespace=None):
     return pyxb.binding.basis.element.AnyCreateFromDOM(node, default_namespace)
 
 
-# Atomic simple type: {http://snomed.info/schema/rf2}sctid
+# Atomic simple type: {http://snomed.info/schema/rf2}SCTID
 class SCTID (pyxb.binding.datatypes.string):
 
     """An atomic simple type."""
 
-    _ExpandedName = pyxb.namespace.ExpandedName(Namespace, u'sctid')
+    _ExpandedName = pyxb.namespace.ExpandedName(Namespace, u'SCTID')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 9, 4)
     _Documentation = None
 SCTID._CF_pattern = pyxb.binding.facets.CF_pattern()
 SCTID._CF_pattern.addPattern(pattern=u'[0-9]{6,18}')
 SCTID._InitializeFacetMap(SCTID._CF_pattern)
-Namespace.addCategoryObject('typeBinding', u'sctid', SCTID)
+Namespace.addCategoryObject('typeBinding', u'SCTID', SCTID)
 
 # Atomic simple type: {http://snomed.info/schema/rf2}UUID
 class UUID (pyxb.binding.datatypes.string):
@@ -1230,8 +1231,19 @@ class LanguageReferenceSetEntry_ (RefsetBase):
     
     acceptabilityId = property(__acceptabilityId.value, __acceptabilityId.set, None, None)
 
+
+    # Element {http://snomed.info/schema/rf2}conceptId uses Python identifier conceptId
+    __conceptId = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'conceptId'),
+                                                          'conceptId',
+                                                          '__httpsnomed_infoschemarf2_LanguageReferenceSetEntry__httpsnomed_infoschemarf2conceptId',
+                                                          False, pyxb.utils.utility.Location(
+            '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 715, 20), )
+
+    conceptId = property(__conceptId.value, __conceptId.set, None, None)
+
     _ElementMap.update({
-        __acceptabilityId.name() : __acceptabilityId
+        __acceptabilityId.name(): __acceptabilityId,
+        __conceptId.name(): __conceptId
     })
     _AttributeMap.update({
         
@@ -1246,7 +1258,7 @@ class QuerySpecificationReferenceSetEntry_ (RefsetBase):
     _ContentTypeTag = pyxb.binding.basis.complexTypeDefinition._CT_ELEMENT_ONLY
     _Abstract = False
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, u'QuerySpecificationReferenceSetEntry')
-    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 731, 4)
+    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 733, 4)
     _ElementMap = RefsetBase._ElementMap.copy()
     _AttributeMap = RefsetBase._AttributeMap.copy()
     # Base type is RefsetBase
@@ -1264,9 +1276,11 @@ class QuerySpecificationReferenceSetEntry_ (RefsetBase):
     # Element referencedComponentId ({http://snomed.info/schema/rf2}referencedComponentId) inherited from {http://snomed.info/schema/rf2}RefsetBase
     
     # Element {http://snomed.info/schema/rf2}query uses Python identifier query
-    __query = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'query'), 'query', '__httpsnomed_infoschemarf2_QuerySpecificationReferenceSetEntry__httpsnomed_infoschemarf2query', False, pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 735, 20), )
+    __query = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'query'), 'query',
+                                                      '__httpsnomed_infoschemarf2_QuerySpecificationReferenceSetEntry__httpsnomed_infoschemarf2query',
+                                                      False, pyxb.utils.utility.Location(
+            '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 737, 20), )
 
-    
     query = property(__query.value, __query.set, None, None)
 
     _ElementMap.update({
@@ -1285,7 +1299,7 @@ class AnnotationReferenceSetEntry_ (RefsetBase):
     _ContentTypeTag = pyxb.binding.basis.complexTypeDefinition._CT_ELEMENT_ONLY
     _Abstract = False
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, u'AnnotationReferenceSetEntry')
-    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 753, 4)
+    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 755, 4)
     _ElementMap = RefsetBase._ElementMap.copy()
     _AttributeMap = RefsetBase._AttributeMap.copy()
     # Base type is RefsetBase
@@ -1303,9 +1317,12 @@ class AnnotationReferenceSetEntry_ (RefsetBase):
     # Element referencedComponentId ({http://snomed.info/schema/rf2}referencedComponentId) inherited from {http://snomed.info/schema/rf2}RefsetBase
     
     # Element {http://snomed.info/schema/rf2}annotation uses Python identifier annotation
-    __annotation = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'annotation'), 'annotation', '__httpsnomed_infoschemarf2_AnnotationReferenceSetEntry__httpsnomed_infoschemarf2annotation', False, pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 757, 20), )
+    __annotation = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'annotation'),
+                                                           'annotation',
+                                                           '__httpsnomed_infoschemarf2_AnnotationReferenceSetEntry__httpsnomed_infoschemarf2annotation',
+                                                           False, pyxb.utils.utility.Location(
+            '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 759, 20), )
 
-    
     annotation = property(__annotation.value, __annotation.set, None, None)
 
     _ElementMap.update({
@@ -1324,7 +1341,7 @@ class AssociationReferenceSetEntry_ (RefsetBase):
     _ContentTypeTag = pyxb.binding.basis.complexTypeDefinition._CT_ELEMENT_ONLY
     _Abstract = False
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, u'AssociationReferenceSetEntry')
-    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 775, 4)
+    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 777, 4)
     _ElementMap = RefsetBase._ElementMap.copy()
     _AttributeMap = RefsetBase._AttributeMap.copy()
     # Base type is RefsetBase
@@ -1342,9 +1359,11 @@ class AssociationReferenceSetEntry_ (RefsetBase):
     # Element referencedComponentId ({http://snomed.info/schema/rf2}referencedComponentId) inherited from {http://snomed.info/schema/rf2}RefsetBase
     
     # Element {http://snomed.info/schema/rf2}targetComponent uses Python identifier targetComponent
-    __targetComponent = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'targetComponent'), 'targetComponent', '__httpsnomed_infoschemarf2_AssociationReferenceSetEntry__httpsnomed_infoschemarf2targetComponent', False, pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 779, 20), )
+    __targetComponent = pyxb.binding.content.ElementDeclaration(
+        pyxb.namespace.ExpandedName(Namespace, u'targetComponent'), 'targetComponent',
+        '__httpsnomed_infoschemarf2_AssociationReferenceSetEntry__httpsnomed_infoschemarf2targetComponent', False,
+        pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 781, 20), )
 
-    
     targetComponent = property(__targetComponent.value, __targetComponent.set, None, None)
 
     _ElementMap.update({
@@ -1363,7 +1382,7 @@ class ModuleDependencyReferenceSetEntry_ (RefsetBase):
     _ContentTypeTag = pyxb.binding.basis.complexTypeDefinition._CT_ELEMENT_ONLY
     _Abstract = False
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, u'ModuleDependencyReferenceSetEntry')
-    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 798, 4)
+    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 800, 4)
     _ElementMap = RefsetBase._ElementMap.copy()
     _AttributeMap = RefsetBase._AttributeMap.copy()
     # Base type is RefsetBase
@@ -1381,16 +1400,20 @@ class ModuleDependencyReferenceSetEntry_ (RefsetBase):
     # Element referencedComponentId ({http://snomed.info/schema/rf2}referencedComponentId) inherited from {http://snomed.info/schema/rf2}RefsetBase
     
     # Element {http://snomed.info/schema/rf2}sourceEffectiveTime uses Python identifier sourceEffectiveTime
-    __sourceEffectiveTime = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'sourceEffectiveTime'), 'sourceEffectiveTime', '__httpsnomed_infoschemarf2_ModuleDependencyReferenceSetEntry__httpsnomed_infoschemarf2sourceEffectiveTime', False, pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 802, 20), )
+    __sourceEffectiveTime = pyxb.binding.content.ElementDeclaration(
+        pyxb.namespace.ExpandedName(Namespace, u'sourceEffectiveTime'), 'sourceEffectiveTime',
+        '__httpsnomed_infoschemarf2_ModuleDependencyReferenceSetEntry__httpsnomed_infoschemarf2sourceEffectiveTime',
+        False, pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 804, 20), )
 
-    
     sourceEffectiveTime = property(__sourceEffectiveTime.value, __sourceEffectiveTime.set, None, None)
 
     
     # Element {http://snomed.info/schema/rf2}targetEffectiveTime uses Python identifier targetEffectiveTime
-    __targetEffectiveTime = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'targetEffectiveTime'), 'targetEffectiveTime', '__httpsnomed_infoschemarf2_ModuleDependencyReferenceSetEntry__httpsnomed_infoschemarf2targetEffectiveTime', False, pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 803, 20), )
+    __targetEffectiveTime = pyxb.binding.content.ElementDeclaration(
+        pyxb.namespace.ExpandedName(Namespace, u'targetEffectiveTime'), 'targetEffectiveTime',
+        '__httpsnomed_infoschemarf2_ModuleDependencyReferenceSetEntry__httpsnomed_infoschemarf2targetEffectiveTime',
+        False, pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 805, 20), )
 
-    
     targetEffectiveTime = property(__targetEffectiveTime.value, __targetEffectiveTime.set, None, None)
 
     _ElementMap.update({
@@ -1410,7 +1433,7 @@ class DescriptionFormatReferenceSetEntry_ (RefsetBase):
     _ContentTypeTag = pyxb.binding.basis.complexTypeDefinition._CT_ELEMENT_ONLY
     _Abstract = False
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, u'DescriptionFormatReferenceSetEntry')
-    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 821, 4)
+    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 823, 4)
     _ElementMap = RefsetBase._ElementMap.copy()
     _AttributeMap = RefsetBase._AttributeMap.copy()
     # Base type is RefsetBase
@@ -1428,16 +1451,20 @@ class DescriptionFormatReferenceSetEntry_ (RefsetBase):
     # Element referencedComponentId ({http://snomed.info/schema/rf2}referencedComponentId) inherited from {http://snomed.info/schema/rf2}RefsetBase
     
     # Element {http://snomed.info/schema/rf2}descriptionFormat uses Python identifier descriptionFormat
-    __descriptionFormat = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'descriptionFormat'), 'descriptionFormat', '__httpsnomed_infoschemarf2_DescriptionFormatReferenceSetEntry__httpsnomed_infoschemarf2descriptionFormat', False, pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 825, 20), )
+    __descriptionFormat = pyxb.binding.content.ElementDeclaration(
+        pyxb.namespace.ExpandedName(Namespace, u'descriptionFormat'), 'descriptionFormat',
+        '__httpsnomed_infoschemarf2_DescriptionFormatReferenceSetEntry__httpsnomed_infoschemarf2descriptionFormat',
+        False, pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 827, 20), )
 
-    
     descriptionFormat = property(__descriptionFormat.value, __descriptionFormat.set, None, None)
 
     
     # Element {http://snomed.info/schema/rf2}descriptionLength uses Python identifier descriptionLength
-    __descriptionLength = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'descriptionLength'), 'descriptionLength', '__httpsnomed_infoschemarf2_DescriptionFormatReferenceSetEntry__httpsnomed_infoschemarf2descriptionLength', False, pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 826, 20), )
+    __descriptionLength = pyxb.binding.content.ElementDeclaration(
+        pyxb.namespace.ExpandedName(Namespace, u'descriptionLength'), 'descriptionLength',
+        '__httpsnomed_infoschemarf2_DescriptionFormatReferenceSetEntry__httpsnomed_infoschemarf2descriptionLength',
+        False, pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 828, 20), )
 
-    
     descriptionLength = property(__descriptionLength.value, __descriptionLength.set, None, None)
 
     _ElementMap.update({
@@ -1842,15 +1869,17 @@ class LanguageReferenceSet_ (Iterator):
     _ContentTypeTag = pyxb.binding.basis.complexTypeDefinition._CT_ELEMENT_ONLY
     _Abstract = False
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, u'LanguageReferenceSet')
-    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 719, 4)
+    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 721, 4)
     _ElementMap = Iterator._ElementMap.copy()
     _AttributeMap = Iterator._AttributeMap.copy()
     # Base type is Iterator
     
     # Element {http://snomed.info/schema/rf2}entry uses Python identifier entry
-    __entry = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'entry'), 'entry', '__httpsnomed_infoschemarf2_LanguageReferenceSet__httpsnomed_infoschemarf2entry', True, pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 723, 20), )
+    __entry = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'entry'), 'entry',
+                                                      '__httpsnomed_infoschemarf2_LanguageReferenceSet__httpsnomed_infoschemarf2entry',
+                                                      True, pyxb.utils.utility.Location(
+            '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 725, 20), )
 
-    
     entry = property(__entry.value, __entry.set, None, None)
 
     
@@ -1877,15 +1906,17 @@ class QuerySpecificationReferenceSet_ (Iterator):
     _ContentTypeTag = pyxb.binding.basis.complexTypeDefinition._CT_ELEMENT_ONLY
     _Abstract = False
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, u'QuerySpecificationReferenceSet')
-    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 741, 4)
+    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 743, 4)
     _ElementMap = Iterator._ElementMap.copy()
     _AttributeMap = Iterator._AttributeMap.copy()
     # Base type is Iterator
     
     # Element {http://snomed.info/schema/rf2}entry uses Python identifier entry
-    __entry = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'entry'), 'entry', '__httpsnomed_infoschemarf2_QuerySpecificationReferenceSet__httpsnomed_infoschemarf2entry', True, pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 745, 20), )
+    __entry = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'entry'), 'entry',
+                                                      '__httpsnomed_infoschemarf2_QuerySpecificationReferenceSet__httpsnomed_infoschemarf2entry',
+                                                      True, pyxb.utils.utility.Location(
+            '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 747, 20), )
 
-    
     entry = property(__entry.value, __entry.set, None, None)
 
     
@@ -1912,15 +1943,17 @@ class AnnotationReferenceSet_ (Iterator):
     _ContentTypeTag = pyxb.binding.basis.complexTypeDefinition._CT_ELEMENT_ONLY
     _Abstract = False
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, u'AnnotationReferenceSet')
-    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 763, 4)
+    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 765, 4)
     _ElementMap = Iterator._ElementMap.copy()
     _AttributeMap = Iterator._AttributeMap.copy()
     # Base type is Iterator
     
     # Element {http://snomed.info/schema/rf2}entry uses Python identifier entry
-    __entry = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'entry'), 'entry', '__httpsnomed_infoschemarf2_AnnotationReferenceSet__httpsnomed_infoschemarf2entry', True, pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 767, 20), )
+    __entry = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'entry'), 'entry',
+                                                      '__httpsnomed_infoschemarf2_AnnotationReferenceSet__httpsnomed_infoschemarf2entry',
+                                                      True, pyxb.utils.utility.Location(
+            '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 769, 20), )
 
-    
     entry = property(__entry.value, __entry.set, None, None)
 
     
@@ -1947,15 +1980,17 @@ class AssociationReferenceSet_ (Iterator):
     _ContentTypeTag = pyxb.binding.basis.complexTypeDefinition._CT_ELEMENT_ONLY
     _Abstract = False
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, u'AssociationReferenceSet')
-    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 785, 4)
+    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 787, 4)
     _ElementMap = Iterator._ElementMap.copy()
     _AttributeMap = Iterator._AttributeMap.copy()
     # Base type is Iterator
     
     # Element {http://snomed.info/schema/rf2}entry uses Python identifier entry
-    __entry = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'entry'), 'entry', '__httpsnomed_infoschemarf2_AssociationReferenceSet__httpsnomed_infoschemarf2entry', True, pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 789, 20), )
+    __entry = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'entry'), 'entry',
+                                                      '__httpsnomed_infoschemarf2_AssociationReferenceSet__httpsnomed_infoschemarf2entry',
+                                                      True, pyxb.utils.utility.Location(
+            '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 791, 20), )
 
-    
     entry = property(__entry.value, __entry.set, None, None)
 
     
@@ -1982,15 +2017,17 @@ class ModuleDepencencyReferenceSet_ (Iterator):
     _ContentTypeTag = pyxb.binding.basis.complexTypeDefinition._CT_ELEMENT_ONLY
     _Abstract = False
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, u'ModuleDepencencyReferenceSet')
-    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 810, 4)
+    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 812, 4)
     _ElementMap = Iterator._ElementMap.copy()
     _AttributeMap = Iterator._AttributeMap.copy()
     # Base type is Iterator
     
     # Element {http://snomed.info/schema/rf2}entry uses Python identifier entry
-    __entry = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'entry'), 'entry', '__httpsnomed_infoschemarf2_ModuleDepencencyReferenceSet__httpsnomed_infoschemarf2entry', True, pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 814, 20), )
+    __entry = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'entry'), 'entry',
+                                                      '__httpsnomed_infoschemarf2_ModuleDepencencyReferenceSet__httpsnomed_infoschemarf2entry',
+                                                      True, pyxb.utils.utility.Location(
+            '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 816, 20), )
 
-    
     entry = property(__entry.value, __entry.set, None, None)
 
     
@@ -2017,15 +2054,17 @@ class DescriptionFormatReferenceSet_ (Iterator):
     _ContentTypeTag = pyxb.binding.basis.complexTypeDefinition._CT_ELEMENT_ONLY
     _Abstract = False
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, u'DescriptionFormatReferenceSet')
-    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 832, 4)
+    _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 834, 4)
     _ElementMap = Iterator._ElementMap.copy()
     _AttributeMap = Iterator._AttributeMap.copy()
     # Base type is Iterator
     
     # Element {http://snomed.info/schema/rf2}entry uses Python identifier entry
-    __entry = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'entry'), 'entry', '__httpsnomed_infoschemarf2_DescriptionFormatReferenceSet__httpsnomed_infoschemarf2entry', True, pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 836, 20), )
+    __entry = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, u'entry'), 'entry',
+                                                      '__httpsnomed_infoschemarf2_DescriptionFormatReferenceSet__httpsnomed_infoschemarf2entry',
+                                                      True, pyxb.utils.utility.Location(
+            '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 838, 20), )
 
-    
     entry = property(__entry.value, __entry.set, None, None)
 
     
@@ -2081,19 +2120,30 @@ Namespace.addCategoryObject('elementBinding', ComplexMapReferenceSetEntry.name()
 LanguageReferenceSetEntry = pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'LanguageReferenceSetEntry'), LanguageReferenceSetEntry_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 708, 4))
 Namespace.addCategoryObject('elementBinding', LanguageReferenceSetEntry.name().localName(), LanguageReferenceSetEntry)
 
-QuerySpecificationReferenceSetEntry = pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'QuerySpecificationReferenceSetEntry'), QuerySpecificationReferenceSetEntry_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 730, 4))
+QuerySpecificationReferenceSetEntry = pyxb.binding.basis.element(
+    pyxb.namespace.ExpandedName(Namespace, u'QuerySpecificationReferenceSetEntry'),
+    QuerySpecificationReferenceSetEntry_,
+    location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 732, 4))
 Namespace.addCategoryObject('elementBinding', QuerySpecificationReferenceSetEntry.name().localName(), QuerySpecificationReferenceSetEntry)
 
-AnnotationReferenceSetEntry = pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'AnnotationReferenceSetEntry'), AnnotationReferenceSetEntry_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 752, 4))
+AnnotationReferenceSetEntry = pyxb.binding.basis.element(
+    pyxb.namespace.ExpandedName(Namespace, u'AnnotationReferenceSetEntry'), AnnotationReferenceSetEntry_,
+    location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 754, 4))
 Namespace.addCategoryObject('elementBinding', AnnotationReferenceSetEntry.name().localName(), AnnotationReferenceSetEntry)
 
-AssociationReferenceSetEntry = pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'AssociationReferenceSetEntry'), AssociationReferenceSetEntry_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 774, 4))
+AssociationReferenceSetEntry = pyxb.binding.basis.element(
+    pyxb.namespace.ExpandedName(Namespace, u'AssociationReferenceSetEntry'), AssociationReferenceSetEntry_,
+    location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 776, 4))
 Namespace.addCategoryObject('elementBinding', AssociationReferenceSetEntry.name().localName(), AssociationReferenceSetEntry)
 
-ModuleDependencyReferenceSetEntry = pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'ModuleDependencyReferenceSetEntry'), ModuleDependencyReferenceSetEntry_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 797, 4))
+ModuleDependencyReferenceSetEntry = pyxb.binding.basis.element(
+    pyxb.namespace.ExpandedName(Namespace, u'ModuleDependencyReferenceSetEntry'), ModuleDependencyReferenceSetEntry_,
+    location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 799, 4))
 Namespace.addCategoryObject('elementBinding', ModuleDependencyReferenceSetEntry.name().localName(), ModuleDependencyReferenceSetEntry)
 
-DescriptionFormatReferenceSetEntry = pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'DescriptionFormatReferenceSetEntry'), DescriptionFormatReferenceSetEntry_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 820, 4))
+DescriptionFormatReferenceSetEntry = pyxb.binding.basis.element(
+    pyxb.namespace.ExpandedName(Namespace, u'DescriptionFormatReferenceSetEntry'), DescriptionFormatReferenceSetEntry_,
+    location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 822, 4))
 Namespace.addCategoryObject('elementBinding', DescriptionFormatReferenceSetEntry.name().localName(), DescriptionFormatReferenceSetEntry)
 
 ConceptList = pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'ConceptList'), ConceptList_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 422, 4))
@@ -2129,22 +2179,34 @@ Namespace.addCategoryObject('elementBinding', SimpleMapReferenceSet.name().local
 ComplexMapReferenceSet = pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'ComplexMapReferenceSet'), ComplexMapReferenceSet_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 696, 4))
 Namespace.addCategoryObject('elementBinding', ComplexMapReferenceSet.name().localName(), ComplexMapReferenceSet)
 
-LanguageReferenceSet = pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'LanguageReferenceSet'), LanguageReferenceSet_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 718, 4))
+LanguageReferenceSet = pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'LanguageReferenceSet'),
+                                                  LanguageReferenceSet_, location=pyxb.utils.utility.Location(
+        '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 720, 4))
 Namespace.addCategoryObject('elementBinding', LanguageReferenceSet.name().localName(), LanguageReferenceSet)
 
-QuerySpecificationReferenceSet = pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'QuerySpecificationReferenceSet'), QuerySpecificationReferenceSet_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 740, 4))
+QuerySpecificationReferenceSet = pyxb.binding.basis.element(
+    pyxb.namespace.ExpandedName(Namespace, u'QuerySpecificationReferenceSet'), QuerySpecificationReferenceSet_,
+    location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 742, 4))
 Namespace.addCategoryObject('elementBinding', QuerySpecificationReferenceSet.name().localName(), QuerySpecificationReferenceSet)
 
-AnnotationReferenceSet = pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'AnnotationReferenceSet'), AnnotationReferenceSet_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 762, 4))
+AnnotationReferenceSet = pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'AnnotationReferenceSet'),
+                                                    AnnotationReferenceSet_, location=pyxb.utils.utility.Location(
+        '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 764, 4))
 Namespace.addCategoryObject('elementBinding', AnnotationReferenceSet.name().localName(), AnnotationReferenceSet)
 
-AssociationReferenceSet = pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'AssociationReferenceSet'), AssociationReferenceSet_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 784, 4))
+AssociationReferenceSet = pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'AssociationReferenceSet'),
+                                                     AssociationReferenceSet_, location=pyxb.utils.utility.Location(
+        '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 786, 4))
 Namespace.addCategoryObject('elementBinding', AssociationReferenceSet.name().localName(), AssociationReferenceSet)
 
-ModuleDepencencyReferenceSet = pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'ModuleDepencencyReferenceSet'), ModuleDepencencyReferenceSet_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 809, 4))
+ModuleDepencencyReferenceSet = pyxb.binding.basis.element(
+    pyxb.namespace.ExpandedName(Namespace, u'ModuleDepencencyReferenceSet'), ModuleDepencencyReferenceSet_,
+    location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 811, 4))
 Namespace.addCategoryObject('elementBinding', ModuleDepencencyReferenceSet.name().localName(), ModuleDepencencyReferenceSet)
 
-DescriptionFormatReferenceSet = pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'DescriptionFormatReferenceSet'), DescriptionFormatReferenceSet_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 831, 4))
+DescriptionFormatReferenceSet = pyxb.binding.basis.element(
+    pyxb.namespace.ExpandedName(Namespace, u'DescriptionFormatReferenceSet'), DescriptionFormatReferenceSet_,
+    location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 833, 4))
 Namespace.addCategoryObject('elementBinding', DescriptionFormatReferenceSet.name().localName(), DescriptionFormatReferenceSet)
 
 
@@ -3200,6 +3262,13 @@ ComplexMapReferenceSetEntry_._Automaton = _BuildAutomaton_13()
 
 LanguageReferenceSetEntry_._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'acceptabilityId'), VSAcceptability, scope=LanguageReferenceSetEntry_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 713, 20)))
 
+LanguageReferenceSetEntry_._AddElement(
+    pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'conceptId'), SCTID,
+                               scope=LanguageReferenceSetEntry_,
+                               location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd',
+                                                                    715, 20)))
+
+
 def _BuildAutomaton_14 ():
     # Remove this helper function from the namespace after it is invoked
     global _BuildAutomaton_14
@@ -3207,6 +3276,9 @@ def _BuildAutomaton_14 ():
     import pyxb.utils.fac as fac
 
     counters = set()
+    cc_0 = fac.CounterCondition(min=0L, max=1, metadata=pyxb.utils.utility.Location(
+        '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 715, 20))
+    counters.add(cc_0)
     states = []
     final_update = None
     symbol = pyxb.binding.content.ElementUse(LanguageReferenceSetEntry_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'id')), pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 543, 12))
@@ -3236,6 +3308,13 @@ def _BuildAutomaton_14 ():
     symbol = pyxb.binding.content.ElementUse(LanguageReferenceSetEntry_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'acceptabilityId')), pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 713, 20))
     st_6 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_6)
+    final_update = set()
+    final_update.add(fac.UpdateInstruction(cc_0, False))
+    symbol = pyxb.binding.content.ElementUse(
+        LanguageReferenceSetEntry_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'conceptId')),
+        pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 715, 20))
+    st_7 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
+    states.append(st_7)
     transitions = []
     transitions.append(fac.Transition(st_1, [
          ]))
@@ -3261,14 +3340,22 @@ def _BuildAutomaton_14 ():
          ]))
     st_5._set_transitionSet(transitions)
     transitions = []
+    transitions.append(fac.Transition(st_7, [
+    ]))
     st_6._set_transitionSet(transitions)
+    transitions = []
+    transitions.append(fac.Transition(st_7, [
+        fac.UpdateInstruction(cc_0, True)]))
+    st_7._set_transitionSet(transitions)
     return fac.Automaton(states, counters, False, containing_state=None)
 LanguageReferenceSetEntry_._Automaton = _BuildAutomaton_14()
 
+QuerySpecificationReferenceSetEntry_._AddElement(
+    pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'query'), String,
+                               scope=QuerySpecificationReferenceSetEntry_,
+                               location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd',
+                                                                    737, 20)))
 
-
-
-QuerySpecificationReferenceSetEntry_._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'query'), String, scope=QuerySpecificationReferenceSetEntry_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 735, 20)))
 
 def _BuildAutomaton_15 ():
     # Remove this helper function from the namespace after it is invoked
@@ -3303,7 +3390,9 @@ def _BuildAutomaton_15 ():
     st_5 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_5)
     final_update = set()
-    symbol = pyxb.binding.content.ElementUse(QuerySpecificationReferenceSetEntry_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'query')), pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 735, 20))
+    symbol = pyxb.binding.content.ElementUse(
+        QuerySpecificationReferenceSetEntry_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'query')),
+        pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 737, 20))
     st_6 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_6)
     transitions = []
@@ -3335,10 +3424,12 @@ def _BuildAutomaton_15 ():
     return fac.Automaton(states, counters, False, containing_state=None)
 QuerySpecificationReferenceSetEntry_._Automaton = _BuildAutomaton_15()
 
+AnnotationReferenceSetEntry_._AddElement(
+    pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'annotation'), String,
+                               scope=AnnotationReferenceSetEntry_,
+                               location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd',
+                                                                    759, 20)))
 
-
-
-AnnotationReferenceSetEntry_._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'annotation'), String, scope=AnnotationReferenceSetEntry_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 757, 20)))
 
 def _BuildAutomaton_16 ():
     # Remove this helper function from the namespace after it is invoked
@@ -3373,7 +3464,9 @@ def _BuildAutomaton_16 ():
     st_5 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_5)
     final_update = set()
-    symbol = pyxb.binding.content.ElementUse(AnnotationReferenceSetEntry_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'annotation')), pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 757, 20))
+    symbol = pyxb.binding.content.ElementUse(
+        AnnotationReferenceSetEntry_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'annotation')),
+        pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 759, 20))
     st_6 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_6)
     transitions = []
@@ -3405,10 +3498,12 @@ def _BuildAutomaton_16 ():
     return fac.Automaton(states, counters, False, containing_state=None)
 AnnotationReferenceSetEntry_._Automaton = _BuildAutomaton_16()
 
+AssociationReferenceSetEntry_._AddElement(
+    pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'targetComponent'), SCTID,
+                               scope=AssociationReferenceSetEntry_,
+                               location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd',
+                                                                    781, 20)))
 
-
-
-AssociationReferenceSetEntry_._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'targetComponent'), SCTID, scope=AssociationReferenceSetEntry_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 779, 20)))
 
 def _BuildAutomaton_17 ():
     # Remove this helper function from the namespace after it is invoked
@@ -3443,7 +3538,9 @@ def _BuildAutomaton_17 ():
     st_5 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_5)
     final_update = set()
-    symbol = pyxb.binding.content.ElementUse(AssociationReferenceSetEntry_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'targetComponent')), pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 779, 20))
+    symbol = pyxb.binding.content.ElementUse(
+        AssociationReferenceSetEntry_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'targetComponent')),
+        pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 781, 20))
     st_6 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_6)
     transitions = []
@@ -3475,12 +3572,18 @@ def _BuildAutomaton_17 ():
     return fac.Automaton(states, counters, False, containing_state=None)
 AssociationReferenceSetEntry_._Automaton = _BuildAutomaton_17()
 
+ModuleDependencyReferenceSetEntry_._AddElement(
+    pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'sourceEffectiveTime'), Time,
+                               scope=ModuleDependencyReferenceSetEntry_,
+                               location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd',
+                                                                    804, 20)))
 
+ModuleDependencyReferenceSetEntry_._AddElement(
+    pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'targetEffectiveTime'), Time,
+                               scope=ModuleDependencyReferenceSetEntry_,
+                               location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd',
+                                                                    805, 20)))
 
-
-ModuleDependencyReferenceSetEntry_._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'sourceEffectiveTime'), Time, scope=ModuleDependencyReferenceSetEntry_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 802, 20)))
-
-ModuleDependencyReferenceSetEntry_._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'targetEffectiveTime'), Time, scope=ModuleDependencyReferenceSetEntry_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 803, 20)))
 
 def _BuildAutomaton_18 ():
     # Remove this helper function from the namespace after it is invoked
@@ -3515,11 +3618,15 @@ def _BuildAutomaton_18 ():
     st_5 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_5)
     final_update = None
-    symbol = pyxb.binding.content.ElementUse(ModuleDependencyReferenceSetEntry_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'sourceEffectiveTime')), pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 802, 20))
+    symbol = pyxb.binding.content.ElementUse(
+        ModuleDependencyReferenceSetEntry_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'sourceEffectiveTime')),
+        pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 804, 20))
     st_6 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_6)
     final_update = set()
-    symbol = pyxb.binding.content.ElementUse(ModuleDependencyReferenceSetEntry_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'targetEffectiveTime')), pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 803, 20))
+    symbol = pyxb.binding.content.ElementUse(
+        ModuleDependencyReferenceSetEntry_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'targetEffectiveTime')),
+        pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 805, 20))
     st_7 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_7)
     transitions = []
@@ -3555,12 +3662,18 @@ def _BuildAutomaton_18 ():
     return fac.Automaton(states, counters, False, containing_state=None)
 ModuleDependencyReferenceSetEntry_._Automaton = _BuildAutomaton_18()
 
+DescriptionFormatReferenceSetEntry_._AddElement(
+    pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'descriptionFormat'), VSDescriptionFormat,
+                               scope=DescriptionFormatReferenceSetEntry_,
+                               location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd',
+                                                                    827, 20)))
 
+DescriptionFormatReferenceSetEntry_._AddElement(
+    pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'descriptionLength'), Integer,
+                               scope=DescriptionFormatReferenceSetEntry_,
+                               location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd',
+                                                                    828, 20)))
 
-
-DescriptionFormatReferenceSetEntry_._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'descriptionFormat'), VSDescriptionFormat, scope=DescriptionFormatReferenceSetEntry_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 825, 20)))
-
-DescriptionFormatReferenceSetEntry_._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'descriptionLength'), Integer, scope=DescriptionFormatReferenceSetEntry_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 826, 20)))
 
 def _BuildAutomaton_19 ():
     # Remove this helper function from the namespace after it is invoked
@@ -3595,11 +3708,15 @@ def _BuildAutomaton_19 ():
     st_5 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_5)
     final_update = None
-    symbol = pyxb.binding.content.ElementUse(DescriptionFormatReferenceSetEntry_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'descriptionFormat')), pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 825, 20))
+    symbol = pyxb.binding.content.ElementUse(
+        DescriptionFormatReferenceSetEntry_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'descriptionFormat')),
+        pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 827, 20))
     st_6 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_6)
     final_update = set()
-    symbol = pyxb.binding.content.ElementUse(DescriptionFormatReferenceSetEntry_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'descriptionLength')), pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 826, 20))
+    symbol = pyxb.binding.content.ElementUse(
+        DescriptionFormatReferenceSetEntry_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'descriptionLength')),
+        pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 828, 20))
     st_7 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_7)
     transitions = []
@@ -3932,10 +4049,12 @@ def _BuildAutomaton_30 ():
     return fac.Automaton(states, counters, True, containing_state=None)
 ComplexMapReferenceSet_._Automaton = _BuildAutomaton_30()
 
+LanguageReferenceSet_._AddElement(
+    pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'entry'), LanguageReferenceSetEntry_,
+                               scope=LanguageReferenceSet_,
+                               location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd',
+                                                                    725, 20)))
 
-
-
-LanguageReferenceSet_._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'entry'), LanguageReferenceSetEntry_, scope=LanguageReferenceSet_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 723, 20)))
 
 def _BuildAutomaton_31 ():
     # Remove this helper function from the namespace after it is invoked
@@ -3944,12 +4063,15 @@ def _BuildAutomaton_31 ():
     import pyxb.utils.fac as fac
 
     counters = set()
-    cc_0 = fac.CounterCondition(min=0L, max=None, metadata=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 723, 20))
+    cc_0 = fac.CounterCondition(min=0L, max=None, metadata=pyxb.utils.utility.Location(
+        '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 725, 20))
     counters.add(cc_0)
     states = []
     final_update = set()
     final_update.add(fac.UpdateInstruction(cc_0, False))
-    symbol = pyxb.binding.content.ElementUse(LanguageReferenceSet_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'entry')), pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 723, 20))
+    symbol = pyxb.binding.content.ElementUse(
+        LanguageReferenceSet_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'entry')),
+        pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 725, 20))
     st_0 = fac.State(symbol, is_initial=True, final_update=final_update, is_unordered_catenation=False)
     states.append(st_0)
     transitions = []
@@ -3959,10 +4081,12 @@ def _BuildAutomaton_31 ():
     return fac.Automaton(states, counters, True, containing_state=None)
 LanguageReferenceSet_._Automaton = _BuildAutomaton_31()
 
+QuerySpecificationReferenceSet_._AddElement(
+    pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'entry'), QuerySpecificationReferenceSetEntry_,
+                               scope=QuerySpecificationReferenceSet_,
+                               location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd',
+                                                                    747, 20)))
 
-
-
-QuerySpecificationReferenceSet_._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'entry'), QuerySpecificationReferenceSetEntry_, scope=QuerySpecificationReferenceSet_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 745, 20)))
 
 def _BuildAutomaton_32 ():
     # Remove this helper function from the namespace after it is invoked
@@ -3971,12 +4095,15 @@ def _BuildAutomaton_32 ():
     import pyxb.utils.fac as fac
 
     counters = set()
-    cc_0 = fac.CounterCondition(min=0L, max=None, metadata=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 745, 20))
+    cc_0 = fac.CounterCondition(min=0L, max=None, metadata=pyxb.utils.utility.Location(
+        '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 747, 20))
     counters.add(cc_0)
     states = []
     final_update = set()
     final_update.add(fac.UpdateInstruction(cc_0, False))
-    symbol = pyxb.binding.content.ElementUse(QuerySpecificationReferenceSet_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'entry')), pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 745, 20))
+    symbol = pyxb.binding.content.ElementUse(
+        QuerySpecificationReferenceSet_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'entry')),
+        pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 747, 20))
     st_0 = fac.State(symbol, is_initial=True, final_update=final_update, is_unordered_catenation=False)
     states.append(st_0)
     transitions = []
@@ -3986,10 +4113,12 @@ def _BuildAutomaton_32 ():
     return fac.Automaton(states, counters, True, containing_state=None)
 QuerySpecificationReferenceSet_._Automaton = _BuildAutomaton_32()
 
+AnnotationReferenceSet_._AddElement(
+    pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'entry'), AnnotationReferenceSetEntry_,
+                               scope=AnnotationReferenceSet_,
+                               location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd',
+                                                                    769, 20)))
 
-
-
-AnnotationReferenceSet_._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'entry'), AnnotationReferenceSetEntry_, scope=AnnotationReferenceSet_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 767, 20)))
 
 def _BuildAutomaton_33 ():
     # Remove this helper function from the namespace after it is invoked
@@ -3998,12 +4127,15 @@ def _BuildAutomaton_33 ():
     import pyxb.utils.fac as fac
 
     counters = set()
-    cc_0 = fac.CounterCondition(min=0L, max=None, metadata=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 767, 20))
+    cc_0 = fac.CounterCondition(min=0L, max=None, metadata=pyxb.utils.utility.Location(
+        '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 769, 20))
     counters.add(cc_0)
     states = []
     final_update = set()
     final_update.add(fac.UpdateInstruction(cc_0, False))
-    symbol = pyxb.binding.content.ElementUse(AnnotationReferenceSet_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'entry')), pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 767, 20))
+    symbol = pyxb.binding.content.ElementUse(
+        AnnotationReferenceSet_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'entry')),
+        pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 769, 20))
     st_0 = fac.State(symbol, is_initial=True, final_update=final_update, is_unordered_catenation=False)
     states.append(st_0)
     transitions = []
@@ -4013,10 +4145,12 @@ def _BuildAutomaton_33 ():
     return fac.Automaton(states, counters, True, containing_state=None)
 AnnotationReferenceSet_._Automaton = _BuildAutomaton_33()
 
+AssociationReferenceSet_._AddElement(
+    pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'entry'), AssociationReferenceSetEntry_,
+                               scope=AssociationReferenceSet_,
+                               location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd',
+                                                                    791, 20)))
 
-
-
-AssociationReferenceSet_._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'entry'), AssociationReferenceSetEntry_, scope=AssociationReferenceSet_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 789, 20)))
 
 def _BuildAutomaton_34 ():
     # Remove this helper function from the namespace after it is invoked
@@ -4025,12 +4159,15 @@ def _BuildAutomaton_34 ():
     import pyxb.utils.fac as fac
 
     counters = set()
-    cc_0 = fac.CounterCondition(min=0L, max=None, metadata=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 789, 20))
+    cc_0 = fac.CounterCondition(min=0L, max=None, metadata=pyxb.utils.utility.Location(
+        '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 791, 20))
     counters.add(cc_0)
     states = []
     final_update = set()
     final_update.add(fac.UpdateInstruction(cc_0, False))
-    symbol = pyxb.binding.content.ElementUse(AssociationReferenceSet_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'entry')), pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 789, 20))
+    symbol = pyxb.binding.content.ElementUse(
+        AssociationReferenceSet_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'entry')),
+        pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 791, 20))
     st_0 = fac.State(symbol, is_initial=True, final_update=final_update, is_unordered_catenation=False)
     states.append(st_0)
     transitions = []
@@ -4040,10 +4177,12 @@ def _BuildAutomaton_34 ():
     return fac.Automaton(states, counters, True, containing_state=None)
 AssociationReferenceSet_._Automaton = _BuildAutomaton_34()
 
+ModuleDepencencyReferenceSet_._AddElement(
+    pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'entry'), ModuleDependencyReferenceSetEntry_,
+                               scope=ModuleDepencencyReferenceSet_,
+                               location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd',
+                                                                    816, 20)))
 
-
-
-ModuleDepencencyReferenceSet_._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'entry'), ModuleDependencyReferenceSetEntry_, scope=ModuleDepencencyReferenceSet_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 814, 20)))
 
 def _BuildAutomaton_35 ():
     # Remove this helper function from the namespace after it is invoked
@@ -4052,12 +4191,15 @@ def _BuildAutomaton_35 ():
     import pyxb.utils.fac as fac
 
     counters = set()
-    cc_0 = fac.CounterCondition(min=0L, max=None, metadata=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 814, 20))
+    cc_0 = fac.CounterCondition(min=0L, max=None, metadata=pyxb.utils.utility.Location(
+        '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 816, 20))
     counters.add(cc_0)
     states = []
     final_update = set()
     final_update.add(fac.UpdateInstruction(cc_0, False))
-    symbol = pyxb.binding.content.ElementUse(ModuleDepencencyReferenceSet_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'entry')), pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 814, 20))
+    symbol = pyxb.binding.content.ElementUse(
+        ModuleDepencencyReferenceSet_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'entry')),
+        pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 816, 20))
     st_0 = fac.State(symbol, is_initial=True, final_update=final_update, is_unordered_catenation=False)
     states.append(st_0)
     transitions = []
@@ -4067,10 +4209,12 @@ def _BuildAutomaton_35 ():
     return fac.Automaton(states, counters, True, containing_state=None)
 ModuleDepencencyReferenceSet_._Automaton = _BuildAutomaton_35()
 
+DescriptionFormatReferenceSet_._AddElement(
+    pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'entry'), DescriptionFormatReferenceSetEntry_,
+                               scope=DescriptionFormatReferenceSet_,
+                               location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd',
+                                                                    838, 20)))
 
-
-
-DescriptionFormatReferenceSet_._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, u'entry'), DescriptionFormatReferenceSetEntry_, scope=DescriptionFormatReferenceSet_, location=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 836, 20)))
 
 def _BuildAutomaton_36 ():
     # Remove this helper function from the namespace after it is invoked
@@ -4079,12 +4223,15 @@ def _BuildAutomaton_36 ():
     import pyxb.utils.fac as fac
 
     counters = set()
-    cc_0 = fac.CounterCondition(min=0L, max=None, metadata=pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 836, 20))
+    cc_0 = fac.CounterCondition(min=0L, max=None, metadata=pyxb.utils.utility.Location(
+        '/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 838, 20))
     counters.add(cc_0)
     states = []
     final_update = set()
     final_update.add(fac.UpdateInstruction(cc_0, False))
-    symbol = pyxb.binding.content.ElementUse(DescriptionFormatReferenceSet_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'entry')), pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 836, 20))
+    symbol = pyxb.binding.content.ElementUse(
+        DescriptionFormatReferenceSet_._UseForTag(pyxb.namespace.ExpandedName(Namespace, u'entry')),
+        pyxb.utils.utility.Location('/Users/mrf7578/git/rf2db/rf2db/static/xsd/rf2.xsd', 838, 20))
     st_0 = fac.State(symbol, is_initial=True, final_update=final_update, is_unordered_catenation=False)
     states.append(st_0)
     transitions = []

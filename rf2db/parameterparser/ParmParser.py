@@ -32,11 +32,11 @@ import re
 from rf2db.utils.sctid import sctid
 
 
-
 class ParameterDefinitionList(object):
     class parms(object):
         """ A Namespace of parameters.
         """
+
         def __init__(self, casesensitive):
             """ Build a new parsed parameter list
             @param casesensitive: Parameter names are case sensitive.
@@ -70,7 +70,7 @@ class ParameterDefinitionList(object):
         """ Set up a collection of parameter parsers
         @param caseSensitive: Collection keys are case sensitive (e.g. 'isActive' is different than 'isactive')
         """
-        self._caseSensitive=caseSensitive
+        self._caseSensitive = caseSensitive
         if base:
             self.add(base)
 
@@ -97,8 +97,8 @@ class ParameterDefinitionList(object):
         @type other: C{ParameterDefinitionList}
         @param ignoredups: True means don't worry about double definitions
         """
-        for k,v in other.definitions():
-            self.__setattr__(k,v,ignoredups)
+        for k, v in other.definitions():
+            self.__setattr__(k, v, ignoredups)
 
     def definitions(self):
         """ Return the parameter definitions in the list
@@ -111,7 +111,7 @@ class ParameterDefinitionList(object):
         @param kwargs: dictionary of arguments to validate
         @return: C{True} if all arguments are valid, C{False} otherwise
         """
-        for arg,val in kwargs.items():
+        for arg, val in kwargs.items():
             if not (arg.startswith('_')):
                 if not self._caseSensitive:
                     arg = arg.lower()
@@ -128,7 +128,8 @@ class ParameterDefinitionList(object):
         @return: tuple - (dictionary of invalid arguments, dictionary of valid or unparsed args)
         """
         invalidargs = {}
-        remainingargs = {i[0]:i[1] for i in map(lambda i: (i[0] if self._caseSensitive else i[0].lower(),i[1]), kwargs.items())}
+        remainingargs = {i[0]: i[1] for i in
+                         map(lambda i: (i[0] if self._caseSensitive else i[0].lower(), i[1]), kwargs.items())}
         for name, parser in self.definitions():
             v = remainingargs.pop(name, None)
             if v is not None and not parser.isValid(v):
@@ -136,7 +137,7 @@ class ParameterDefinitionList(object):
         return invalidargs, remainingargs
 
     def invalidMessage(self, **kwargs):
-        invalidargs,_ = self.invalidParms(**kwargs)
+        invalidargs, _ = self.invalidParms(**kwargs)
         if len(invalidargs):
             badarg = invalidargs.keys()[0]
             return "Invalid value (%s) for argument %s" % (invalidargs[badarg], badarg)
@@ -152,7 +153,8 @@ class ParameterDefinitionList(object):
         @return:  namespace of parsed parameters
         """
         parmdefs = self.parms(self._caseSensitive)
-        remainingargs = {i[0]:i[1] for i in map(lambda i: (i[0] if self._caseSensitive else i[0].lower(),i[1]), kwargs.items())}
+        remainingargs = {i[0]: i[1] for i in
+                         map(lambda i: (i[0] if self._caseSensitive else i[0].lower(), i[1]), kwargs.items())}
         for name, parser in self.definitions():
             v = remainingargs.pop(name, None)
             if v is not None and not parser.isFixed():
@@ -170,6 +172,8 @@ class ParameterDefinitionList(object):
 
 
 """ Parameter definition - define a parameter for subsequent parsing """
+
+
 class ParameterDefinition(object):
     _computed = False
 
@@ -181,14 +185,14 @@ class ParameterDefinition(object):
 
 
     def _splitmaybe(self, val):
-        return val.split() if self._splitable and isinstance(val,str) and ' ' in val else val
+        return val.split() if self._splitable and isinstance(val, str) and ' ' in val else val
 
     def isValid(self, val):
         if self._computed:
             return True
         val = self._splitmaybe(val)
         if isinstance(val, list):
-            return reduce(lambda a,b: a and self._isValid(b), val, True)
+            return reduce(lambda a, b: a and self._isValid(b), val, True)
         return self._isValid(val)
 
     def isFixed(self):
@@ -209,11 +213,9 @@ class ParameterDefinition(object):
         return self.value(self._default)
 
 
-
-
 class booleanparam(ParameterDefinition):
-    true_values = ['y','yes','true', '1', 'on', 'yup']
-    false_values = ['n', 'no','false', '0', 'off', 'nope']
+    true_values = ['y', 'yes', 'true', '1', 'on', 'yup']
+    false_values = ['n', 'no', 'false', '0', 'off', 'nope']
 
     def __init__(self, default=None, fixed=False):
         ParameterDefinition.__init__(self, "boolean", default, splitable=False, fixed=fixed)
@@ -254,20 +256,19 @@ class intparam(ParameterDefinition):
         return int(val)
 
 
-
 class strparam(ParameterDefinition):
-    sql_escapes = [ (r'\\',r'\\\\'),
-                    (r"'",r"\'"),
-                    (r'"',r'\"'),
-                    (r'%',r'\%'),
-                    (r'_',r'\_'),
-                    (r'\x00',r'\\0'),
-                    (r'\x08',r'\\b'),
-                    (r'\n',r'\\n'),
-                    (r'\r',r'\\r'),
-                    (r'\t',r'\\t'),
-                    (r'\x1a',r'\\Z'),
-                    ]
+    sql_escapes = [(r'\\', r'\\\\'),
+                   (r"'", r"\'"),
+                   (r'"', r'\"'),
+                   (r'%', r'\%'),
+                   (r'_', r'\_'),
+                   (r'\x00', r'\\0'),
+                   (r'\x08', r'\\b'),
+                   (r'\n', r'\\n'),
+                   (r'\r', r'\\r'),
+                   (r'\t', r'\\t'),
+                   (r'\x1a', r'\\Z'),
+    ]
     _sanitize = True
 
     def __init__(self, default=None, fixed=False, splitable=False):
@@ -283,8 +284,7 @@ class strparam(ParameterDefinition):
     def _value(self, val):
         """ Return the string value, sanitized for SQL if sanitize is set to true
         """
-        return reduce(lambda s, e: re.sub(e[0],e[1],s,re.DOTALL+re.MULTILINE),self.sql_escapes,str(val))
-
+        return reduce(lambda s, e: re.sub(e[0], e[1], s, re.DOTALL + re.MULTILINE), self.sql_escapes, str(val))
 
 
 class sctidparam(ParameterDefinition):
@@ -304,6 +304,8 @@ class enumparam(ParameterDefinition):
         self._possvalues = [str(v) if casesensitive else str(v).lower() for v in possvalues]
         self._casesensitive = casesensitive
 
+    def possibleValues(self):
+        return self._possvalues
 
     def _isValid(self, val):
         _val = str(val) if self._casesensitive else str(val).lower()
@@ -315,6 +317,7 @@ class enumparam(ParameterDefinition):
 
 class computedparam(ParameterDefinition):
     _computed = True
+
     def __init__(self, formula):
         """ Formula is an expression that operates on a parameters list.  It is executed after all other parameters
             are parsed.
@@ -323,6 +326,7 @@ class computedparam(ParameterDefinition):
 
     def _computeValue(self, parms):
         return self._default(parms)
+
 
 class dateparam(ParameterDefinition):
     def __init__(self, val, default=None, fixed=False):

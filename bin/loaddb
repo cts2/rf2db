@@ -46,11 +46,11 @@ from rf2db.db.RF2FileCommon import config_parms
 
 load_sections = [
     ('concept', (RF2ConceptFile.ConceptDB,)),
-    ('description', (RF2DescriptionFile.DescriptionDB,RF2DescriptionTextFile.DescriptionTextDB)),
+    ('description', (RF2DescriptionFile.DescriptionDB, RF2DescriptionTextFile.DescriptionTextDB)),
     ('language', (RF2LanguageFile.LanguageDB,)),
-    ('relationship',(RF2RelationshipFile.StatedRelationshipDB, RF2RelationshipFile.RelationshipDB)),
+    ('relationship', (RF2RelationshipFile.StatedRelationshipDB, RF2RelationshipFile.RelationshipDB)),
     ('simplemap', (RF2SimpleMapFile.SimpleMapDB,)),
-    ('simplerefset',(RF2SimpleReferencesetFile.SimpleReferencesetDB,)),
+    ('simplerefset', (RF2SimpleReferencesetFile.SimpleReferencesetDB,)),
     ('moduleversions', (RF2ModuleVersionsFile.ModuleVersionsDB,)),
     ('transitive', (RF2TransitiveClosure.TransitiveClosureDB,)),
     ('canonical', (RF1CanonicalCore.CanonicalCoreDB,)),
@@ -71,12 +71,12 @@ def load_file(loader, opts, cfg):
     print("Loading " + rf2file._tname(ss))
     rf2file.loadTable(rf2file, ss, cfg)
 
+
 def main(args):
     cfg = ConfigManager(config_parms)
     parser = argparse.ArgumentParser(description="Set up RF2 DB parameters and optionally create a database")
     config_parms.add_to_parser(parser, current=cfg)
 
-    # loadrf2db.py <path to RF2 DB> <mysql URI> -u --update
     parser.add_argument('--files', nargs='+', help="RF2 files to load. If omitted, all are loaded",
                         choices=[e[0] for e in load_sections])
     parser.add_argument('-t', '--truncate', help="Truncate table(s) if present", action="store_true")

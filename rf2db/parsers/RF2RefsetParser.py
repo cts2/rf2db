@@ -45,7 +45,8 @@ from rf2db.utils.link import rf2link
 # ==================
 class RF2RefsetBase(rf2.RefsetBase, object):
     _baseFields  = ['id', 'effectiveTime', 'active', 'moduleId', 'refsetId', 'referencedComponentId']
-    _sctidFieldNames = ['moduleId', 'refsetId', 'referencedComponentId']
+    _sctidFieldNames = ['moduleId', 'refsetId',
+                        'referencedComponentId']  # be aware that referencedComponentId isn't always a concept id
     _rcididx     = len(_baseFields) - 1
     _fieldNames  = _baseFields
     _sctidFields = _sctidFieldNames
@@ -88,8 +89,10 @@ class RF2RefsetBase(rf2.RefsetBase, object):
     @classmethod
     def validateHeader(cls, headerfields):
         return cls._fieldNames == headerfields
-   
-@rf2link(rf2.LanguageReferenceSetEntry, rf2.LanguageReferenceSetEntry_, ['acceptabilityId'], ['acceptabilityId'])
+
+
+@rf2link(rf2.LanguageReferenceSetEntry, rf2.LanguageReferenceSetEntry_, ['acceptabilityId', 'conceptId'],
+         ['acceptabilityId', 'conceptId'])
 class RF2LanguageRefsetEntry(rf2.LanguageReferenceSetEntry_, RF2RefsetBase):
 
     @property

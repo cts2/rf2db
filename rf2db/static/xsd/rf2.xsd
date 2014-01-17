@@ -711,6 +711,8 @@
             <xs:extension base="RefsetBase">
                 <xs:sequence>
                     <xs:element name="acceptabilityId" type="VSAcceptability"/>
+                    <!-- NOTE: This is NOT in the original file.  It is computed in the implementation -->
+                    <xs:element name="conceptId" type="SCTID" minOccurs="0"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>

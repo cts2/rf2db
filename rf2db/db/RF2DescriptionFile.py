@@ -68,12 +68,16 @@ class DescriptionDB(RF2FileWrapper):
     @lfu_cache(maxsize=100)
     def getConceptDescription(self, conceptId, parmlist):
         db = self.connect()
-        return [RF2Description(d) for d in db.query_p(self._tname(parmlist.ss), parmlist, filter="conceptId = %s" % conceptId)]
+        rval = db.query_p(self._tname(parmlist.ss), parmlist, filter="conceptId = %s" % conceptId)
+        return [RF2Description(d) for d in rval] if parmlist.maxtoreturn else list(rval)
 
     def getConceptIdForDescription(self, descId, parmlist):
         rlist = self.getDescriptionById(descId, parmlist)
         return str(rlist.conceptId) if rlist else None
-    
+
+    def getDescriptionById_p(self, descId):
+        return self.getDescriptionById(descId, description_parms.parse(**{}))
+
     @lfu_cache(maxsize=20)
     def getDescriptionById(self, descId, parmlist):
         db = self.connect()

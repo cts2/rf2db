@@ -203,7 +203,7 @@ class RF2DBConnection(object):
         if active:
             query += " AND active = 1 "
         if moduleids:
-            query += " AND " + ' AND '.join(['moduleid = %s' % m for m in listify(moduleids)]) + ' '
+            query += " AND (" + ' OR '.join(['moduleid = %s' % m for m in listify(moduleids)]) + ') '
         if sort:
             query += " ORDER BY tbl.%s ASC " % sort
         if maxtoreturn:
@@ -218,7 +218,7 @@ class RF2DBConnection(object):
 
 
     def query(self, table, filter_="", sort=None, active=True, ss=True, start=0,
-              maxtoreturn=0, refdate=None, moduleids=None):
+              maxtoreturn=100, refdate=None, moduleids=None):
         """ Query an RF2 table taking the historical information into account.
 
         @param table: table to query

@@ -126,6 +126,16 @@ class TransitiveClosureDB(RF2FileWrapper):
         db.execute("""CREATE INDEX %(tname)s_idx3 ON %(tname)s(destinationId)""" % tbl)
         db.commit()
 
+
+    def are_related(self, parent, child):
+        if parent == child:
+            return True
+        db = RF2DBConnection()
+        tname = self._tname(True)
+        return bool(list(db.executeAndReturn(
+            "SELECT count(*) FROM %(tname)s WHERE sourceId = %(parent)s AND destinationId=%(child)s" % locals()))[0][0])
+
+
     
 
             
