@@ -33,14 +33,14 @@
 
 import os
 import rf2db.db.RF2DBConnection
-from rf2db.parameterparser.ParmParser import ParameterDefinitionList, booleanparam, sctidparam
+from rf2db.parameterparser.ParmParser import booleanparam, sctidparam
 from config.ConfigArgs import ConfigArg, ConfigArgs
 
 config_parms = ConfigArgs( 'rf2',
                            [ConfigArg('fileloc', abbrev='f', help='Location of primary RF2 Distribution'),
                             ConfigArg('addloc', abbrev='a',help='Add the location of a secondary RF2 Distribution'),
-                            ConfigArg('canonical', abbrev='c', help='Add the RF1 Canonical ')
-                            ])
+                            ConfigArg('release', abbrev='r', help='Current RF2 Revision (yyyymmdd)')
+                           ])
 
 # TODO: initialize the PYTHONPATH variable - use WebServer as an example
 # TODO: load script for SNOMED_STY file

@@ -159,8 +159,8 @@
                 </xs:annotation>
             </xs:enumeration>
             <!-- Qualifying relationships are not "semantic" -->
-            <xs:enumeration value="900000000000409009">
-                <xs:annotation>
+            <xs:enumeration value="900000000000225001">
+            <xs:annotation>
                     <xs:documentation>qualifying relationship</xs:documentation>
                 </xs:annotation>
             </xs:enumeration>

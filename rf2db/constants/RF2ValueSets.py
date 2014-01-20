@@ -104,8 +104,8 @@ moduleToExtensionMap = {
 
 # relationship characteristic type
 characteristicType      = sctid(900000000000449001)
-definingRelationship    = sctid(900000000000412007)   # (superclass - not actually used)
+definingRelationship = sctid(900000000000006009)   # (superclass - not actually used)
 inferredRelationship    = sctid(900000000000011006)   # in relationships file
 statedRelationship      = sctid(900000000000010007)   # in stated relationships file
-additionalRelationship  = sctid(900000000000412007)   # (No examples)
-qualifyingRelationship  = sctid(900000000000409009)   # in relationships file
+additionalRelationship = sctid(900000000000227009)   # (No examples)
+qualifyingRelationship = sctid(900000000000225001)   # in relationships file

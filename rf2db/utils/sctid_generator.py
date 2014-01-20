@@ -26,43 +26,42 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-import os
+from rf2db.utils.check_digit import generate_verhoeff
+from rf2db.utils.sctid import sctid
+
+MAYO_Namespace = 1000134
+CIMI_Namespace = 1000160
 
 
-from rf2db.db.RF2FileCommon import RF2FileWrapper
+class sctid_generator(object):
+    class partition(object):
+        def __init__(self, id):
+            self._id = id
+
+    CONCEPT = partition(00)
+    DESCRIPTION = partition(01)
+    RELATIONSHIP = partition(02)
 
 
-class CanonicalCoreDB(RF2FileWrapper):
+    def __init__(self, namespace, partition, start):
+        """
+        @param namespace: SNOMED Namespace identifier
+        @param partition: Partition Identifier
+        @param start:
+        @return:
+        """
+        assert isinstance(partition, sctid_generator.partition)
+        self._namespace = namespace
+        self._partition = partition._id
+        self._start = start
 
-    directory = os.path.join('OtherResources', 'Canonical Table')
-    prefixes = ['res1_Canonical_Core_']
-    table = 'canonical_core'
-    isRF1File = True
+    def __iter__(self):
+        return self
 
-    createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
-      conceptid1 bigint(20) NOT NULL,
-      relationshiptype bigint(20) NOT NULL,
-      conceptid2 bigint(20) NOT NULL,
-      relationshipgroup int(11) NOT NULL,
-      KEY conceptid1 (conceptid1) USING HASH);"""
+    def __next__(self):
+        return self.next()
 
-    def __init__(self, *args, **kwargs):
-        RF2FileWrapper.__init__(self, *args, **kwargs)
-
-    def loadTable(self, rf2file, ss, cfg):
-        from rf2db.db.RF2RelationshipFile import RelationshipDB
-        from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB
-        rdb = RelationshipDB()
-        srdb = StatedRelationshipDB()
-        if not rdb.hascontent(ss) or not srdb.hascontent(ss):
-            print("Relationship databases must be loaded before loading %s" % self._tname(ss))
-            return
-
-
-        super(CanonicalCoreDB, self).loadTable(rf2file,ss,cfg)
-
-        print("Updating Stated Relationship File")
-        srdb.updateFromCanonical(self._tname(ss), ss, cfg)
-
-        print("Updating Relationship File")
-        rdb.updateFromCanonical(self._tname(ss), ss, cfg)
+    def next(self):
+        rval = generate_verhoeff(self._start * 10 ** 10 + self._namespace * 10 ** 3 + self._partition * 10)
+        self._start += 1
+        return sctid(rval)

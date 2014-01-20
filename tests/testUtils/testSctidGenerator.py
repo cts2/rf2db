@@ -21,48 +21,25 @@
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
 # IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
 # INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
 # DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-import os
+
+import unittest
+from rf2db.utils.sctid_generator import *
 
 
-from rf2db.db.RF2FileCommon import RF2FileWrapper
+class GeneratorTestCase(unittest.TestCase):
+    def test_gen(self):
+        generator = sctid_generator(MAYO_Namespace, sctid_generator.RELATIONSHIP, 1000)
+        self.assertEqual(100010001340204, generator.next())
+        self.assertEqual([(1, 100110001340200), (2, 100210001340207), (3, 100310001340202),
+                          (4, 100410001340208), (5, 100510001340209), (6, 100610001340205),
+                          (7, 100710001340201), (8, 100810001340206), (9, 100910001340203)],
+                         zip(range(1, 10), generator))
 
 
-class CanonicalCoreDB(RF2FileWrapper):
-
-    directory = os.path.join('OtherResources', 'Canonical Table')
-    prefixes = ['res1_Canonical_Core_']
-    table = 'canonical_core'
-    isRF1File = True
-
-    createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
-      conceptid1 bigint(20) NOT NULL,
-      relationshiptype bigint(20) NOT NULL,
-      conceptid2 bigint(20) NOT NULL,
-      relationshipgroup int(11) NOT NULL,
-      KEY conceptid1 (conceptid1) USING HASH);"""
-
-    def __init__(self, *args, **kwargs):
-        RF2FileWrapper.__init__(self, *args, **kwargs)
-
-    def loadTable(self, rf2file, ss, cfg):
-        from rf2db.db.RF2RelationshipFile import RelationshipDB
-        from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB
-        rdb = RelationshipDB()
-        srdb = StatedRelationshipDB()
-        if not rdb.hascontent(ss) or not srdb.hascontent(ss):
-            print("Relationship databases must be loaded before loading %s" % self._tname(ss))
-            return
-
-
-        super(CanonicalCoreDB, self).loadTable(rf2file,ss,cfg)
-
-        print("Updating Stated Relationship File")
-        srdb.updateFromCanonical(self._tname(ss), ss, cfg)
-
-        print("Updating Relationship File")
-        rdb.updateFromCanonical(self._tname(ss), ss, cfg)
+if __name__ == '__main__':
+    unittest.main()

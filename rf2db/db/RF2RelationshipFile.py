@@ -33,24 +33,38 @@
 from rf2db.parsers.RF2BaseParser import RF2Relationship
 from rf2db.parsers.RF2Iterator import iter_parms
 from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms
-from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB, canon_filtr, rel_id
+from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB, rel_id
+from rf2db.db.RF1CanonicalCore import CanonicalCoreDB
 from rf2db.parsers.RF2Iterator import RF2RelationshipList
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, booleanparam
 from rf2db.utils.lfu_cache import lfu_cache
+from rf2db.utils.sctid_generator import *
+from rf2db.constants.RF2ValueSets import additionalRelationship, some, inferredRelationship
 
 """ Parameters for relationship file query
     - C{B{stated}}: stated relationships are included in queries
     - C{B{inferred}}: inferred relationships are included in queries
+    - C{B{additional}}: additional relationships are included in queries
     - C{B{canonical}}: C{True} means canonical relationships only, C{False} means any
 """
 rel_parms = ParameterDefinitionList(global_rf2_parms)
 rel_parms.stated = booleanparam(default=True)
 rel_parms.inferred = booleanparam(default=True)
+rel_parms.additional = booleanparam(default=True)
 rel_parms.canonical = booleanparam(default=False)
 
 """ Parameters for relationship list query """
 rellist_parms = ParameterDefinitionList(rel_parms)
 rellist_parms.add(iter_parms)
+
+
+def build_filtr(filtr, parmlist):
+    assert parmlist.inferred or parmlist.addl, "Shouldn't be building a filter if you are returning nothing"
+    if parmlist.canonical: filtr += ' AND isCanonical=1 '
+    if parmlist.inferred and parmlist.additional:
+        return filtr
+    return (
+    filtr + ' AND characteristicTypeId=%s' % (additionalRelationship if parmlist.additional else inferredRelationship))
 
 
 class RelationshipDB(RF2FileWrapper):
@@ -84,7 +98,7 @@ class RelationshipDB(RF2FileWrapper):
         if parmlist.stated and self._srcb._existsRecs(filtr, parmlist.active, parmlist.canonical, parmlist.ss):
             return True
         db = self.connect()
-        return bool([r for r in db.query(self._tname(parmlist.ss), canon_filtr(filtr, parmlist.canonical),
+        return bool([r for r in db.query(self._tname(parmlist.ss), build_filtr(filtr, parmlist),
                                          active=parmlist.active, ss=parmlist.ss)])
 
     def loadTable(self, rf2file, ss, cfg):
@@ -92,12 +106,56 @@ class RelationshipDB(RF2FileWrapper):
         warnings.filterwarnings("ignore", ".*doesn't contain data for all columns.*")
         super(RelationshipDB,self).loadTable(rf2file, ss, cfg)
 
-    def updateFromCanonical(self, canon_fname, ss):
+    class _BlockWriter(object):
+        addrow = "(%(id)s, %(effectiveTime)s, %(active)s, %(moduleId)s, %(sourceId)s, \
+                             %(destinationId)s, %(relationshipGroup)s, %(typeId)s, %(characteristicTypeId)s, \
+                             %(modifierId)s, %(isCanonical)s)"
+        blocksize = 1000
+        insert_stmt = "INSERT INTO %s VALUES "
+
+        def __init__(self, tname, release):
+            self.idGenerator = sctid_generator(MAYO_Namespace, sctid_generator.RELATIONSHIP, 0)
+            self.moduleId = self.idGenerator.next()
+            self.effectiveTime = release
+            self._stmt = self.insert_stmt % tname
+            self.active = 1
+            self.characteristicTypeId = additionalRelationship
+            self.modifierId = some
+            self.isCanonical = 1
+            self.rowstoadd = []
+            self.rdb = RelationshipDB()
+
+        def addrec(self, (sourceId, typeId, destinationId, relationshipGroup)):
+            id = self.idGenerator.next()
+            self.rowstoadd += [self.addrow % dict(self.__dict__, **vars())]
+            if len(self.rowstoadd) >= self.blocksize:
+                self.flush()
+
+        def flush(self):
+            if len(self.rowstoadd):
+                db = self.rdb.connect()
+                db.execute(self._stmt + ','.join(self.rowstoadd))
+                db.commit()
+            self.rowstoadd = []
+
+    def updateFromCanonical(self, canon_fname, ss, cfg):
         db = self.connect()
+
+        # Step 1: Add the canonical tag to everything that exists
         db.execute("""UPDATE %s s, %s c SET isCanonical=1
             WHERE conceptid1 = sourceId AND conceptid2 = destinationId AND relationshiptype = typeId
-            AND s.relationshipgroup=c.relationshipgroup""" % (self._tname(ss), canon_fname))
+            AND s.relationshipgroup=c.relationshipgroup""" % (self._tname(ss), CanonicalCoreDB()._tname(ss)))
         db.commit()
+
+        # Step 2: Add additional relationship entries for new assertions in the canonical table
+        bw = self._BlockWriter(self._tname(ss), cfg.release)
+        query = """SELECT conceptid1, relationshiptype, conceptid2, c.relationshipgroup FROM %s c
+             LEFT JOIN %s r ON (conceptid1=sourceid AND conceptid2=destinationid AND
+             relationshiptype=typeid AND c.relationshipgroup=r.relationshipgroup) WHERE sourceid IS NULL LIMIT 2000""" % (
+        canon_fname, self._tname(ss))
+        for e in db.executeAndReturn(query):
+            bw.addrec(e)
+        bw.flush()
 
     def existsSourceRecs(self, sourceId, parmlist):
         return self._existsRecs('sourceId = %s ' % sourceId, parmlist)
@@ -112,12 +170,20 @@ class RelationshipDB(RF2FileWrapper):
     @lfu_cache(maxsize=100)
     def _getRecs(self, filtr, parmlist, key):
         """ Return all relationship records matching the given filter. Inferred is ignored in the stated relationship file
+        Note that we have 4 controlling parameters:
+            - stated -- if true, we return stated relationships
+            - inferred -- if true we return inferred relationships
+            - additional -- if true we return additional relationships (are in the relationships_ss file)
+            - canonical -- if true we return I{only} canonical relationships meeting the above criteria
+
+
+
         """
         if not parmlist.maxtoreturn:    # we're getting counts
             infcount = int(list(self.connect().query_p(self._tname(parmlist.ss),
                                            parmlist,
-                                           filter=canon_filtr(filtr, parmlist.canonical)))[0]) \
-            if parmlist.inferred else 0
+                                           filter=build_filtr(filtr, parmlist)))[0]) \
+                if parmlist.inferred else 0
             statedcount = self._srdb._getRecs(filtr, parmlist) if parmlist.stated else 0
             # TODO: the count is not accurate unless we subtract out both inferred and stated...
             return [infcount + statedcount]
@@ -127,7 +193,7 @@ class RelationshipDB(RF2FileWrapper):
                                    map(lambda r: RF2Relationship(r),
                                        self.connect().query_p(self._tname(parmlist.ss),
                                                               parmlist,
-                                                              filter=canon_filtr(filtr, parmlist.canonical))))} \
+                                                              filter=build_filtr(filtr, parmlist))))} \
             if parmlist.inferred else {}
         if parmlist.stated:
             for r in self._srdb._getRecs(filtr, parmlist):
@@ -162,8 +228,7 @@ class RelationshipDB(RF2FileWrapper):
             db = self.connect()
             return sources.union(map(lambda r: RF2Relationship(r).sourceId,
                 db.query(self._tname(parmlist.ss),
-                         canon_filtr("destinationId = '%s' " % targetId,
-                                     parmlist.canonical),
+                         build_filtr("destinationId = '%s' " % targetId, parmlist),
                          active=parmlist.active, ss=parmlist.ss)))
 
     @lfu_cache(maxsize=100)

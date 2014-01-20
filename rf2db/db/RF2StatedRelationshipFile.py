@@ -78,7 +78,7 @@ class StatedRelationshipDB(RF2FileWrapper):
         warnings.filterwarnings("ignore", ".*doesn't contain data for all columns.*")
         super(StatedRelationshipDB,self).loadTable(rf2file, ss, cfg)
 
-    def updateFromCanonical(self, canon_fname, ss):
+    def updateFromCanonical(self, canon_fname, ss, _):
         db = self.connect()
         db.execute("""UPDATE %s s, %s c SET isCanonical=1
             WHERE conceptid1 = sourceId AND conceptid2 = destinationId AND relationshiptype = typeId
@@ -124,8 +124,8 @@ class StatedRelationshipDB(RF2FileWrapper):
     def getSourcesForTarget(self, targetId, parmlist):
         """ Return a list of sourceId's connected with the given targetId.  Inferred is ignored"""
         db = self.connect()
-        return set(map(lambda r:RF2Relationship(r).sourceId,  db.query_p(self._tname(ss),
-                                                                   parmlist,
+        return set(map(lambda r: RF2Relationship(r).sourceId, db.query_p(self._tname(parmlist.ss),
+                                                                         parmlist,
                                                                    filter=canon_filtr("destinationId = '%s' " % targetId, parmlist.canonical))))
 
     def getRelationship(self, relId, parmlist):
