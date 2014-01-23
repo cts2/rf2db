@@ -62,6 +62,6 @@ class CheckDigitSnomedTestCase(unittest.TestCase):
         from rf2db.db.RF2DBConnection import RF2DBConnection
 
         db = RF2DBConnection()
-        db.execute('SELECT id FROM concept_ss')
+        db.execute('SELECT id FROM concept_ss limit 1000')
         for row in db:
             self.assertEqual(long(sctid(row[0])), row[0])

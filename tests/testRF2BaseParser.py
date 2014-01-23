@@ -28,13 +28,12 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+import unittest
+
 from rf2db.parsers.RF2BaseParser import *
 from rf2db.parsers.RF2RefsetParser import *
 from rf2db.utils import xmlutils
 from rf2db.schema import rf2
-
-           
-import unittest
 
 
 class RF2ConceptTestCase(unittest.TestCase):
@@ -128,8 +127,8 @@ class RF2ReprTestCase(unittest.TestCase):
         conc = '10027005\t20020131\t1\t900000000000207008\t900000000000074008'
         desc = '517048016\t20100131\t1\t900000000000380005\t10027005\ten\t900000000000003001\tPatchy (qualifier value)\t900000000000022005'
         rel  = '452025\t20100131\t1\t900000000000380005\t10027005\t106234000\t0\t116680003\t900000000000006009\t900000000000451002\t0'
-        lang = '0000097d-42b2-500d-88bb-46066baa9bad\t20020131\t1\t900000000000207008\t900000000000508004\t132462014\t900000000000548007'
-	    
+        lang = '0000097d-42b2-500d-88bb-46066baa9bad\t20020131\t1\t900000000000207008\t900000000000508004\t132462014\t900000000000548007\t79838002'
+
         self.assertEqual(repr(RF2Concept(conc)),conc)
         self.assertEqual(repr(RF2Description(desc)),desc)
         self.assertEqual(repr(RF2Relationship(rel)),rel)

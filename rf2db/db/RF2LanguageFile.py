@@ -44,27 +44,28 @@ from rf2db.constants.RF2ValueSets import us_english, gb_english, spanish, prefer
 #       it can't actually depend on the RF2RefsetWrapper
 
 
-""" Parameters for language file access """
+# Parameters for language file access
 language_parms = global_rf2_parms
+
 language_list_parms = ParameterDefinitionList(global_rf2_parms)
 language_list_parms.add(iter_parms)
-language_list_parms.language=enumparam(['en'])
+language_list_parms.language = enumparam(['en'])
 
 """ Map from short form of language to refset id """
-language_map = {'en':us_english,
-                'en-us':us_english,
-                'en-gb':gb_english,
-                'es':spanish}
+language_map = {'en': us_english,
+                'en-us': us_english,
+                'en-gb': gb_english,
+                'es': spanish}
 
 """ Default parameters to use of the caller doesn't know them """
-default_parmlist = language_list_parms.parse(**{'active':True, 'language':'en', 'ss':True})
+default_parmlist = language_list_parms.parse(**{'active': True, 'language': 'en', 'ss': True})
 
 
 class LanguageDB(RF2RefsetWrapper):
-    directory   = 'Refset/Language'
-    prefixes    = ['der2_cRefset_Language']
-    table       = 'language'
-    
+    directory = 'Refset/Language'
+    prefixes = ['der2_cRefset_Language']
+    table = 'language'
+
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
       id char(36) COLLATE utf8_bin NOT NULL,
       effectiveTime int(11) NOT NULL,
@@ -84,43 +85,48 @@ class LanguageDB(RF2RefsetWrapper):
         SET l.conceptid = d.conceptid"""
 
     descdb = DescriptionDB()
-    
+
     def __init__(self, *args, **kwargs):
         RF2RefsetWrapper.__init__(self, *args, **kwargs)
 
-    """ We have to override the refset wrapper because the call would be recursive otherwise """
+    # We have to override the refset wrapper because the call would be recursive otherwise
+
     def _build_knowns(self, language, ss):
         self._known_refsets = self.valid_refsets(self._tname(ss))
-        self._refset_names = {k:v[0] for k,v in self.preferred_term_for_concepts(self._known_refsets.items(),
-                                                                                 language=language)}
-        for k,v in list(language_map.items()):
+        self._refset_names = {k: v[0] for k, v in self.preferred_term_for_concepts(self._known_refsets.items(),
+                                                                                   language=language)}
+        for k, v in list(language_map.items()):
             if v not in self._known_refsets:
                 language_map.pop(k)
 
     def loadTable(self, rf2file, ss, cfg):
         from rf2db.db.RF2DescriptionFile import DescriptionDB
+
         if not DescriptionDB().hascontent(ss):
             print("Description database must be loaded before loading %s" % self._tname(ss))
             return
 
         import warnings
+
         warnings.filterwarnings("ignore", ".*doesn't contain data for all columns.*")
-        super(LanguageDB,self).loadTable(rf2file,ss,cfg)
+        super(LanguageDB, self).loadTable(rf2file, ss, cfg)
         db = self.connect()
         print("\t...adding concept identifiers")
-        db.execute(self.updateSTMT % {'table':self._tname(ss)})
+        db.execute(self.updateSTMT % {'table': self._tname(ss)})
         db.commit()
 
     @staticmethod
     def _languageFilter(fltr, parmlist):
-        return fltr + " AND refsetId=%s " % language_map[parmlist.language] if parmlist.language in language_map else ''
+        return fltr + " AND refsetId=%s " % language_map[
+            parmlist.language] if parmlist.language in language_map else fltr
 
     @lfu_cache(maxsize=100)
     def get_entries_for_description(self, descId, parmlist):
         db = self.connect()
         return [RF2LanguageRefsetEntry(d) for d in db.query_p(self._tname(parmlist.ss),
                                                               parmlist,
-                                                              self._languageFilter("referencedComponentId = %s" % descId, parmlist)
+                                                              self._languageFilter(
+                                                                  "referencedComponentId = %s" % descId, parmlist)
         )]
 
 
@@ -129,7 +135,8 @@ class LanguageDB(RF2RefsetWrapper):
         db = self.connect()
         return [RF2LanguageRefsetEntry(d) for d in db.query_p(self._tname(parmlist.ss),
                                                               parmlist,
-                                                              self._languageFilter("conceptId = %s" % conceptId, parmlist)
+                                                              self._languageFilter("conceptId = %s" % conceptId,
+                                                                                   parmlist)
         )]
 
     # This can't be cached because it returns a list...
@@ -151,7 +158,7 @@ class LanguageDB(RF2RefsetWrapper):
                "AND l.acceptabilityId = %s AND d.typeid = %s" % \
                (self._tname(parmlist.ss),
                 self.descdb._tname(parmlist.ss),
-               ', '.join(str(c) for c in conceptIds),
+                ', '.join(str(c) for c in conceptIds),
                 preferred,
                 synonym)
         stmt += ' AND l.active=1 AND d.active=1' if parmlist.active else 'True '
@@ -159,12 +166,12 @@ class LanguageDB(RF2RefsetWrapper):
             stmt += "AND moduleId in (" + ', '.join(str(m) for m in parmlist.moduleid)
         stmt += self._languageFilter('', parmlist)
         db.execute(stmt)
-        return {e[0]:(e[2],e[1]) for e in map(lambda r: r.split('\t',2), db.ResultsGenerator(db))}
+        return {e[0]: (e[2], e[1]) for e in map(lambda r: r.split('\t', 2), db.ResultsGenerator(db))}
 
 
     @staticmethod
     def as_reference_set(llist, parmlist):
-        thelist=RF2LanguageReferenceSet(parmlist)
+        thelist = RF2LanguageReferenceSet(parmlist)
         if not parmlist.maxtoreturn:
             return thelist.finish(True, total=list(llist)[0])
         for l in llist:

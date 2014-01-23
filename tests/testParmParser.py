@@ -191,7 +191,7 @@ class ParmParserTestCase(unittest.TestCase):
         args = arglist.parse(p1='900000000000207008')
         self.assertEqual(args.p1,900000000000207008)
         args = arglist.parse(p1='74400008')
-        print args.p1
+        self.assertIsNone(args.p1, "Should not accept an invalid module identifier")
 
     def test_sql_escape(self):
         arglist = ParmParser.ParameterDefinitionList()

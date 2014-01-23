@@ -41,16 +41,19 @@ from rf2db.utils.lfu_cache import lfu_cache
 from rf2db.utils.sctid_generator import *
 from rf2db.constants.RF2ValueSets import additionalRelationship, some, inferredRelationship
 
-""" Parameters for relationship file query
-    - C{B{stated}}: stated relationships are included in queries
-    - C{B{inferred}}: inferred relationships are included in queries
-    - C{B{additional}}: additional relationships are included in queries
-    - C{B{canonical}}: C{True} means canonical relationships only, C{False} means any
-"""
+# Parameters for relationship file query
 rel_parms = ParameterDefinitionList(global_rf2_parms)
+
+# Stated relationships are included in queries
 rel_parms.stated = booleanparam(default=True)
+
+# Inferred relationships are included in queries
 rel_parms.inferred = booleanparam(default=True)
+
+# additional relationships are included in queries
 rel_parms.additional = booleanparam(default=True)
+
+# C{True} means canonical relationships only, C{False} means any
 rel_parms.canonical = booleanparam(default=False)
 
 """ Parameters for relationship list query """
@@ -95,7 +98,7 @@ class RelationshipDB(RF2FileWrapper):
 
     @lfu_cache(maxsize=100)
     def _existsRecs(self, filtr, parmlist):
-        if parmlist.stated and self._srcb._existsRecs(filtr, parmlist.active, parmlist.canonical, parmlist.ss):
+        if parmlist.stated and self._srdb._existsRecs(filtr, parmlist):
             return True
         db = self.connect()
         return bool([r for r in db.query(self._tname(parmlist.ss), build_filtr(filtr, parmlist),
@@ -141,18 +144,20 @@ class RelationshipDB(RF2FileWrapper):
     def updateFromCanonical(self, canon_fname, ss, cfg):
         db = self.connect()
 
-        # Step 1: Add the canonical tag to everything that exists
+        # Step 1: Add the canonical tag to everything that exists.  Note that the canonical table can re-activate an
+        #         inactive entry, so we need to select it out...
         db.execute("""UPDATE %s s, %s c SET isCanonical=1
             WHERE conceptid1 = sourceId AND conceptid2 = destinationId AND relationshiptype = typeId
-            AND s.relationshipgroup=c.relationshipgroup""" % (self._tname(ss), CanonicalCoreDB()._tname(ss)))
+            AND s.relationshipgroup=c.relationshipgroup AND active=1""" % (
+            self._tname(ss), CanonicalCoreDB()._tname(ss)))
         db.commit()
 
         # Step 2: Add additional relationship entries for new assertions in the canonical table
         bw = self._BlockWriter(self._tname(ss), cfg.release)
         query = """SELECT conceptid1, relationshiptype, conceptid2, c.relationshipgroup FROM %s c
              LEFT JOIN %s r ON (conceptid1=sourceid AND conceptid2=destinationid AND
-             relationshiptype=typeid AND c.relationshipgroup=r.relationshipgroup) WHERE sourceid IS NULL LIMIT 2000""" % (
-        canon_fname, self._tname(ss))
+             relationshiptype=typeid AND c.relationshipgroup=r.relationshipgroup) WHERE sourceid IS NULL OR active=0""" % (
+            canon_fname, self._tname(ss))
         for e in db.executeAndReturn(query):
             bw.addrec(e)
         bw.flush()
@@ -220,10 +225,7 @@ class RelationshipDB(RF2FileWrapper):
     def getSourcesForTarget(self, targetId, parmlist):
         """ Return a list of sourceId's connected with the given targetId."""
 
-        sources = self._srdb.getSourcesForTarget(targetId,
-                                                 active=parmlist.active,
-                                                 canonical=parmlist.canonical,
-                                                 ss=parmlist.ss) if parmlist.stated else set()
+        sources = self._srdb.getSourcesForTarget(targetId, parmlist) if parmlist.stated else set()
         if parmlist.inferred:
             db = self.connect()
             return sources.union(map(lambda r: RF2Relationship(r).sourceId,
