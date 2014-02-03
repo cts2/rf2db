@@ -28,11 +28,13 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-from cherrypy import request, HTTPRedirect
-from urlparse import urlsplit,parse_qs, urlunsplit
+from urlparse import urlsplit, parse_qs, urlunsplit
 from urllib import urlencode
 
+from cherrypy import request, HTTPRedirect
+
 from rf2db.utils import xmlutils
+
 
 dropParms = ['bypass']
 
@@ -67,7 +69,8 @@ def forxml(uri):
 
 def relative_uri():
     """ Return the relative URI that invoked this call """
-    return request.path_info[len(base_uri()):]
+    return request.path_info
+
 
 def strip_control_params(url):
     """ Remove any control parameters from a URL that should not be forwarded.
@@ -81,8 +84,9 @@ def strip_control_params(url):
     splitlist[3] = urlencode(urlparms, True)
     if '@' in splitlist[1]: splitlist[1] = splitlist[1].split('@')[1]
     return urlunsplit(splitlist)
-      
-def append_params(baseURL,parms):
+
+
+def append_params(base_uri, parms):
     """ Append a parameter to the base URI 
     @param base_uri: The uri to append the parameters to
     @type base_uri: c{URI}
@@ -90,7 +94,7 @@ def append_params(baseURL,parms):
     @param parms: the list of parameters to append
     @type parms: c{dict}
     """
-    spliturl = urlsplit(baseURL)
+    spliturl = urlsplit(base_uri)
     urlparms = parse_qs(spliturl.query,True)
     for (k,v) in parms.items():
         urlparms[k] = v
@@ -98,7 +102,8 @@ def append_params(baseURL,parms):
     splitlist[3] = urlencode(urlparms, True)
     return urlunsplit(splitlist)
 
-def remove_params(baseURL,parms):
+
+def remove_params(base_uri, parms):
     """ Remove parameter or parameters from the base URI
      @param base_uri: The uri to append the parameters to
     @type base_uri: c{URI}
@@ -108,7 +113,7 @@ def remove_params(baseURL,parms):
     """
     if not isinstance(parms, (list, tuple)):
         parms = [parms]
-    spliturl = urlsplit(baseURL)
+    spliturl = urlsplit(base_uri)
     urlparms = parse_qs(spliturl.query,True)
     for k in parms:
         urlparms.pop(k, None)
