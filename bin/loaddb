@@ -75,8 +75,7 @@ def load_file(loader, opts, cfg):
 def main(args):
     cfg = ConfigManager(config_parms)
     parser = argparse.ArgumentParser(description="Set up RF2 DB parameters and optionally create a database")
-    config_parms.add_to_parser(parser, current=cfg)
-
+    parser.add_argument('configfile', help="Configuration file location")
     parser.add_argument('--files', nargs='+', help="RF2 files to load. If omitted, all are loaded",
                         choices=[e[0] for e in load_sections])
     parser.add_argument('-t', '--truncate', help="Truncate table(s) if present", action="store_true")
@@ -85,10 +84,11 @@ def main(args):
 
     parser.add_argument('--show', '-s', dest='show', action="store_true", help="show current configuration")
     parser.add_argument('--load', '-l', action="store_true", help="load the database")
-
     opts = parser.parse_args(args)
+    cfg.set_configfile(opts.configfile)
+    config_parms.add_to_parser(parser, current=cfg)
     cfg.update(vars(opts))
-    if cfg.write():
+    if cfg.flush():
         print("Configuration file updated")
 
 

@@ -27,10 +27,16 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import unittest, argparse, os
+import unittest
+import argparse
+import os
+
 from config.ConfigArgs import ConfigArgs, ConfigArg
 from config.ConfigManager import ConfigManager
 
+
+# TODO: add a way to clear out the configuration manager completely so that all of the test cases can run without
+#       interfering with the runtime settings
 config_parms = ConfigArgs( 'dbparms',
                            [ConfigArg('host', help='MySQL DB Host', default='localhost'),
                             ConfigArg('port', help='MySQL DB Port'),
@@ -41,31 +47,67 @@ config_parms = ConfigArgs( 'dbparms',
                             ConfigArg('trace', help='Trace SQL Statements')
                             ])
 
+config_parms_2 = ConfigArgs('otherstuff',
+                            [ConfigArg('db', help="AnotherDB", default='somewhere')
+                            ])
 
-defaultConfigFile = os.path.join(os.path.dirname(__file__),'testdata/settings.cfg')
+test_config_file = os.path.join(os.path.dirname(__file__), 'testdata/settings.cfg')
+
+
 class ConfigManagerTestCase(unittest.TestCase):
     def setUp(self):
-        if os.path.isfile(defaultConfigFile):
-            os.remove(defaultConfigFile)
+        if os.path.isfile(test_config_file):
+            os.remove(test_config_file)
 
     def test_load_args(self):
-        cfg = ConfigManager(config_parms,cfgfile=defaultConfigFile)
+        cfg = ConfigManager(config_parms)
+        cfg.set_configfile(test_config_file)
         self.assertEqual(str(cfg), """[dbparms]
 host = localhost
 db = rf2
 charset = utf8""")
 
+
+    def test_load_multi_args(self):
+        cfg1 = ConfigManager(config_parms)
+        cfg2 = ConfigManager(config_parms_2)
+        cfg1.set_configfile(test_config_file)
+        self.assertEqual(str(cfg1), """[dbparms]
+host = localhost
+db = rf2
+charset = utf8""")
+        self.assertEqual(str(cfg2), """[otherstuff]
+db = somewhere""")
+
+    def test_load_multi_args2(self):
+        cfg1 = ConfigManager(config_parms)
+        cfg1.set_configfile(test_config_file)
+        cfg2 = ConfigManager(config_parms_2)
+        self.assertEqual(str(cfg1), """[dbparms]
+host = localhost
+db = rf2
+charset = utf8""")
+        self.assertEqual(str(cfg2), """[otherstuff]
+db = somewhere""")
+
+    def test_double_set(self):
+        cfg = ConfigManager(config_parms)
+        cfg.set_configfile(test_config_file)
+        cfg.set_configfile(test_config_file)
+        self.assertRaises(AssertionError, cfg.set_configfile, test_config_file + 'z')
+
     def test_set_parm(self):
-        cfg = ConfigManager(config_parms,cfgfile=defaultConfigFile)
+        cfg = ConfigManager(config_parms)
         parser = argparse.ArgumentParser()
         config_parms.add_to_parser(parser, current=cfg)
         parser.add_argument('-show', dest='show', action="store_true", help="show current configuration")
         parser.add_argument('-upd', dest='update', action="store_true", help="update configuration file")
         parser.add_argument('--create', action="store_true", help="create database if it doesn't exist")
-        parser.add_argument('--configfile', help="configuration file location (default: %s)" % defaultConfigFile,
-                            default=defaultConfigFile)
+        parser.add_argument('--configfile', help="configuration file location (default: %s)" % test_config_file,
+                            default=test_config_file)
         opts = parser.parse_args("-db rf2test --host localhost --port 8091 -u root -p rootpw".split())
         cfg.update(vars(opts))
+        cfg.set_configfile(test_config_file)
         self.assertEqual(str(cfg),"""[dbparms]
 host = localhost
 db = rf2test
@@ -73,8 +115,9 @@ charset = utf8
 port = 8091
 user = root
 passwd = rootpw""")
-        cfg.write()
-        cfg = ConfigManager(config_parms,cfgfile=defaultConfigFile)
+
+        cfg.flush()
+        cfg = ConfigManager(config_parms)
         self.assertEqual(str(cfg),"""[dbparms]
 host = localhost
 db = rf2test

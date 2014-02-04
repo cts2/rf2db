@@ -36,7 +36,7 @@ _curdir = os.path.join(os.getcwd(), os.path.dirname(__file__), '..')
 # Get ourselves into the correct directory
 sys.path.append(_curdir)
 
-from config.ConfigManager import ConfigManager, defaultConfigFile
+from config.ConfigManager import ConfigManager
 from rf2db.db import RF2DBConnection
 
 helpargs = ['-h', '-?']
@@ -48,15 +48,15 @@ def main(argv):
 
     # Get the configuration file name established
     parser = argparse.ArgumentParser(description="Set up RF2 DB parameters and optionally create a database")
-    parser.add_argument('--configfile', help="configuration file location (default: %s)" % defaultConfigFile,
-                        default=defaultConfigFile)
+    parser.add_argument('configfile', help="configuration file location")
 
     holdargs = [e for e in helpargs if e in argv]
     args = [e for e in argv if e not in helpargs]
     fileopt, remargs = parser.parse_known_args(args)
 
     # Open the existing configuration file so we know what the defaults should be
-    cfg = ConfigManager(RF2DBConnection.config_parms, cfgfile=fileopt.configfile)
+    cfg = ConfigManager(RF2DBConnection.config_parms)
+    cfg.set_configfile(fileopt.configfile)
     parser = argparse.ArgumentParser(description="Set up RF2 DB parameters and optionally create a database")
     RF2DBConnection.config_parms.add_to_parser(parser, cfg)
 
