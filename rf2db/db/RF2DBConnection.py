@@ -55,7 +55,6 @@ debug_parms = ConfigArgs('debug',
                           ConfigArg('nocache', help='Turn off cache for debugging', action='store_true')
                          ])
 dbconfig = ConfigManager(debug_parms)
-# TODO: how to we get the configuration file name into here?  Should we?
 
 db = pool.manage(mysql)
 
@@ -90,7 +89,7 @@ class RF2DBConnection(object):
     def _connect(self):
         """ Make sure there is a database connection active """
         if not self._connection:
-            parms = config.section().copy()
+            parms = config.asdict().copy()
             parms.pop('dodecode', None)
             self._connection = db.connect(**parms)
             # self._connection.set_character_set("utf8")

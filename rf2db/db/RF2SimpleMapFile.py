@@ -35,9 +35,9 @@ from rf2db.db.RF2FileCommon import global_rf2_parms
 from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
 from rf2db.parsers.RF2RefsetParser import RF2SimpleMapReferenceSetEntry
 from rf2db.parsers.RF2Iterator import RF2SimpleMapReferenceSet, iter_parms
-from rf2db.parameterparser.ParmParser import ParameterDefinitionList, sctidparam, strparam, enumparam
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, sctidparam, strparam
 
-   
+
 class SimpleMapDB(RF2RefsetWrapper):
       
     directory   = 'Refset/Map'
@@ -86,7 +86,7 @@ class SimpleMapDB(RF2RefsetWrapper):
         for m in mlist:
             if thelist.at_end:
                 return thelist.finish(True)
-            thelist.append(m)
+            thelist.add_entry(m)
         return thelist.finish(False)
 
 

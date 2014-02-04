@@ -38,7 +38,7 @@ from rf2db.utils.listutils import listify
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, intparam
 
 
-""" Parameters for concept access """
+# Parameters for concept access
 concept_parms = global_rf2_parms
 concept_list_parms = ParameterDefinitionList(global_rf2_parms)
 concept_list_parms.add(iter_parms)
@@ -80,7 +80,7 @@ class ConceptDB(RF2FileWrapper):
     def getAllConcepts(self, parmlist):
         """
         Read a number of concept records
-        @param after: sctid to start after
+        @param parmlist: parsed parameter list
         """
 
         if not parmlist.ss:
@@ -113,6 +113,6 @@ class ConceptDB(RF2FileWrapper):
         for c in clist:
             if thelist.at_end:
                 return thelist.finish(True)
-            thelist.append(c)
+            thelist.add_entry(c)
         return thelist.finish(False)
 

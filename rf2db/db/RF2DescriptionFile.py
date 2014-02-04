@@ -36,7 +36,7 @@ from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms
 from rf2db.utils.lfu_cache import lfu_cache
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList
 
-""" Parameters for description access """
+# Parameters for description access
 description_parms = global_rf2_parms
 description_list_parms = ParameterDefinitionList(global_rf2_parms)
 description_list_parms.add(iter_parms)
@@ -93,7 +93,7 @@ class DescriptionDB(RF2FileWrapper):
         for d in dlist:
             if thelist.at_end:
                 return thelist.finish(True)
-            thelist.append(d)
+            thelist.add_entry(d)
         return thelist.finish(False)
 
 

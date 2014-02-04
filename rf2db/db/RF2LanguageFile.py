@@ -177,7 +177,7 @@ class LanguageDB(RF2RefsetWrapper):
         for l in llist:
             if thelist.at_end:
                 return thelist.finish(True)
-            thelist.append(l)
+            thelist.add_entry(l)
         return thelist.finish(False)
 
 

@@ -255,7 +255,7 @@ class RelationshipDB(RF2FileWrapper):
         for d in rels:
             if thelist.at_end:
                 return thelist.finish(True)
-            thelist.append(d)
+            thelist.add_entry(d)
         return thelist.finish(False)
 
 
