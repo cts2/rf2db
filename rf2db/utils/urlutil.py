@@ -30,11 +30,17 @@
 
 from urlparse import urlsplit, parse_qs, urlunsplit
 from urllib import urlencode
-
 from cherrypy import request, HTTPRedirect
 
 from rf2db.utils import xmlutils
+from config.ConfigArgs import ConfigArg, ConfigArgs
+from config.ConfigManager import ConfigManager
 
+config_parms = ConfigArgs('hrefbase',
+                          [ConfigArg('host', help='External URL Host'),
+                           ConfigArg('root', help='External URL Root Directory', default='rf2'),
+                          ])
+href_settings = ConfigManager(config_parms)
 
 dropParms = ['bypass']
 
@@ -53,7 +59,8 @@ def base_uri():
 
         Must be accessed in the context of a cherrypy request
     """
-    return request.base + request.app.script_name
+    return href_settings.host + href_settings.root
+
 
 def completeuri_sans_parms():
     """ Return the complete URI of this call sans parms """
