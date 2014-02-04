@@ -51,15 +51,14 @@ config_parms = ConfigArgs( 'rf2',
 
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList
 
-""" Base line parameters used for the REST RF2 Services
-
-Global Parameters
-    - B{C{ss}} - C{True} means dealing with the snapshot db, C{False} means full.  Full is not completely
-    implemented at this point.  When it is, this will be moved to a configuration parameter.  Default: C{True}
-    - B{C{active}} - C{True} means inactive entries will not be visible.  C{False} means that both active
-    and inactive entries are treated as present.  Default: C{True}
-    - B{C{moduleid}} - a list of module id's.  If supplied access will be restricted to the specific modules.
-"""
+#  Base line parameters used for the REST RF2 Services
+#
+# Global Parameters
+#     - ss - C{True} means dealing with the snapshot db, C{False} means full.  Full is not completely
+#     implemented at this point.  When it is, this will be moved to a configuration parameter.  Default: C{True}
+#     - active - C{True} means inactive entries will not be visible.  C{False} means that both active
+#     and inactive entries are treated as present.  Default: C{True}
+#     - moduleid - a list of module id's.  If supplied access will be restricted to the specific modules.
 global_rf2_parms = ParameterDefinitionList()
 global_rf2_parms.ss = booleanparam(default=True, fixed=True)
 global_rf2_parms.active = booleanparam(default=True)

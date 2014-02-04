@@ -46,7 +46,7 @@ class PNandFSNDB(RF2FileWrapper):
     prefixes = []
     table = 'RF2PNandFSN'
 
-    createSTMT = """CREATE TABLE %(table)s (
+    createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
       id   BIGINT(20) NOT NULL,
       lang BIGINT(20) NOT NULL,
       fsn  VARCHAR(1024) CHARACTER SET utf8 NOT NULL,
@@ -63,7 +63,6 @@ class PNandFSNDB(RF2FileWrapper):
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
-    """ Batch inserter.  Do things in BATCH_SIZE chunks """
 
     class _inserter(object):
         def __init__(self, db, filename, batchsize):
