@@ -68,7 +68,9 @@ def completeuri_sans_parms():
 
 def complete_uri():
     """ Return the complete URI that invoked this call """
-    return strip_control_params(completeuri_sans_parms() + ('?' + request.query_string) if request.query_string else '')
+    return strip_control_params(
+        completeuri_sans_parms() + (('?' + request.query_string) if request.query_string else ''))
+
 
 def forxml(uri):
     """ Escape XML nasties in a URI """
@@ -76,7 +78,7 @@ def forxml(uri):
 
 def relative_uri():
     """ Return the relative URI that invoked this call """
-    return request.path_info
+    return href_settings.root + request.path_info
 
 
 def strip_control_params(url):

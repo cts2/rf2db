@@ -93,11 +93,11 @@ class RF2Iterator(rf2.Iterator, object):
             self.complete = rf2.CompleteDirectory.COMPLETE
         else:
             if self.numEntries >= self._parmlist.maxtoreturn and moreToCome:
-                self.next = urlutil.forxml(urlutil.append_params(urlutil.strip_control_params(urlutil.complete_uri()),
+                self.next = urlutil.forxml(urlutil.append_params(urlutil.strip_control_params(urlutil.relative_uri()),
                                                                  {'page': str(self._parmlist.page + 1),
                                                                   'maxtoreturn': str(self._parmlist.maxtoreturn)}))
             if self._parmlist.page > 0:
-                self.prev = urlutil.forxml(urlutil.append_params(urlutil.strip_control_params(urlutil.complete_uri()),
+                self.prev = urlutil.forxml(urlutil.append_params(urlutil.strip_control_params(urlutil.relative_uri()),
                                                                  {'page': str(self._parmlist.page - 1),
                                                                   'maxtoreturn': str(self._parmlist.maxtoreturn)}))
 
