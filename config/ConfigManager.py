@@ -27,6 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 import os
+
 from configparser import ConfigParser
 
 
@@ -89,7 +90,7 @@ class ConfigManager(object):
 
 
     def _load_section(self, parms):
-        print "Loading " + self._configfile + "[" + parms.section + "]"
+        # print "Loading " + self._configfile + "[" + parms.section + "]"
         if self._section not in self._config_parser.sections():
             self._config_parser.setdefault(self._section, {})
             self.update(parms.values())
@@ -111,12 +112,12 @@ class ConfigManager(object):
         """ Return the configuration variables as a dictionary """
         return dict(self._config_parser[self._section].items())
 
-    def update(self,values):
+    def update(self, values):
         """ Update the contents based using the keys that are present in the values dictionary
         """
         for k in self._keys:
             if values.get(k):
-                self.__setattr__(k,values.get(k))
+                self.__setattr__(k, values.get(k))
 
     def __str__(self):
         return "[%s]\n" % self._section + \

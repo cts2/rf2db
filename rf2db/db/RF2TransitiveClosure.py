@@ -102,7 +102,8 @@ class TransitiveClosureDB(RF2FileWrapper):
         print("Computing transitive closure")
         tbl = {'tname':self._tname(ss)}
         tc = list(transitive_closure(db))
-
+        print("Dropping indices")
+        TransitiveClosureDB._dropIndexes(tbl)
         print("Writing records to table")
         for s in range(0, len(tc), chunksize):
             TransitiveClosureDB._writeblock(tc[s:s+chunksize], db, tbl)
@@ -115,6 +116,15 @@ class TransitiveClosureDB(RF2FileWrapper):
     def _writeblock(tc, db, tbl):
         insertList = ["(%s,%s,%s,%s)" % e for e in tc]
         db.execute("INSERT INTO %(tname)s (sourceId, destinationId, depth, isLeaf) VALUES " % tbl + ','.join(insertList) )
+        db.commit()
+
+    @staticmethod
+    def _dropIndexes(tbl):
+        db = RF2DBConnection()
+
+        db.execute("""DROP INDEX %(tname)s_idx1 on %(tname)s""" % tbl)
+        db.execute("""DROP INDEX %(tname)s_idx2 on %(tname)s""" % tbl)
+        db.execute("""DROP INDEX %(tname)s_idx3 on %(tname)s""" % tbl)
         db.commit()
 
     @staticmethod
