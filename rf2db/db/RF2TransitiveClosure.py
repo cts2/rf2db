@@ -121,10 +121,19 @@ class TransitiveClosureDB(RF2FileWrapper):
     @staticmethod
     def _dropIndexes(tbl):
         db = RF2DBConnection()
-
-        db.execute("""DROP INDEX %(tname)s_idx1 on %(tname)s""" % tbl)
-        db.execute("""DROP INDEX %(tname)s_idx2 on %(tname)s""" % tbl)
-        db.execute("""DROP INDEX %(tname)s_idx3 on %(tname)s""" % tbl)
+        # Strange as it may seem, mysql doesn't have a drop index if exists command
+        try:
+            db.execute("""DROP INDEX %(tname)s_idx1 on %(tname)s""" % tbl)
+        except Exception:
+            pass
+        try:
+            db.execute("""DROP INDEX %(tname)s_idx2 on %(tname)s""" % tbl)
+        except Exception:
+            pass
+        try:
+            db.execute("""DROP INDEX %(tname)s_idx3 on %(tname)s""" % tbl)
+        except Exception:
+            pass
         db.commit()
 
     @staticmethod
