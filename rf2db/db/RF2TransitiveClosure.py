@@ -132,9 +132,10 @@ class TransitiveClosureDB(RF2FileWrapper):
             pass
         try:
             db.execute("""DROP INDEX %(tname)s_idx3 on %(tname)s""" % tbl)
+            db.commit()
         except Exception:
             pass
-        db.commit()
+
 
     @staticmethod
     def _createIndexes(tbl):
