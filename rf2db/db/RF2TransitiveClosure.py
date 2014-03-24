@@ -82,7 +82,8 @@ class TransitiveClosureDB(RF2FileWrapper):
             `sourceId` bigint(20) NOT NULL,
             `destinationId` bigint(20) NOT NULL,
             `depth` int NOT NULL,
-            `isLeaf` tinyint NOT NULL);"""
+            `isLeaf` tinyint NOT NULL,
+            `isRoot` tinyint NOT NULL);"""
 
 
     def __init__(self, *args, **kwargs):

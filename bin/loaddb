@@ -40,7 +40,7 @@ from config.ConfigManager import ConfigManager
 
 from rf2db.db import RF2ConceptFile, RF2DescriptionFile, RF2DescriptionTextFile, RF2LanguageFile, RF2RelationshipFile
 from rf2db.db import RF2SimpleMapFile, RF2SimpleReferencesetFile, RF2ModuleVersionsFile
-from rf2db.db import RF2TransitiveClosure, RF2TransitiveClosureCanonical
+from rf2db.db import RF2TransitiveClosure, RF2TransitiveClosureCanonical, CTS2Entity
 from rf2db.db import RF2PnAndFSN
 from rf2db.db import RF1CanonicalCore
 from rf2db.db.RF2FileCommon import config_parms
@@ -54,10 +54,11 @@ load_sections = [
     ('simplemap', (RF2SimpleMapFile.SimpleMapDB,)),
     ('simplerefset', (RF2SimpleReferencesetFile.SimpleReferencesetDB,)),
     ('moduleversions', (RF2ModuleVersionsFile.ModuleVersionsDB,)),
+    ('canonical', (RF1CanonicalCore.CanonicalCoreDB,)),
+    ('pnandfsn', (RF2PnAndFSN.PNandFSNDB,))
     ('transitive', (RF2TransitiveClosure.TransitiveClosureDB,)),
     ('transitive_c', (RF2TransitiveClosureCanonical.TransitiveClosureCanonicalDB,)),
-    ('canonical', (RF1CanonicalCore.CanonicalCoreDB,)),
-    ('pnandfsn', (RF2PnAndFSN.PNandFSNDB,))]
+    ('cts2_entity', (CTS2Entity.CTS2EntityDB,))]
 
 
 def load_file(loader, opts, cfg):
