@@ -35,7 +35,7 @@ from rf2db.db.RF2TransitiveClosure import TransitiveClosureDB
 
 class TransitiveClosureCanonicalDB(TransitiveClosureDB):
     table = 'transitive_c'
-    filter = ' active = 1 and isCanonical = 1 '
+    fltr = ' active = 1 and isCanonical = 1 '
 
 
 
