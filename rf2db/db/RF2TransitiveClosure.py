@@ -77,13 +77,14 @@ def transitive_closure(g):
 
 class TransitiveClosureDB(RF2FileWrapper):
     table = 'transitive'
+    fltr = ' active = 1 '
 
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
             `sourceId` bigint(20) NOT NULL,
             `destinationId` bigint(20) NOT NULL,
             `depth` int NOT NULL,
             `isLeaf` tinyint NOT NULL,
-            `isRoot` tinyint NOT NULL);"""
+            `isRoot` tinyint NOT NULL DEFAULT 0);"""
 
 
     def __init__(self, *args, **kwargs):
@@ -97,8 +98,8 @@ class TransitiveClosureDB(RF2FileWrapper):
             print("Error: Transitive table load requires Snapshot releationship table")
             return
 
-        db.execute("""SELECT sourceId, destinationId FROM %s WHERE active = 1
-    				  AND typeId = %s""" % (rdb._tname(True), is_a))
+        db.execute("""SELECT sourceId, destinationId FROM %s WHERE %s AND typeId = %s""" %
+                   (rdb._tname(True), self.fltr, is_a))
 
         print("Computing transitive closure")
         tbl = {'tname':self._tname(ss)}
@@ -111,6 +112,12 @@ class TransitiveClosureDB(RF2FileWrapper):
 
         print("Indexing table")
         TransitiveClosureDB._createIndexes(tbl)
+
+        print("Computing root entries")
+        db.execute("""UPDATE %s t1 LEFT JOIN %s t2 ON t1.sourceid=t2.destinationid
+                      SET t1.isRoot=1
+                      WHERE t1.depth=1 AND t2.destinationid IS null""" % (self._tname(True), self._tname(True)))
+        db.commit()
 
 
     @staticmethod
@@ -151,13 +158,35 @@ class TransitiveClosureDB(RF2FileWrapper):
     def are_related(self, parent, child):
         if parent == child:
             return True
-        db = RF2DBConnection()
+        db = self.connect()
         tname = self._tname(True)
         return bool(list(db.executeAndReturn(
             "SELECT count(*) FROM %(tname)s WHERE sourceId = %(parent)s AND destinationId=%(child)s" % locals()))[0][0])
 
+    def doquery(self, query, start, maxtoreturn):
+        start, maxtoreturn = int(start), int(maxtoreturn)
+        db = self.connect()
+        if maxtoreturn:
+            query += " LIMIT %d, %d " % (start * maxtoreturn, maxtoreturn + 1)
+        db.execute(query)
+        rval = set([e if len(e) > 1 else e[0] for e in db])
+        return rval
 
-    
+
+    def hasChildren(self, sctid, **kwargs):
+        return bool(self.children(sctid, maxtoreturn=1, **kwargs))
+
+    def children(self, sctid, start=0, maxtoreturn=0, **kwargs):
+        return self.doquery("SELECT destinationId FROM %s WHERE sourceId = %s AND depth=1 ORDER BY destinationId" %
+                            (self._tname(True), sctid), start, maxtoreturn)
+
+    def parents(self, sctid, **kwargs):
+        return self.doquery("SELECT sourceId FROM %s WHERE destinationId = %s AND depth=1 ORDER BY sourceId" %
+                            (self._tname(True), sctid), start=0, maxtoreturn=0)
+
+
+
+
 
             
         

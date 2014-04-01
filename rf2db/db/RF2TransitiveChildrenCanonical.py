@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2013, Mayo Clinic
+# Copyright (c) 2014, Mayo Clinic
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification,
@@ -27,17 +27,14 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-""" Function to build the SNOMED CT Canonical Transitive Closure File
+""" Function to build the SNOMED CT Transitive Children for the Canonical file file -- a helper table that
+    returns the number of children given a source concept and depth
 """
 
-from rf2db.db.RF2TransitiveClosure import TransitiveClosureDB
+from rf2db.db.RF2TransitiveClosureCanonical import TransitiveClosureCanonicalDB
+from rf2db.db.RF2TransitiveChildren import TransitiveChildrenDB
 
 
-class TransitiveClosureCanonicalDB(TransitiveClosureDB):
-    table = 'transitive_c'
-    filter = ' active = 1 and isCanonical = 1 '
-
-
-
-
-
+class TransitiveChildrenCanonicalDB(TransitiveChildrenDB):
+    table = 'transitive_children_c'
+    closuredb = TransitiveClosureCanonicalDB
