@@ -41,7 +41,7 @@ from config.ConfigManager import ConfigManager
 from rf2db.db import RF2ConceptFile, RF2DescriptionFile, RF2DescriptionTextFile, RF2LanguageFile, RF2RelationshipFile
 from rf2db.db import RF2SimpleMapFile, RF2SimpleReferencesetFile, RF2ModuleVersionsFile
 from rf2db.db import RF2TransitiveClosure, RF2TransitiveClosureCanonical, CTS2Entity
-from rf2db.db import RF2TransitiveChildren, RF2TransitiveChildrenCanonical
+from rf2db.db import RF2TransitiveChildren, RF2TransitiveChildrenCanonical, RF2ComplexMapFile
 from rf2db.db import RF2PnAndFSN
 from rf2db.db import RF1CanonicalCore
 from rf2db.db.RF2FileCommon import config_parms
@@ -53,6 +53,7 @@ load_sections = [
     ('language', (RF2LanguageFile.LanguageDB,)),
     ('relationship', (RF2RelationshipFile.StatedRelationshipDB, RF2RelationshipFile.RelationshipDB,)),
     ('simplemap', (RF2SimpleMapFile.SimpleMapDB,)),
+    ('complexmap', (RF2ComplexMapFile.ComplexMapDB,)),
     ('simplerefset', (RF2SimpleReferencesetFile.SimpleReferencesetDB,)),
     ('moduleversions', (RF2ModuleVersionsFile.ModuleVersionsDB,)),
     ('canonical', (RF1CanonicalCore.CanonicalCoreDB,)),
