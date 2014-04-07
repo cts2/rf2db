@@ -52,8 +52,8 @@ rf2.Description_._SetSupersedingClass(_RF2Description)
         # This will cause the constructor and __init__ methods to be called in the original class
         pyxbType._SetSupersedingClass(impl_class)
         impl_class._baseClass = pyxbType
-        impl_class._fieldNames = impl_class._baseFields + addlFields if addlFields else []
-        impl_class._sctidFields = impl_class._sctidFieldNames + addlSctids if addlSctids else []
+        impl_class._fieldNames = impl_class._baseFields + (addlFields if addlFields else [])
+        impl_class._sctidFields = impl_class._sctidFieldNames + (addlSctids if addlSctids else [])
         impl_class._nFields = len(impl_class._fieldNames)
         return constructor
 
