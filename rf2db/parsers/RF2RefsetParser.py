@@ -61,15 +61,18 @@ class RF2RefsetBase(rf2.RefsetBase, object):
         if nFields < self._nFields:
             fields += [None] * (self._nFields - nFields)
         e = fields[self._rcididx]
-        fields[self._rcididx] = rf2.SCTIDorUUID(uuid=e) if '-' in e else rf2.SCTIDorUUID(sctid=e)
+        if e:
+            fields[self._rcididx] = rf2.SCTIDorUUID(uuid=e) if '-' in e else rf2.SCTIDorUUID(sctid=e)
         vals = filter(lambda f: f[1], zip(self._fieldNames, fields))
-        self._baseClass.__init__(self, **dict(vals) )
+        self._baseClass.__init__(self, **dict(self._dropNulls(vals)) )
         return self
                     
     def __str__(self):
         return self._name + "(" + \
                ', '.join(k + ":" + self.strify(k) for k in self._fieldNames) + ")"
 
+    def _dropNulls(self, vals):
+        return [v for v in vals if v[0] not in self._sctidFields or v[1] != 'None']
 
     def __repr__(self):
         return '\t'.join(self.strify(k) for k in self._fieldNames)
@@ -128,7 +131,8 @@ class RF2SimpleMapReferenceSetEntry(rf2.SimpleMapReferenceSetEntry_, RF2RefsetBa
     pass
 
 @rf2link(rf2.ComplexMapReferenceSetEntry, rf2.ComplexMapReferenceSetEntry_,
-         ['mapGroup', 'mapPriority', 'mapRule', 'mapAdvice', 'mapTarget', 'mapCategory'])
+         ['mapGroup', 'mapPriority', 'mapRule', 'mapAdvice', 'mapTarget', 'correlationId', 'mapCategoryId'],
+         ['correlationId', 'mapCategoryId'])
 class RF2ComplexMapReferenceSetEntry(rf2.ComplexMapReferenceSetEntry_, RF2RefsetBase):
     pass
 
