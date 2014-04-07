@@ -147,7 +147,7 @@ class RF2DBConnection(object):
 
     @staticmethod
     def build_query(table, filter_="", sort=None, active=True, ss=True, start=0, maxtoreturn=100, refdate=None,
-                    moduleids=None):
+                    moduleids=None, order='asc'):
         """ Query an RF2 table taking the historical information into account.
         
         @param table: table to query
@@ -204,7 +204,7 @@ class RF2DBConnection(object):
         if moduleids:
             query += " AND (" + ' OR '.join(['moduleid = %s' % m for m in listify(moduleids)]) + ') '
         if sort:
-            query += " ORDER BY tbl.%s ASC " % sort
+            query += " ORDER BY " + ', '.join([('tbl.%s' % e) for e in listify(sort)]) + ' %s ' % order
         if maxtoreturn:
             query += " LIMIT %d, %d " % (start, maxtoreturn + 1)
         return query
@@ -212,12 +212,13 @@ class RF2DBConnection(object):
     def query_p(self, table, parms, filter=""):
         """ Alternate query where parameters doen't have to be disassembled """
         # TODO: add sort column to the parameters list
-        return self.query(table, filter, sort=None, active=parms.active, ss=parms.ss, start=parms.start,
-                          maxtoreturn=parms.maxtoreturn, refdate=parms.refdate, moduleids=parms.moduleid)
+        return self.query(table, filter, sort=parms.sort, order=parms.order, active=parms.active, ss=parms.ss,
+                          start=parms.start, maxtoreturn=parms.maxtoreturn, refdate=parms.refdate,
+                          moduleids=parms.moduleid)
 
 
     def query(self, table, filter_="", sort=None, active=True, ss=True, start=0,
-              maxtoreturn=100, refdate=None, moduleids=None):
+              maxtoreturn=100, refdate=None, moduleids=None, order="asc"):
         """ Query an RF2 table taking the historical information into account.
 
         @param table: table to query

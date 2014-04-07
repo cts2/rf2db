@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 from rf2db.schema import rf2
-from rf2db.parameterparser.ParmParser import ParameterDefinitionList, enumparam, intparam, computedparam
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, enumparam, intparam, computedparam, strparam
 from rf2db.utils import urlutil
 
 # Iteration Parameters
@@ -42,6 +42,7 @@ iter_parms.order = enumparam(['asc', 'desc'], default='asc')
 iter_parms.page = intparam(default=0)
 iter_parms.maxtoreturn = intparam(default=100)
 iter_parms.start = computedparam(lambda p: p.page * p.maxtoreturn)
+iter_parms.sort = strparam()
 
 
 class RF2Iterator(rf2.Iterator, object):
@@ -161,6 +162,9 @@ class RF2OrderedReferenceSet(rf2.OrderedReferenceSet_, RF2Iterator):
 class RF2AttributeValueReferenceSet(rf2.AttributeValueReferenceSet_, RF2Iterator):
     pass
 
+@rf2iterlink(rf2.SimpleReferenceSet, rf2.SimpleReferenceSet_)
+class RF2SimpleReferenceSet(rf2.SimpleReferenceSet_, RF2Iterator):
+    pass
 
 @rf2iterlink(rf2.SimpleMapReferenceSet, rf2.SimpleMapReferenceSet_)
 class RF2SimpleMapReferenceSet(rf2.SimpleMapReferenceSet_, RF2Iterator):
