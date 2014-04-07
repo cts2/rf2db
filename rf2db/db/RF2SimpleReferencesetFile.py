@@ -31,9 +31,14 @@
 """
 
 
-from rf2db.db.RF2FileCommon import RF2FileWrapper
+from rf2db.db.RF2FileCommon import global_rf2_parms
+from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
+from rf2db.parsers.RF2RefsetParser import RF2SimpleReferenceSetEntry
+from rf2db.parsers.RF2Iterator import RF2SimpleReferenceSet, iter_parms
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, sctidparam
 
-class SimpleReferencesetDB(RF2FileWrapper):
+
+class SimpleReferencesetDB(RF2RefsetWrapper):
    
     directory   = 'Refset/Content'
     prefixes    = ['der2_Refset_Simple']
@@ -49,18 +54,38 @@ class SimpleReferencesetDB(RF2FileWrapper):
       KEY refset (refsetId),
       KEY component (referencedComponentId),
        %(primkey)s ); """
+
+
+    _simplerefset_list_parms = ParameterDefinitionList(global_rf2_parms)
+    _simplerefset_list_parms.add(iter_parms)
+    _simplerefset_list_parms.component = sctidparam()
+    _simplerefset_list_parms.refset = sctidparam()
     
     def __init__(self, *args, **kwargs):
-        RF2FileWrapper.__init__(self, *args, **kwargs)
+        RF2RefsetWrapper.__init__(self, *args, **kwargs)
 
-    def refsetExists(self, refsetId, ss=True):
+    def get_simple_refset(self, parmlist):
+        filtr = 'refsetId=%s' % parmlist.refset if parmlist.refset else 'True'
+        filtr += (' AND referencedComponentId = %s ' % parmlist.component) if parmlist.component else ' '
         db = self.connect()
-        return db.query(self._tname(ss), "refsetid = %s" % refsetId, maxtoreturn=1, ss=ss)
-        
-    def getRefset(self, refsetId, start=0, num=0, ss=True):
-        db = self.connect()
-        return db.query(self._tname(ss), filter="refsetid = %s" % refsetId, sort="referencedComponentId", ss=ss, start=int(start), maxtoreturn=int(num))
+        # TODO: Sort
+        return [RF2SimpleReferenceSetEntry(e) for e in db.query_p(self._tname(parmlist.ss),
+                                                                              parmlist,
+                                                                              filter=filtr)]
 
-    def getReferencesTo(self, refComponentId, ss=True):
-        db = self.connect()
-        return db.query(self._tname(ss), filter="referencedComponentId = %s" % refComponentId, sort="refsetid", ss=ss)
+    @classmethod
+    def simplerefset_list_parms(cls):
+        return cls._simplerefset_list_parms
+
+
+    @staticmethod
+    def as_reference_set(mlist, parmlist):
+        thelist=RF2SimpleReferenceSet(parmlist)
+        if not parmlist.maxtoreturn:
+            return thelist.finish(True, total=list(mlist)[0])
+        for m in mlist:
+            if thelist.at_end:
+                return thelist.finish(True)
+            thelist.add_entry(m)
+        return thelist.finish(False)
+

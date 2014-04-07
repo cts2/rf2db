@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2013, Mayo Clinic
+# Copyright (c) 2014, Mayo Clinic
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification,
@@ -58,6 +58,7 @@ class SimpleMapDB(RF2RefsetWrapper):
     _simplemap_list_parms.add(iter_parms)
     _simplemap_list_parms.component = sctidparam()
     _simplemap_list_parms.target = strparam()
+    _simplemap_list_parms.refset = sctidparam()
 
     
     def __init__(self, *args, **kwargs):
@@ -68,7 +69,8 @@ class SimpleMapDB(RF2RefsetWrapper):
         filtr += (' AND referencedComponentId = %s ' % parmlist.component) if parmlist.component else ' '
         filtr += (" AND mapTarget = '%s' " % parmlist.target) if parmlist.target else ' '
         db = self.connect()
-        # TODO: Sort
+        if not parmlist.sort:
+            parmlist.sort=['refsetId', 'referencedComponentId']
         return [RF2SimpleMapReferenceSetEntry(e) for e in db.query_p(self._tname(parmlist.ss),
                                                                      parmlist,
                                                                      filter=filtr)]
