@@ -37,7 +37,7 @@ class RF2RefsetWrapper(RF2FileWrapper):
         self._known_refsets = None
         self._refset_names = None
 
-    def known_refsets(self, ss=True, refresh=False):
+    def known_refsets(self, language='en', ss=True, refresh=False):
         if not self._known_refsets or refresh:
             self._build_knowns(language, ss)
         return self._known_refsets
@@ -55,12 +55,7 @@ class RF2RefsetWrapper(RF2FileWrapper):
                                                                                          language=language).items()}
 
 
-    """ Return the list of refset identifiers in the supplied refset file
-    @param filename: refset file to query
-    @param active: True means active only, false means all
-    @param moduleids: list of module id's.  If empty or None, return all
-    @return: set of refset identifiers
-    """
+
     def valid_refsets(self, ss=True, active=True, moduleids=None):
         stmt = "SELECT DISTINCT refsetId FROM %s WHERE " % self._tname(ss)
         stmt += 'active=1 ' if active else 'True '
