@@ -26,4 +26,4 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-__all__ = ['CheckDigit', 'kwutil' 'lfu_cache', 'link', 'listutils', 'sctid', 'urlutil', 'xmlutils']
+__all__ = ['check_digit', 'jsonutils' 'kwutil' 'lfu_cache', 'link', 'listutils', 'sctid', 'sctid_generator' 'urlutil', 'xmlutils']
