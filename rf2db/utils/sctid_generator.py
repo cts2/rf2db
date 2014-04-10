@@ -26,8 +26,14 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-from rf2db.utils.check_digit import generate_verhoeff
-from rf2db.utils.sctid import sctid
+
+import argparse
+
+
+from check_digit import generate_verhoeff
+from sctid import sctid
+
+
 
 MAYO_Namespace = 1000134
 CIMI_Namespace = 1000160
@@ -47,7 +53,7 @@ class sctid_generator(object):
         """
         @param namespace: SNOMED Namespace identifier
         @param partition: Partition Identifier
-        @param start:
+        @param start: Starting concept number
         @return:
         """
         assert isinstance(partition, sctid_generator.partition)
@@ -65,3 +71,18 @@ class sctid_generator(object):
         rval = generate_verhoeff(self._start * 10 ** 10 + self._namespace * 10 ** 3 + self._partition * 10)
         self._start += 1
         return sctid(rval)
+
+nsMap = {'M': MAYO_Namespace, 'C': CIMI_Namespace}
+partitionMap = {'C':sctid_generator.CONCEPT, 'D':sctid_generator.DESCRIPTION, 'R':sctid_generator.RELATIONSHIP}
+
+def main():
+    parser = argparse.ArgumentParser(description="SCTID Generator")
+    parser.add_argument('-p', '--partition', choices=['C','D','R'], help="(C)oncept, (D)escription, (R)elationship", required=True)
+    parser.add_argument('-n', '--namespace', choices=['M','C'], help="(M)ayo, (C)imi", required=True)
+    parser.add_argument('-s', '--start', type=int, help="Starting identifier", required=True)
+    opts = parser.parse_args()
+    print sctid_generator(nsMap[opts.namespace], partitionMap[opts.partition], opts.start).next()
+
+
+if __name__ == '__main__':
+    main()
