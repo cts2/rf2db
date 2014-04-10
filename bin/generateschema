@@ -6,8 +6,11 @@ import pyxb.xmlschema
 import pyxb.binding.generate
 import pyxb.utils.utility
 import pyxb.utils.domutils
+schemaroot="http://localhost:8081/rf2/xsd/"
+# schemaroot="../rf2db/static/xsd/"
 
-cmdline = '-u ../rf2db/static/xsd/rf2.xsd -m rf2 --binding-root=../rf2db/schema'
+
+cmdline = '--schema-root %s -u rf2.xsd -m rf2 --binding-root=../rf2db/schema' % schemaroot
 
 import logging
 logging.basicConfig()
