@@ -122,7 +122,8 @@ class RF2DBConnection(object):
             return self._cursor.execute(stmt)
         except db.Error as e:
             self._disconnect()
-            if retryCount == 0 and e.args[0] == 2006:
+            # if retryCount == 0 and e.args[0] == 2006:
+            if retryCount == 0:
                 print >> sys.stderr, ("Database timeout error - reconnecting")
                 self._connect()
                 return self.execute(stmt, retryCount + 1)

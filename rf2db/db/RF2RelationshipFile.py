@@ -108,6 +108,23 @@ class RelationshipDB(RF2FileWrapper):
         import warnings
         warnings.filterwarnings("ignore", ".*doesn't contain data for all columns.*")
         super(RelationshipDB,self).loadTable(rf2file, ss, cfg)
+        # Temporary fix.  There is an error in the 20140131 distro where a significant number of the
+        # relations have two entries on the same date, one for active and one for inactive.  We have
+        # remove all of the inactive duplicates.
+        # Also note that we may be able skip Step 1: below -- it may be that canonical doesn't actually
+        # reactivate anything except the errors
+        print "Removing relationship duplicates...",
+        q = """ DELETE r1.* FROM %(tname)s r1, %(tname)s r2
+            WHERE r1.effectiveTime=r2.effectiveTime AND r1.moduleid=r2.moduleid AND
+                  r1.sourceId=r2.sourceId AND r1.destinationId=r2.destinationId AND
+                  r1.relationshipGroup=r2.relationshipgroup AND r1.typeId=r2.typeId AND
+                  r1.characteristicTypeId=r2.characteristicTypeId AND r1.modifierId = r2.modifierId AND
+                  r1.active=0 AND r2.active=1""" % {'tname':self._tname(ss)}
+        db = self.connect()
+        db.execute(q)
+        db.commit()
+        print "done"
+
 
     class _BlockWriter(object):
         addrow = "(%(id)s, %(effectiveTime)s, %(active)s, %(moduleId)s, %(sourceId)s, \
@@ -142,6 +159,11 @@ class RelationshipDB(RF2FileWrapper):
             self.rowstoadd = []
 
     def updateFromCanonical(self, canon_fname, ss, cfg):
+        ccdb = CanonicalCoreDB()
+        if not ccdb.hascontent(ss):
+            print("Canonical DB is empty -- relationship tables not updated")
+            return
+
         db = self.connect()
 
         # Step 1: Add the canonical tag to everything that exists.  Note that the canonical table can re-activate an
@@ -149,7 +171,7 @@ class RelationshipDB(RF2FileWrapper):
         db.execute("""UPDATE %s s, %s c SET isCanonical=1
             WHERE conceptid1 = sourceId AND conceptid2 = destinationId AND relationshiptype = typeId
             AND s.relationshipgroup=c.relationshipgroup AND active=1""" % (
-            self._tname(ss), CanonicalCoreDB()._tname(ss)))
+            self._tname(ss), ccdb._tname(ss)))
         db.commit()
 
         # Step 2: Add additional relationship entries for new assertions in the canonical table
@@ -180,8 +202,6 @@ class RelationshipDB(RF2FileWrapper):
             - inferred -- if true we return inferred relationships
             - additional -- if true we return additional relationships (are in the relationships_ss file)
             - canonical -- if true we return I{only} canonical relationships meeting the above criteria
-
-
 
         """
         if not parmlist.maxtoreturn:    # we're getting counts
