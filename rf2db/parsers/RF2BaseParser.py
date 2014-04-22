@@ -67,10 +67,10 @@ class RF2Base(rf2.Base, object):
         return '\t'.join(self.strify(k) for k in self._fieldNames)
 
     def __eq__(self, other):
-        return str(self) == str(other)
+        return self.__class__ == other.__class__ and str(self) == str(other)
 
     def __ne__(self, other):
-        return str(self) != str(other)
+        return not self.__eq__(other)
 
     def __hash__(self):
         return self.__str__().__hash__()
