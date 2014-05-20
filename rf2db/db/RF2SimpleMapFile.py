@@ -52,6 +52,10 @@ class SimpleMapDB(RF2RefsetWrapper):
       refsetId bigint(20) NOT NULL,
       referencedComponentId bigint(20) NOT NULL,
       mapTarget varchar(255) COLLATE utf8_bin NOT NULL,
+      KEY ars (active, refsetId),
+      KEY component (refsetId, referencedComponentId),
+      KEY source (referencedComponentId),
+      key targ (mapTarget(16)),
       %(primkey)s );"""
 
     _simplemap_list_parms = ParameterDefinitionList(global_rf2_parms)
