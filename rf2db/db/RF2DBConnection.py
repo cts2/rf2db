@@ -72,7 +72,7 @@ class RF2DBConnection(object):
         return self
 
     def newDB(self, config_mgr):
-        nondb_config = config_mgr.section().copy()
+        nondb_config = config_mgr.asdict().copy()
         dbname = nondb_config.pop('db')
         nondb_config.pop('dodecode')
         self._connection = db.connect(**nondb_config)

@@ -31,10 +31,12 @@ import sys
 import argparse
 import os
 
+# Assuming that we are running in the bin directory
 _curdir = os.path.join(os.getcwd(), os.path.dirname(__file__), '..')
 
 # Get ourselves into the correct directory
 sys.path.append(_curdir)
+sys.path.append(os.path.join(_curdir, '..', 'ConfigManager'))
 
 from config.ConfigManager import ConfigManager
 from rf2db.db import RF2DBConnection
@@ -70,7 +72,7 @@ def main(argv):
     if opts.show:
         print(str(cfg))
     if opts.update or not opts.show:
-        if cfg.write():
+        if cfg.flush():
             print("\nConfiguration file updated")
     if opts.create:
         RF2DBConnection.RF2DBConnection().newDB(cfg)

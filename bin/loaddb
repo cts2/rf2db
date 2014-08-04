@@ -35,6 +35,7 @@ _curdir = os.path.join(os.getcwd(), os.path.dirname(__file__), '..')
 
 # Get ourselves into the correct directory
 sys.path.append(_curdir)
+sys.path.append(os.path.join(_curdir, '..', 'ConfigManager'))
 
 from config.ConfigManager import ConfigManager
 
