@@ -60,6 +60,11 @@ class ComplexMapDB(RF2RefsetWrapper):
       mapTarget text(256),
       correlationId bigint(20),
       mapCategoryId bigint(20),
+      KEY ars (active, refsetId),
+      KEY component (refsetId, referencedComponentId),
+      KEY source (referencedComponentId),
+      KEY target(refsetId, mapTarget(16)),
+      key targ (mapTarget(16)),
       %(primkey)s );"""
 
     _complexmap_list_parms = ParameterDefinitionList(global_rf2_parms)
