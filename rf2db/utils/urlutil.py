@@ -33,8 +33,8 @@ from urllib import urlencode
 from cherrypy import request, HTTPRedirect
 
 from rf2db.utils import xmlutils
-from config.ConfigArgs import ConfigArg, ConfigArgs
-from config.ConfigManager import ConfigManager
+from ConfigManager.ConfigArgs import ConfigArg, ConfigArgs
+from ConfigManager.ConfigManager import ConfigManager
 
 config_parms = ConfigArgs('hrefbase',
                           [ConfigArg('host', help='External URL Host'),

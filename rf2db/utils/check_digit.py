@@ -26,6 +26,7 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
+import argparse
 
 """ This package provides an implementation of the verhoeff dihedral group checksum used by SNOMED CT
 
@@ -85,4 +86,21 @@ def validate_verhoeff(number):
     return checksum(number) == 0
 
 
+def main():
+    parser = argparse.ArgumentParser(description="SCTID Validator")
+    parser.add_argument('-g', '--generate', dest='generate', action='store_true', help="Generate Check Digit")
+    parser.add_argument('-v', '--validate', dest='validate', action='store_true', help="Validate Check Digit")
+    parser.add_argument('sctid', type=int, help='Id to check or generate')
+    opts = parser.parse_args()
+    if opts.generate:
+        print(generate_verhoeff(opts.sctid))
+    elif opts.validate:
+        print(validate_verhoeff(opts.sctid))
+    else:
+        parser.print_help()
 
+
+
+
+if __name__ == '__main__':
+    main()

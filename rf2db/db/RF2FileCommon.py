@@ -34,7 +34,7 @@
 import os
 import rf2db.db.RF2DBConnection
 from rf2db.parameterparser.ParmParser import booleanparam, sctidparam
-from config.ConfigArgs import ConfigArg, ConfigArgs
+from ConfigManager.ConfigArgs import ConfigArg, ConfigArgs
 
 config_parms = ConfigArgs( 'rf2',
                            [ConfigArg('fileloc', abbrev='f', help='Location of primary RF2 Distribution'),
