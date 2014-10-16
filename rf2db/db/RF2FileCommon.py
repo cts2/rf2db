@@ -34,7 +34,7 @@
 import os
 import rf2db.db.RF2DBConnection
 from rf2db.parameterparser.ParmParser import booleanparam, sctidparam
-from config.ConfigArgs import ConfigArg, ConfigArgs
+from ConfigManager.ConfigArgs import ConfigArg, ConfigArgs
 
 config_parms = ConfigArgs( 'rf2',
                            [ConfigArg('fileloc', abbrev='f', help='Location of primary RF2 Distribution'),
@@ -131,13 +131,13 @@ class RF2FileWrapper(object):
         if ss:
             if not self._existsss:
                 db = self.connect()
-                self._existsss   = db.execute(self._existsQuery % self._tabless) > 0
+                self._existsss   = len(db.execute(self._existsQuery % self._tabless).fetchall()) > 0
                 db.close()
             return self._existsss
         else:
             if not self._existsfull:
                 db = self.connect()
-                self._existsfull = db.execute(self._existsQuery % self._tablefull) > 0
+                self._existsfull = len(db.execute(self._existsQuery % self._tablefull).fetchall()) > 0
                 db.close()
             return self._existsfull
 

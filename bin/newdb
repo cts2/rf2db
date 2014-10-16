@@ -34,18 +34,21 @@ import os
 # Assuming that we are running in the bin directory
 _curdir = os.path.join(os.getcwd(), os.path.dirname(__file__), '..')
 
-# Get ourselves into the correct directory
+# There needs to be a ConfigManager at our root
 sys.path.append(_curdir)
-sys.path.append(os.path.join(_curdir, '..', 'ConfigManager'))
+sys.path.append(os.path.join(_curdir, '..',  'ConfigManager'))
 
-from config.ConfigManager import ConfigManager
+from ConfigManager.ConfigManager import ConfigManager
 from rf2db.db import RF2DBConnection
 
 helpargs = ['-h', '-?']
 
 
 def main(argv):
-    """ Create a MySQL database for RF2 files and/or manage the connection parameters
+    """ Create a MySQL database for RF2 files and/or manage the connection parameters.  Example sequence:
+    * python newdb -upd ../../rf2service/settings.conf --host localhost --db rf220140731 --charset utf8 --user root --passwd pw
+    * python newdb -show ../../rf2service/settings.conf
+    * python newdb --create ../../rf2service/settings.conf
     """
 
     # Get the configuration file name established

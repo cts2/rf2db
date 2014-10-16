@@ -32,11 +32,11 @@
 import sys
 import re
 from functools import reduce
-import MySQLdb as mysql
+import mysql.connector as mysql
 import sqlalchemy.pool as pool
 
-from config.ConfigArgs import ConfigArg, ConfigArgs
-from config.ConfigManager import ConfigManager
+from ConfigManager.ConfigArgs import ConfigArg, ConfigArgs
+from ConfigManager.ConfigManager import ConfigManager
 from rf2db.utils.listutils import listify
 from rf2db.parameterparser.ParmParser import booleanparam
 
@@ -46,7 +46,8 @@ config_parms = ConfigArgs('dbparms',
                            ConfigArg('user', abbrev='u', help='MySQL User Id'),
                            ConfigArg('passwd', abbrev='p', help='MySQL Password'),
                            ConfigArg('db', abbrev='db', help='Database', default='rf2'),
-                           ConfigArg('charset', help='MySQL Character Set', default='utf8')
+                           ConfigArg('charset', help='MySQL Character Set', default='utf8'),
+                           ConfigArg('dodecode', help='Do ')
                           ])
 config = ConfigManager(config_parms)
 
@@ -74,7 +75,7 @@ class RF2DBConnection(object):
     def newDB(self, config_mgr):
         nondb_config = config_mgr.asdict().copy()
         dbname = nondb_config.pop('db')
-        nondb_config.pop('dodecode')
+        nondb_config.pop('dodecode', None)
         self._connection = db.connect(**nondb_config)
         self._cursor = self._connection.cursor()
         self._cursor.execute("CREATE DATABASE IF NOT EXISTS %s" % dbname)
@@ -119,7 +120,8 @@ class RF2DBConnection(object):
         try:
             self._connect()
             self._cursor = self._connection.cursor()
-            return self._cursor.execute(stmt)
+            self._cursor.execute(stmt)
+            return self._cursor
         except db.Error as e:
             self._disconnect()
             # if retryCount == 0 and e.args[0] == 2006:
