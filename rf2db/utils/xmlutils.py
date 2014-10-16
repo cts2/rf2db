@@ -119,7 +119,7 @@ def testxml(resource, testxml=None, testfile=None, save=False, printdiff=True):
     assert (testxml or testfile) and not(testxml and testfile)
     if save and testfile:
         open(testfile,'w').write(prettyxml(resource))
-        print "SAVED: " + testfile
+        print("SAVED: " + testfile)
         rval = True
     else:
         if not testxml: testxml = open(testfile).read()
@@ -228,10 +228,10 @@ def diffxml(xml1, xml2, printdiff=True):
         while cmpElement(seq1[0], seq2[0]):
             seq1.pop(0), seq2.pop(0)
         print
-        print "===== MISMATCH ====="
-        print "Source: "
+        print("===== MISMATCH =====")
+        print("Source: ")
         pp(seq1.pop(0))
-        print "Target: "
+        print("Target: ")
         pp(seq2.pop(0))
     return rval
 
