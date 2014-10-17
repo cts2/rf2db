@@ -68,7 +68,7 @@ class sctid_generator(object):
         return self.next()
 
     def next(self):
-        rval = generate_verhoeff(self._start * 10 ** 10 + self._namespace * 10 ** 3 + self._partition * 10)
+        rval = generate_verhoeff(self._start * 10 ** 19 + self._namespace * 10 ** 2 + self._partition)
         self._start += 1
         return sctid(rval)
 

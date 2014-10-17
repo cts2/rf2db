@@ -36,6 +36,7 @@ from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms
 from rf2db.utils.lfu_cache import lfu_cache
 from rf2db.utils.listutils import listify
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, intparam
+from rf2db.constants import RF2ValueSets
 
 
 # Parameters for concept access
@@ -73,9 +74,24 @@ class ConceptDB(RF2FileWrapper):
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
+    def newConcept(self, moduleId, effectiveTime, definitionStatusId=RF2ValueSets.primitive):
+        rval = RF2Concept()
+        rval.id = sctid
+        rval.moduleId = moduleId
+        rval.effectiveTime = effectiveTime
+        rval.definitionStatusId = definitionStatusId
+        return rval
+
+
     def getAllConcepts_p(self, active=1, order='asc', page=0, maxtoreturn=100, after=0):
         return self.getAllConcepts(concept_list_parms.parse(
             **{'active': active, 'order': order, 'page': page, 'maxtoreturn': maxtoreturn, 'after': after}))
+
+    def getMaxId(self, namespace):
+        db = self.connect()
+        query = 'SELECT MAX(id div 10000000000) from %s WHERE (id %% 10000000000) div 1000 = %s' % (self._tname(True), namespace)
+        db.execute(query)
+        return db.next()
 
     def getAllConcepts(self, parmlist):
         """
