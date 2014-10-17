@@ -29,8 +29,8 @@
 
 from rf2db.db.RF2ConceptFile import ConceptDB
 from rf2db.utils.sctid_generator import sctid_generator
-from rf2db.db.RF2DescriptionFile import RF2Description
-from rf2db.db.RF2RelationshipFile import RF2Relationship
+from rf2db.db.RF2DescriptionFile import DescriptionDB
+from rf2db.db.RF2RelationshipFile import RelationshipDB
 
 
 class RF2Namespace():
@@ -40,21 +40,24 @@ class RF2Namespace():
         if namespace not in self.activeNamespaces:
             self.activeNamespaces[namespace] = IDGenerator(namespace)
 
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        return self.next()
-
-    def next(self):
+    def nextConceptId(self):
         return self.activeNamespaces[self._namespace].next(sctid_generator.CONCEPT)
+
+    def nextRelationshipId(self):
+        return self.activeNamespaces[self._namespace].next(sctid_generator.RELATIONSHIP)
+
+    def nextDescriptionId(self):
+        return self.activeNamespaces[self._namespace].next(sctid_generator.DESCRIPTION)
 
 
 
 class IDGenerator():
     def __init__(self, namespace):
         self._generators = {partition : self._generator(namespace, partition, db)
-                            for partition, db in ((sctid_generator.CONCEPT, ConceptDB),)}
+                            for partition, db in ((sctid_generator.CONCEPT, ConceptDB),
+                                                  (sctid_generator.DESCRIPTION, DescriptionDB),
+                                                  (sctid_generator.RELATIONSHIP, RelationshipDB),)
+        }
 
 
 

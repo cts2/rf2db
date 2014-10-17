@@ -87,11 +87,6 @@ class ConceptDB(RF2FileWrapper):
         return self.getAllConcepts(concept_list_parms.parse(
             **{'active': active, 'order': order, 'page': page, 'maxtoreturn': maxtoreturn, 'after': after}))
 
-    def getMaxId(self, namespace):
-        db = self.connect()
-        query = 'SELECT MAX(id div 10000000000) from %s WHERE (id %% 10000000000) div 1000 = %s' % (self._tname(True), namespace)
-        db.execute(query)
-        return db.next()
 
     def getAllConcepts(self, parmlist):
         """

@@ -29,7 +29,7 @@
 
 import unittest
 from rf2db.db.RF2Namespaces import RF2Namespace
-from rf2db.utils.sctid_generator import CIMI_Namespace, MAYO_Namespace
+from rf2db.utils.sctid_generator import CIMI_Namespace, MAYO_Namespace, sctid_generator
 
 
 class RF2NamespaceTestCase(unittest.TestCase):
@@ -38,13 +38,17 @@ class RF2NamespaceTestCase(unittest.TestCase):
 
     def test_CIMI(self):
         RF2Namespace(CIMI_Namespace)
-        print(RF2Namespace(CIMI_Namespace).next())
+        print(RF2Namespace(CIMI_Namespace).nextConceptId())
         x = RF2Namespace(CIMI_Namespace)
-        print x.next()
-        print x.next()
+        print x.nextConceptId()
+        print x.nextConceptId()
+        print x.nextRelationshipId()
+        print x.nextDescriptionId()
         ns = 1000087
-        print(RF2Namespace(ns).next())
-        print(RF2Namespace(ns).next())
+        print(RF2Namespace(ns).nextConceptId())
+        print(RF2Namespace(ns).nextConceptId())
+        print(RF2Namespace(ns).nextDescriptionId())
+        print(RF2Namespace(ns).nextRelationshipId())
 
 
 if __name__ == '__main__':

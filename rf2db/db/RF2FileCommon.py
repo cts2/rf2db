@@ -196,6 +196,12 @@ class RF2FileWrapper(object):
         db.execute("TRUNCATE TABLE %s" % self._tname(ss))
         db.commit()
 
+    def getMaxId(self, namespace):
+        db = self.connect()
+        query = 'SELECT MAX(id div 10000000000) from %s WHERE (id %% 10000000000) div 1000 = %s' % (self._tname(True), namespace)
+        db.execute(query)
+        return db.next()
+
     def moduleVersions(self, ss):
         db = self.connect()
         if db.execute("SELECT DISTINCT moduleId, effectiveTime FROM %s ORDER BY moduleid ASC, effectiveTime DESC" % self._tname(ss)):
