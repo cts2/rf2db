@@ -49,17 +49,14 @@ class DescriptionDB(RF2FileWrapper):
     table = 'description'
     
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
-      id bigint(20) NOT NULL,
-      effectiveTime int(11) NOT NULL,
-      active tinyint(1) NOT NULL,
-      moduleId bigint(20) NOT NULL,
+     %(base)s,
       conceptId bigint(20) NOT NULL,
       languageCode varchar(10) COLLATE utf8_bin NOT NULL,
       typeId bigint(20) NOT NULL,
       term text(16384) CHARACTER SET utf8 NOT NULL,
       caseSignificanceId bigint(20) NOT NULL,
       KEY concept (conceptId) USING BTREE,
-       %(primkey)s ); """
+       %(keys)s ); """
     
     def __init__(self, *args, **kwargs): 
         RF2FileWrapper.__init__(self, *args, **kwargs)

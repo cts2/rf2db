@@ -29,17 +29,32 @@
 
 import unittest
 from rf2db.utils.sctid_generator import *
+from rf2db.utils.sctid import sctid
 
 
 class GeneratorTestCase(unittest.TestCase):
     def test_gen(self):
         generator = sctid_generator(MAYO_Namespace, sctid_generator.RELATIONSHIP, 1000)
-        self.assertEqual(100010001340204, generator.next())
-        self.assertEqual([(1, 100110001340200), (2, 100210001340207), (3, 100310001340202),
-                          (4, 100410001340208), (5, 100510001340209), (6, 100610001340205),
-                          (7, 100710001340201), (8, 100810001340206), (9, 100910001340203)],
+        self.assertEqual(10001000134127, generator.next())
+        self.assertEqual([(1, 10011000134125), (2, 10021000134121), (3, 10031000134123),
+                          (4, 10041000134129), (5, 10051000134126), (6, 10061000134128),
+                          (7, 10071000134120), (8, 10081000134122), (9, 10091000134124)],
                          zip(range(1, 10), generator))
+        self.assertEqual(171000160104, (sctid_generator(CIMI_Namespace, sctid_generator.CONCEPT, 17)).next())
+        self.assertEqual(911431000160119, (sctid_generator(CIMI_Namespace, sctid_generator.DESCRIPTION, 91143)).next())
 
+        self.assertEqual(10101000134126, sctid(generator.next()))
+        self.assertEqual([(1, 10111000134129), (2, 10121000134120), (3, 10131000134122),
+                          (4, 10141000134128), (5, 10151000134125), (6, 10161000134127),
+                          (7, 10171000134124), (8, 10181000134121), (9, 10191000134123)],
+                         map(lambda (a,b): (a, sctid(b)), zip(range(1, 10), generator)))
+        self.assertEqual(171000160104, sctid((sctid_generator(CIMI_Namespace, sctid_generator.CONCEPT, 17)).next()))
+        self.assertEqual(911431000160119, sctid((sctid_generator(CIMI_Namespace, sctid_generator.DESCRIPTION, 91143)).next()))
+
+    def test_zero_partition(self):
+        self.assertEqual(123456001, sctid_generator(0, sctid_generator.CONCEPT, 123456).next())
+        self.assertEqual(654321026, sctid_generator(0, sctid_generator.RELATIONSHIP, 654321).next())
+        self.assertEqual(5349010, sctid_generator(0, sctid_generator.DESCRIPTION, 012345).next())
 
 if __name__ == '__main__':
     unittest.main()

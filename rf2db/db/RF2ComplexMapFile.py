@@ -47,12 +47,7 @@ class ComplexMapDB(RF2RefsetWrapper):
     table       = 'complexmap'
     
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
-      id varchar(36) COLLATE utf8_bin NOT NULL,
-      effectiveTime int(11) NOT NULL,
-      active tinyint(1) NOT NULL,
-      moduleId bigint(20) NOT NULL,
-      refsetId bigint(20) NOT NULL,
-      referencedComponentId bigint(20) NOT NULL,
+      %(base)s,
       mapGroup int(4) NOT NULL,
       mapPriority int(4) NOT NULL,
       mapRule text(8192) CHARACTER SET utf8,
@@ -60,12 +55,9 @@ class ComplexMapDB(RF2RefsetWrapper):
       mapTarget text(256),
       correlationId bigint(20),
       mapCategoryId bigint(20),
-      KEY ars (active, refsetId),
-      KEY component (refsetId, referencedComponentId),
-      KEY source (referencedComponentId),
       KEY target(refsetId, mapTarget(16)),
       key targ (mapTarget(16)),
-      %(primkey)s );"""
+      %(keys)s );"""
 
     _complexmap_list_parms = ParameterDefinitionList(global_rf2_parms)
     _complexmap_list_parms.add(iter_parms)

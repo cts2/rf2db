@@ -45,18 +45,10 @@ class SimpleMapDB(RF2RefsetWrapper):
     table       = 'simplemap'
     
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
-      id varchar(36) COLLATE utf8_bin NOT NULL,
-      effectiveTime int(11) NOT NULL,
-      active tinyint(1) NOT NULL,
-      moduleId bigint(20) NOT NULL,
-      refsetId bigint(20) NOT NULL,
-      referencedComponentId bigint(20) NOT NULL,
+     %(base)s,
       mapTarget varchar(255) COLLATE utf8_bin NOT NULL,
-      KEY ars (active, refsetId),
-      KEY component (refsetId, referencedComponentId),
-      KEY source (referencedComponentId),
       key targ (mapTarget(16)),
-      %(primkey)s );"""
+      %(keys)s );"""
 
     _simplemap_list_parms = ParameterDefinitionList(global_rf2_parms)
     _simplemap_list_parms.add(iter_parms)

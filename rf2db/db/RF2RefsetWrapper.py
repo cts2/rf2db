@@ -32,6 +32,21 @@ from rf2db.db.RF2DBConnection import RF2DBConnection
 
 class RF2RefsetWrapper(RF2FileWrapper):
 
+    _file_base = '''id char(36) COLLATE utf8_bin NOT NULL,
+effectiveTime int(11) NOT NULL,
+active tinyint(1) NOT NULL,
+moduleId bigint(20) NOT NULL,
+refsetId bigint(20) NOT NULL,
+referencedComponentId bigint(20) NOT NULL '''
+
+    _wrapper_keys = '''KEY ars (active, refsetId),
+KEY rac (refsetId, referencedComponentId),
+KEY refset (refsetId),
+KEY component (referencedComponentId)'''
+
+    _keys_ss = RF2FileWrapper._keys_ss + ',' + _wrapper_keys
+    _keys_full = RF2FileWrapper._keys_full + ',' + _wrapper_keys
+
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
         self._known_refsets = None

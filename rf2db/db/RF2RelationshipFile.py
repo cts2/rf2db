@@ -76,10 +76,7 @@ class RelationshipDB(RF2FileWrapper):
     table = 'relationship'
 
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
-      id bigint(20) NOT NULL,
-      effectiveTime int(11) NOT NULL,
-      active tinyint(1) NOT NULL,
-      moduleId bigint(20) NOT NULL,
+     %(base)s,
       sourceId bigint(20) NOT NULL,
       destinationId bigint(20) NOT NULL,
       relationshipGroup int(11) NOT NULL,
@@ -90,7 +87,7 @@ class RelationshipDB(RF2FileWrapper):
       KEY source (sourceId) USING HASH,
       KEY target (destinationId) USING HASH,
       KEY predicate (typeId),
-      %(primkey)s );"""
+      %(keys)s );"""
 
     def __init__(self, *args, **kwargs):
         self._srdb = StatedRelationshipDB()

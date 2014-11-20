@@ -35,8 +35,8 @@ from rf2db.parsers.RF2Iterator import RF2ConceptList, iter_parms
 from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms
 from rf2db.utils.lfu_cache import lfu_cache
 from rf2db.utils.listutils import listify
-from rf2db.parameterparser.ParmParser import ParameterDefinitionList, intparam
-from rf2db.constants import RF2ValueSets
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, intparam, strparam, enumparam, sctidparam
+from rf2db.constants.RF2ValueSets import primitive, defined
 
 
 # Parameters for concept access
@@ -45,6 +45,11 @@ concept_list_parms = ParameterDefinitionList(global_rf2_parms)
 concept_list_parms.add(iter_parms)
 concept_list_parms.after = intparam()
 
+new_concept_parms = ParameterDefinitionList(global_rf2_parms)
+new_concept_parms.sctid = sctidparam()
+new_concept_parms.effectiveTime = intparam()
+new_concept_parms.definitionstatus = enumparam(['p', 'f'], default='p')
+
 
 class ConceptDB(RF2FileWrapper):
     directory = 'Terminology'
@@ -52,13 +57,10 @@ class ConceptDB(RF2FileWrapper):
     table = 'concept'
 
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
-      id bigint(20) NOT NULL,
-      effectiveTime int(11) NOT NULL,
-      active tinyint(1) NOT NULL,
-      moduleId bigint(20) NOT NULL,
+      %(base)s,
       definitionStatusId bigint(20) NOT NULL,
        KEY id (id),
-       %(primkey)s );"""
+       %(keys)s );"""
 
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
@@ -74,13 +76,13 @@ class ConceptDB(RF2FileWrapper):
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
-    def newConcept(self, moduleId, effectiveTime, definitionStatusId=RF2ValueSets.primitive):
-        rval = RF2Concept()
-        rval.id = sctid
-        rval.moduleId = moduleId
-        rval.effectiveTime = effectiveTime
-        rval.definitionStatusId = definitionStatusId
-        return rval
+    def newConcept(self, parmlist):
+        db = self.connect()
+        parmlist.fname = self._tname(True)
+        parmlist.definitionStatusId = primitive if parmlist.definitionstatus == 'p' else defined
+        db.execute("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, definitionStatusId, changeSetId, locked) "
+        "VALUES (%(sctid)s, %(effectivetime)s, 1, %(moduleid)s, %(definitionstatusid)s, '%(changesetid)s', 1 )" % parmlist.__dict__)
+        db.commit()
 
 
     def getAllConcepts_p(self, active=1, order='asc', page=0, maxtoreturn=100, after=0):
@@ -99,6 +101,10 @@ class ConceptDB(RF2FileWrapper):
         db = self.connect()
         query = 'SELECT %s FROM %s' % ('*' if parmlist.maxtoreturn else 'count(*)', self._tname(parmlist.ss))
         query += ' WHERE %s ' % ('active=1' if parmlist.active else 'TRUE')
+        if parmlist.changesetid:
+            query += " AND (changeSetId = '%s' OR locked = 0)" % parmlist.changesetid
+        else:
+            query += ' AND locked = 0'
         if parmlist.after:
             query += ' AND id > %s' % parmlist.after
         if parmlist.moduleid:

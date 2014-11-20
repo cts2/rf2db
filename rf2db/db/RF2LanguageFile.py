@@ -58,7 +58,9 @@ language_map = {'en': us_english,
                 'es': spanish}
 
 """ Default parameters to use of the caller doesn't know them """
-default_parmlist = language_list_parms.parse(**{'active': True, 'language': 'en', 'ss': True})
+default_parmlist = language_list_parms.parse(**{'active': True,
+                                                'language': 'en',
+                                                'ss': True})
 
 
 class LanguageDB(RF2RefsetWrapper):
@@ -67,17 +69,11 @@ class LanguageDB(RF2RefsetWrapper):
     table = 'language'
 
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
-      id char(36) COLLATE utf8_bin NOT NULL,
-      effectiveTime int(11) NOT NULL,
-      active tinyint(1) NOT NULL,
-      moduleId bigint(20) NOT NULL,
-      refsetId bigint(20) NOT NULL,
-      referencedComponentId bigint(20) NOT NULL,
+     %(base)s,
       acceptabilityId bigint(20) NOT NULL,
       conceptId bigint(20) DEFAULT 0,
-      KEY component (referencedComponentId),
-      KEY conceptId (conceptId),
-       %(primkey)s ); """
+      KEY concept (conceptId) USING BTREE,
+       %(keys)s ); """
 
     updateSTMT = """UPDATE %(table)s l
         INNER JOIN description_ss d

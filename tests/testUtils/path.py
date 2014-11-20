@@ -5,14 +5,14 @@
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
 #
-#     Redistributions of source code must retain the above copyright notice, this
-#     list of conditions and the following disclaimer.
+# Redistributions of source code must retain the above copyright notice, this
+# list of conditions and the following disclaimer.
 #
 #     Redistributions in binary form must reproduce the above copyright notice,
 #     this list of conditions and the following disclaimer in the documentation
 #     and/or other materials provided with the distribution.
 #
-#     Neither the name of the Mayo Clinic nor the names of its contributors
+#     Neither the name of the <ORGANIZATION> nor the names of its contributors
 #     may be used to endorse or promote products derived from this software
 #     without specific prior written permission.
 #
@@ -21,29 +21,16 @@
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
 # IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
 # INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
 # DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
+import os
+import sys
 
-""" CTS2 Entity File -- used by the py4cts2 package for caching, but it makes more sense
-to just build it here.
-"""
+_curdir = os.path.join(os.getcwd(), os.path.dirname(__file__))
+sys.path.append(os.path.join(_curdir,'..', '..'))
+print(sys.path[-1])
 
-from rf2db.db.RF2FileCommon import RF2FileWrapper
-
-
-class CTS2EntityDB(RF2FileWrapper):
-    directory = ''
-    prefixes = []
-    table = 'cts2_entity'
-
-    createSTMT = """CREATE TABLE %(table)s (
-      %(base)s,
-      record text NOT NULL,
-       %(keys)s ); """
-
-    def __init__(self, *args, **kwargs):
-        RF2FileWrapper.__init__(self, *args, **kwargs)
-
+# NOTE: there is a local settings.conf that is used for the test code...

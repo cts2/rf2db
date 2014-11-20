@@ -51,7 +51,7 @@ def prettyxml(pyxb_xml,validate=True, ns=None, xslt=None, toXML=True):
     """
     pyxb.defaultNamespace = ns
     domutils.BindingDOMSupport.SetDefaultNamespace(ns if ns else defaultNS)
-    pyxb.RequireValidWhenGenerating(validate)
+    pyxb.RequireValidWhenGenerating(True)
     return prettyxml_(pyxb_xml.toxml(encoding='utf-8') if toXML else pyxb_xml, xslt)
 
 def prettyxml_(rawxml, xslt=None):

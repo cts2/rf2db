@@ -51,10 +51,7 @@ class DescriptionTextDB(RF2FileWrapper):
     table = 'description_text'
 
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
-      id bigint(20) NOT NULL,
-      effectiveTime int(11) NOT NULL,
-      active tinyint(1) NOT NULL,
-      moduleId bigint(20) NOT NULL,
+     %(base)s,
       conceptId bigint(20) NOT NULL,
       languageCode varchar(10) COLLATE utf8_bin NOT NULL,
       typeId bigint(20) NOT NULL,
@@ -63,7 +60,7 @@ class DescriptionTextDB(RF2FileWrapper):
       conceptActive tinyint(1) DEFAULT NULL,
       KEY concept (conceptId),
       FULLTEXT(term),
-       %(primkey)s 
+       %(keys)s
     ) ENGINE=MyISAM;"""
 
     _loadStmt1 = """INSERT INTO %(table)s SELECT d.*, 0 FROM %(desctable)s d, 

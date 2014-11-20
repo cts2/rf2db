@@ -36,7 +36,7 @@ from rf2db.db.RF2DescriptionFile import DescriptionDB
 from rf2db.db.RF2RelationshipFile import RelationshipDB
 from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB
 from rf2db.db.RF2LanguageFile import LanguageDB
-from rf2db.constants.RF2ValueSets import acceptable, synonym
+from rf2db.constants.RF2ValueSets import acceptable, synonym, preferred
 from rf2db.utils.listutils import listify
 from rf2db.utils.lfu_cache import lfu_cache
 from rf2db.parameterparser.ParmParser import sctidparam
@@ -56,7 +56,7 @@ class ModuleVersionsDB(RF2FileWrapper):
     createModulesSTMT = """CREATE OR REPLACE VIEW moduleids AS
         SELECT DISTINCT m.moduleid, d.term, d.languagecode FROM %(mvtable)s m, %(desctable)s d, %(langtable)s l
         WHERE d.conceptid = m.moduleid AND l.referencedcomponentid=d.id AND
-              l.acceptabilityid=%(acceptable)s AND d.typeid=%(synonym)s;"""
+              l.acceptabilityid in (%(acceptable)s, %(preferred)s) AND d.typeid=%(synonym)s;"""
     
     # A list of tables that carry significant version identifiers.  Used to determine possible module changes
     _versionTables = [ConceptDB(),
@@ -83,7 +83,7 @@ class ModuleVersionsDB(RF2FileWrapper):
         print "Loading moduleid view"
         db.execute(self.createModulesSTMT % {'mvtable':self._tname(ss), 'desctable':DescriptionDB()._tname(ss),
                                              'langtable':LanguageDB()._tname(ss),'acceptable':acceptable,
-                                             'synonym':synonym})
+                                             'preferred':preferred, 'synonym':synonym})
         db.commit()
 
             

@@ -29,7 +29,7 @@
 
 import unittest
 from rf2db.db.RF2Namespaces import RF2Namespace
-from rf2db.utils.sctid_generator import CIMI_Namespace, MAYO_Namespace, sctid_generator
+from rf2db.utils.sctid_generator import CIMI_Namespace
 
 
 class RF2NamespaceTestCase(unittest.TestCase):
@@ -49,6 +49,10 @@ class RF2NamespaceTestCase(unittest.TestCase):
         print(RF2Namespace(ns).nextConceptId())
         print(RF2Namespace(ns).nextDescriptionId())
         print(RF2Namespace(ns).nextRelationshipId())
+
+    def test_strNS(self):
+        ns = "1000087"
+        print(RF2Namespace(ns).nextConceptId())
 
 
 if __name__ == '__main__':

@@ -33,13 +33,14 @@
 
 import os
 import rf2db.db.RF2DBConnection
-from rf2db.parameterparser.ParmParser import booleanparam, sctidparam
+from rf2db.parameterparser.ParmParser import booleanparam, sctidparam, strparam
 from ConfigManager.ConfigArgs import ConfigArg, ConfigArgs
 
 config_parms = ConfigArgs( 'rf2',
                            [ConfigArg('fileloc', abbrev='f', help='Location of primary RF2 Distribution'),
-                            ConfigArg('addloc', abbrev='a',help='Add the location of a secondary RF2 Distribution'),
-                            ConfigArg('release', abbrev='r', help='Current RF2 Revision (yyyymmdd)')
+                            ConfigArg('addloc', abbrev='a', help='Add the location of a secondary RF2 Distribution'),
+                            ConfigArg('release', abbrev='r', help='Current RF2 Revision (yyyymmdd)'),
+                            ConfigArg('namespace', abbrev='n', help='Default namespace')
                            ])
 
 # TODO: initialize the PYTHONPATH variable - use WebServer as an example
@@ -62,14 +63,17 @@ from rf2db.parameterparser.ParmParser import ParameterDefinitionList
 global_rf2_parms = ParameterDefinitionList()
 global_rf2_parms.ss = booleanparam(default=True, fixed=True)
 global_rf2_parms.active = booleanparam(default=True)
+global_rf2_parms.changesetid = strparam(required=False)
 
 class moduleidparam(sctidparam):
 
-    def __init__(self, default=None, fixed=False):
+    def __init__(self, **args):
         self._mvdb = None
-        sctidparam.__init__(self, default, fixed)
+        sctidparam.__init__(self, **args)
 
     def _isValid(self, val):
+        if not val:
+            return True
         if not self._mvdb:
             from rf2db.db.RF2ModuleVersionsFile import ModuleVersionsDB
             self._mvdb = ModuleVersionsDB()
@@ -87,6 +91,16 @@ class RF2FileWrapper(object):
     table      = None    # 'concept', 'description', 'simplemap', etc.
     createSTMT = None    # SQL create statement for table. 'table' is available as a parameter
     isRF1File  = False   # True means this is an RF1 table w/ different behavior
+
+    _file_base = '''id bigint(20) NOT NULL,
+effectiveTime int(11) NOT NULL,
+active tinyint(1) NOT NULL,
+moduleId bigint(20) NOT NULL '''
+
+    _file_extension = '''changeSetId char(36), locked tinyint(1) NOT NULL DEFAULT 0,'''
+
+    _keys_ss = '''KEY (changeSetId), PRIMARY KEY (id)'''
+    _keys_full = '''KEY (changeSetId), PRIMARY KEY (id, effectiveTime)'''
 
     # Directory layout
     # - py4cts2/RF2/rf2_source
@@ -142,18 +156,14 @@ class RF2FileWrapper(object):
             return self._existsfull
 
     def createTable(self, ss):
-        import warnings
-        warnings.filterwarnings("ignore", r"Table .* already exists.*")
-        if ss:
-            db = self.connect()
-            db.execute(self.createSTMT % {'table':self._tabless,   'primkey': 'PRIMARY KEY (id)' })
-            db.commit()
-            self._existsss = True
-        else:
-            db = self.connect()
-            db.execute(self.createSTMT % {'table':self._tablefull, 'primkey': 'PRIMARY KEY (id,effectiveTime)' })
-            db.commit()
-            self._existsfull = True
+        db = self.connect()
+        db.execute(self.createSTMT % {'table': self._tabless,
+                                      'base': self._file_base,
+                                      'keys': self._file_extension + (self._keys_ss if ss else self._keys_full)})
+        db.commit()
+        if ss: self._existsss = True
+        else: self._existsfull = True
+
 
     def hascontent(self, ss):
         if ss:

@@ -5,14 +5,14 @@
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
 #
-#     Redistributions of source code must retain the above copyright notice, this
-#     list of conditions and the following disclaimer.
+# Redistributions of source code must retain the above copyright notice, this
+# list of conditions and the following disclaimer.
 #
 #     Redistributions in binary form must reproduce the above copyright notice,
 #     this list of conditions and the following disclaimer in the documentation
 #     and/or other materials provided with the distribution.
 #
-#     Neither the name of the Mayo Clinic nor the names of its contributors
+#     Neither the name of the <ORGANIZATION> nor the names of its contributors
 #     may be used to endorse or promote products derived from this software
 #     without specific prior written permission.
 #
@@ -21,29 +21,44 @@
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
 # IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
 # INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
 # DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-""" CTS2 Entity File -- used by the py4cts2 package for caching, but it makes more sense
-to just build it here.
+""" RF2 ModuleDependency reference file
 """
 
-from rf2db.db.RF2FileCommon import RF2FileWrapper
+
+from rf2db.db.RF2FileCommon import global_rf2_parms
+from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
+from rf2db.parsers.RF2RefsetParser import RF2SimpleMapReferenceSetEntry
+from rf2db.parsers.RF2Iterator import RF2SimpleMapReferenceSet, iter_parms
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, sctidparam, strparam
 
 
-class CTS2EntityDB(RF2FileWrapper):
-    directory = ''
-    prefixes = []
-    table = 'cts2_entity'
+class ModuleDependencyDB(RF2RefsetWrapper):
 
-    createSTMT = """CREATE TABLE %(table)s (
-      %(base)s,
-      record text NOT NULL,
-       %(keys)s ); """
+    directory   = 'Refset/Metadata'
+    prefixes    = ['der2_ssRefset_ModuleDependency']
+    table       = 'moduleDependency'
+
+    createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
+     %(base)s,
+      sourceEffectiveTime int(11) NOT NULL,
+      targetEffectiveTime int(11) NOT NULL,
+      %(keys)s );"""
+
 
     def __init__(self, *args, **kwargs):
-        RF2FileWrapper.__init__(self, *args, **kwargs)
+        RF2RefsetWrapper.__init__(self, *args, **kwargs)
+
+
+
+
+
+
+
+
 

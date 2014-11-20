@@ -41,12 +41,13 @@ CIMI_Namespace = 1000160
 
 class sctid_generator(object):
     class partition(object):
-        def __init__(self, id):
-            self._id = id
+        def __init__(self, sid, lid):
+            self._sid = sid
+            self._lid = lid
 
-    CONCEPT = partition(00)
-    DESCRIPTION = partition(01)
-    RELATIONSHIP = partition(02)
+    CONCEPT = partition(0, 10)
+    DESCRIPTION = partition(1, 11)
+    RELATIONSHIP = partition(2, 12)
 
 
     def __init__(self, namespace, partition, start):
@@ -58,7 +59,7 @@ class sctid_generator(object):
         """
         assert isinstance(partition, sctid_generator.partition)
         self._namespace = namespace
-        self._partition = partition._id
+        self._partition = partition._lid if namespace else partition._sid
         self._start = start
 
     def __iter__(self):
@@ -68,7 +69,7 @@ class sctid_generator(object):
         return self.next()
 
     def next(self):
-        rval = generate_verhoeff(self._start * 10 ** 19 + self._namespace * 10 ** 2 + self._partition)
+        rval = generate_verhoeff(self._start * 10 ** (9 if self._namespace else 2) + self._namespace * 10 ** 2 + self._partition)
         self._start += 1
         return sctid(rval)
 

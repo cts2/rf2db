@@ -47,7 +47,7 @@ config_parms = ConfigArgs('dbparms',
                            ConfigArg('passwd', abbrev='p', help='MySQL Password'),
                            ConfigArg('db', abbrev='db', help='Database', default='rf2'),
                            ConfigArg('charset', help='MySQL Character Set', default='utf8'),
-                           ConfigArg('dodecode', help='Do ')
+                           ConfigArg('dodecode', help='Decode paramater needed for some implementations')
                           ])
 config = ConfigManager(config_parms)
 
@@ -124,8 +124,7 @@ class RF2DBConnection(object):
             return self._cursor
         except db.Error as e:
             self._disconnect()
-            # if retryCount == 0 and e.args[0] == 2006:
-            if retryCount == 0:
+            if retryCount == 0 and e.args[0] == 2006:
                 print >> sys.stderr, ("Database timeout error - reconnecting")
                 self._connect()
                 return self.execute(stmt, retryCount + 1)
@@ -150,7 +149,7 @@ class RF2DBConnection(object):
 
     @staticmethod
     def build_query(table, filter_="", sort=None, active=True, ss=True, start=0, maxtoreturn=100, refdate=None,
-                    moduleids=None, order='asc'):
+                    moduleids=None, order='asc', changesetid=None):
         """ Query an RF2 table taking the historical information into account.
         
         @param table: table to query
@@ -179,6 +178,9 @@ class RF2DBConnection(object):
 
         @param moduleids: list of module ids to constrain the query
         @type moduleids: C{sctid} or C{list{sctid}}
+
+        @param changesetid: changeset to include in the query
+        @type changesetid: C{uuid}
         
         @return: query
         @rtype: C{String}
@@ -206,6 +208,10 @@ class RF2DBConnection(object):
             query += " AND active = 1 "
         if moduleids:
             query += " AND (" + ' OR '.join(['moduleid = %s' % m for m in listify(moduleids)]) + ') '
+        if changesetid:
+            query += " AND (changesetid = '%s' OR locked = 0)" % changesetid
+        else:
+            query += " AND locked = 0"
         if sort:
             query += " ORDER BY " + ', '.join([('tbl.%s' % e) for e in listify(sort)]) + ' %s ' % order
         if maxtoreturn:
@@ -217,11 +223,11 @@ class RF2DBConnection(object):
         # TODO: add sort column to the parameters list
         return self.query(table, filter, sort=parms.sort, order=parms.order, active=parms.active, ss=parms.ss,
                           start=parms.start, maxtoreturn=parms.maxtoreturn, refdate=parms.refdate,
-                          moduleids=parms.moduleid)
+                          moduleids=parms.moduleid, changesetid=parms.changesetid)
 
 
     def query(self, table, filter_="", sort=None, active=True, ss=True, start=0,
-              maxtoreturn=100, refdate=None, moduleids=None, order="asc"):
+              maxtoreturn=100, refdate=None, moduleids=None, order="asc", changesetid=None):
         """ Query an RF2 table taking the historical information into account.
 
         @param table: table to query
@@ -257,7 +263,7 @@ class RF2DBConnection(object):
                                                                             maxtoreturn, refdate, moduleids)) else []
 
     def executeAndReturn(self, query):
-        return self if self.execute(query) else []
+        return self._cursor if self.execute(query) else []
 
 
     @staticmethod

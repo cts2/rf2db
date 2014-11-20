@@ -36,9 +36,9 @@ from rf2db.db.RF2RelationshipFile import RelationshipDB
 class RF2Namespace():
     activeNamespaces = {}
     def __init__(self, namespace):
-        self._namespace = namespace
-        if namespace not in self.activeNamespaces:
-            self.activeNamespaces[namespace] = IDGenerator(namespace)
+        self._namespace = int(namespace)
+        if self._namespace not in self.activeNamespaces:
+            self.activeNamespaces[self._namespace] = IDGenerator(self._namespace)
 
     def nextConceptId(self):
         return self.activeNamespaces[self._namespace].next(sctid_generator.CONCEPT)

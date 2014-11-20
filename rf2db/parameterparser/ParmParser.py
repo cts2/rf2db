@@ -177,9 +177,10 @@ class ParameterDefinitionList(object):
 class ParameterDefinition(object):
     _computed = False
 
-    def __init__(self, typename, default=None, splitable=True, fixed=False):
+    def __init__(self, typename, default=None, splitable=True, fixed=False, required=True):
         self._typename = typename
         self._default = default
+        self._required = required
         self._splitable = splitable
         self._fixed = fixed
 
@@ -204,23 +205,24 @@ class ParameterDefinition(object):
             if isinstance(val, list):
                 return map(self._value, val)
             return self._value(val)
+        print("Invalid module id: %s" % val)
         return None
 
     def hasDefault(self):
-        return self._default is not None
+        return self._default is not None or not self._required
 
     def defaultValue(self):
-        return self.value(self._default)
+        return self.value(self._default) if self._default is not None else None
 
 
 class booleanparam(ParameterDefinition):
     true_values = ['y', 'yes', 'true', '1', 'on', 'yup']
     false_values = ['n', 'no', 'false', '0', 'off', 'nope']
 
-    def __init__(self, default=None, fixed=False):
-        ParameterDefinition.__init__(self, "boolean", default, splitable=False, fixed=fixed)
+    def __init__(self, **args):
+        ParameterDefinition.__init__(self, "boolean", **args)
         if self.hasDefault():
-            assert self.isValid(default)
+            assert self.isValid(self.defaultValue())
 
     def _isValid(self, val):
         val = str(val).lower()
@@ -242,8 +244,8 @@ class booleanparam(ParameterDefinition):
 
 
 class intparam(ParameterDefinition):
-    def __init__(self, default=None, fixed=False):
-        ParameterDefinition.__init__(self, "integer", default, fixed=fixed)
+    def __init__(self, **args):
+        ParameterDefinition.__init__(self, "integer", **args)
 
     def _isValid(self, val):
         try:
@@ -271,8 +273,8 @@ class strparam(ParameterDefinition):
     ]
     _sanitize = True
 
-    def __init__(self, default=None, fixed=False, splitable=False):
-        ParameterDefinition.__init__(self, "string", default, splitable=splitable, fixed=fixed)
+    def __init__(self, fixed=False, **args):
+        ParameterDefinition.__init__(self, "string", fixed=fixed, **args)
 
     def _isValid(self, val):
         try:
@@ -288,8 +290,8 @@ class strparam(ParameterDefinition):
 
 
 class sctidparam(ParameterDefinition):
-    def __init__(self, default=None, fixed=False):
-        ParameterDefinition.__init__(self, "sctid", default, fixed=fixed)
+    def __init__(self, **args):
+        ParameterDefinition.__init__(self, "sctid", **args)
 
     def _isValid(self, val):
         return sctid.isValid(val)
@@ -299,8 +301,8 @@ class sctidparam(ParameterDefinition):
 
 
 class enumparam(ParameterDefinition):
-    def __init__(self, possvalues, default=None, casesensitive=False, fixed=False):
-        ParameterDefinition.__init__(self, "enum", default, fixed=fixed)
+    def __init__(self, possvalues, casesensitive=False, **args):
+        ParameterDefinition.__init__(self, "enum", **args)
         self._possvalues = [str(v) if casesensitive else str(v).lower() for v in possvalues]
         self._casesensitive = casesensitive
 
@@ -329,8 +331,8 @@ class computedparam(ParameterDefinition):
 
 
 class dateparam(ParameterDefinition):
-    def __init__(self, val, default=None, fixed=False):
-        ParameterDefinition.__init__(self, "date", default=default, fixed=fixed)
+    def __init__(self, val, **args):
+        ParameterDefinition.__init__(self, "date", **args)
 
     def _isValid(self, val):
         # TODO: Add date time validation and the like
