@@ -52,6 +52,7 @@ def main(argv):
     """
 
     # Get the configuration file name established
+    # TODO: newdb -h doesn't work because the parse_known_args doesn't have a setting
     parser = argparse.ArgumentParser(description="Set up RF2 DB parameters and optionally create a database")
     parser.add_argument('configfile', help="configuration file location")
 

@@ -43,6 +43,7 @@ from rf2db.db import RF2ConceptFile, RF2DescriptionFile, RF2DescriptionTextFile,
 from rf2db.db import RF2SimpleMapFile, RF2SimpleReferencesetFile, RF2ModuleVersionsFile
 from rf2db.db import RF2TransitiveClosure, RF2TransitiveClosureCanonical, CTS2Entity
 from rf2db.db import RF2TransitiveChildren, RF2TransitiveChildrenCanonical, RF2ComplexMapFile
+from rf2db.db import RF2ModuleDependencyFile
 from rf2db.db import RF2PnAndFSN
 from rf2db.db import RF1CanonicalCore
 from rf2db.db.RF2FileCommon import config_parms
@@ -57,6 +58,7 @@ load_sections = [
     ('complexmap', (RF2ComplexMapFile.ComplexMapDB,)),
     ('simplerefset', (RF2SimpleReferencesetFile.SimpleReferencesetDB,)),
     ('moduleversions', (RF2ModuleVersionsFile.ModuleVersionsDB,)),
+    ('moduledependency', (RF2ModuleDependencyFile.ModuleDependencyDB,)),
     ('canonical', (RF1CanonicalCore.CanonicalCoreDB,)),
     ('pnandfsn', (RF2PnAndFSN.PNandFSNDB,)),
     ('transitive', (RF2TransitiveClosure.TransitiveClosureDB,)),
@@ -88,7 +90,7 @@ def main(args):
     parser.add_argument('configfile', help="Configuration file location")
     parser.add_argument('--files', nargs='+', help="RF2 files to load. If omitted, all are loaded",
                         choices=[e[0] for e in load_sections])
-    parser.add_argument('-n', '--notruncate', help="To not truncate table(s) if present", action="store_true")
+    parser.add_argument('--notruncate', help="To not truncate table(s) if present", action="store_true")
     parser.add_argument('-d', '--drop', help="Drop table(s) if present", action="store_true")
     parser.add_argument('--full', help="Operate on full history instead of snapshot", action="store_true")
 
