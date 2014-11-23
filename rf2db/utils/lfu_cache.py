@@ -69,7 +69,7 @@ def lfu_cache(maxsize=100):
         def wrapper(*args, **kwargs):
             if booleanparam.v(dbconfig.nocache, False):
                 return user_function(*args, **kwargs)
-            key = args[1:]
+            key = ''.join(str(e) for e in args[1:])
             if kwargs:
                 #
                 key += (kwarg_mark,) + tuple(

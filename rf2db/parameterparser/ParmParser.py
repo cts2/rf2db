@@ -58,6 +58,15 @@ class ParameterDefinitionList(object):
             else:
                 self.__dict__[key.lower()] = value
 
+        def __repr__(self):
+            return ''.join(k + ':' + repr(self.__dict__[k]) for k in self._orderedKeys())
+
+        def _orderedKeys(self):
+            """
+            :return: An ordered list of non-underscored keys
+            """
+            return sorted([k for k in self.__dict__.keys() if not k.startswith('_')])
+
         def defaulted(self, key):
             """ Determine whether C{key} is defaulted
             @param key: value to check
