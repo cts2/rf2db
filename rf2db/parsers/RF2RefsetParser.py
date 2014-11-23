@@ -29,7 +29,7 @@
 
 """ RF2 Reference Set parser module
 """
-from rf2db.schema      import rf2
+from rf2db.schema import rf2
 
 from rf2db.constants import RF2ValueSets
 from rf2db.utils.sctid import sctid
@@ -163,4 +163,7 @@ class RF2ModuleDependencyReferenceSetEntry(rf2.ModuleDependencyReferenceSetEntry
 class RF2DescriptionFormatReferenceSetEntry(rf2.DescriptionFormatReferenceSetEntry_, RF2RefsetBase):
     pass
 
-
+@rf2link(rf2.ChangeSetReferenceSetEntry, rf2.ChangeSetReferenceSetEntry_,
+        ['creator', 'changeDescription', 'isFinal', 'inRelease'])
+class RF2ChangeSetReferenceEntry(rf2.ChangeSetReferenceSetEntry_, RF2RefsetBase):
+    pass

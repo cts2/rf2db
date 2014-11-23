@@ -57,6 +57,7 @@ class RF2Base(rf2.Base, object):
         if nFields < self._nFields:
             fields += [None] * (self._nFields - nFields)
         self._baseClass.__init__(self, **dict(zip(self._fieldNames, fields)))
+        self._changeSetId, self._locked = fields[len(self._fieldNames):len(self._fieldNames)+2]
         return self
 
     def __str__(self):
@@ -84,6 +85,14 @@ class RF2Base(rf2.Base, object):
 
     def isActive(self):
         return self.active == 1
+
+    @property
+    def locked(self):
+        return bool(self._locked)
+
+    @property
+    def changesetid(self):
+        return self._changeSetId
 
     @classmethod
     def validateHeader(cls, headerfields):

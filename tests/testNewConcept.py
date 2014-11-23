@@ -27,8 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 import unittest
-
-from testUtils import path
+import re
 
 from rf2db.db.RF2ConceptFile import ConceptDB, new_concept_parms
 from rf2db.constants.RF2ValueSets import cimiModule
@@ -54,6 +53,22 @@ class NewConceptTestCase(unittest.TestCase):
                                          'sctid': sctid,
                                         })
         dbrec = self.concdb.newConcept(parms)
-        print(dbrec)
+        # We would like to do the test below, but RF2Concept has a wrapper and, as such, evaluates as a function
+        # self.assertTrue(isinstance(dbrec, RF2Concept))
+        self.assertIsNotNone(re.match(r'RF2Concept\(id:[0-9]+100016010[0-9], effectiveTime:20141131, active:1, moduleId:11000160102, definitionStatusId:900000000000074008\)', str(dbrec)))
+
+    def testNew2(self):
+        dbrec = self.concdb.newConcept_p(sctid=RF2Namespace(CIMI_Namespace).nextConceptId(),
+                                       effectivetime='20141131',
+                                       moduleid=str(cimiModule),
+                                       definitionstatus='p',
+                                       changesetid=testChangeSet)
+        self.assertIsNotNone(re.match(r'RF2Concept\(id:[0-9]+100016010[0-9], effectiveTime:20141131, active:1, moduleId:11000160102, definitionStatusId:900000000000074008\)', str(dbrec)))
+
+
+    def testNew3(self):
+        dbrec = self.concdb.newConcept_p(changesetid=testChangeSet)
+        self.assertIsNotNone(re.match(r'RF2Concept\(id:[0-9]+100016010[0-9], effectiveTime:[0-9]{8}, active:1, moduleId:11000160102, definitionStatusId:900000000000074008\)', str(dbrec)))
+
 
 

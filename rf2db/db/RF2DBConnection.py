@@ -47,7 +47,7 @@ config_parms = ConfigArgs('dbparms',
                            ConfigArg('passwd', abbrev='p', help='MySQL Password'),
                            ConfigArg('db', abbrev='db', help='Database', default='rf2'),
                            ConfigArg('charset', help='MySQL Character Set', default='utf8'),
-                           ConfigArg('dodecode', help='Decode paramater needed for some implementations')
+                           ConfigArg('dodecode', help='Decode paramater needed for some implementations'),
                           ])
 config = ConfigManager(config_parms)
 
@@ -104,6 +104,33 @@ class RF2DBConnection(object):
                 pass
             self._connection = None
 
+    # TODO: merge this with execute
+    def execute_query(self, stmt, retryCount=0):
+        """ Execute a create/delete/update statement
+
+        @param stmt:  The sql statement to execute
+        @type stmt: C{str}
+
+        @param retryCount: The number of times the execution has been tried
+        @type retryCount: C{int}
+
+        @return: Result of cursor.execute(stmt)
+        """
+        if booleanparam.v(dbconfig.trace, False):
+            print("===== %s" % stmt)
+        try:
+            self._connect()
+            return self._connection.cmd_query(stmt)
+        except db.Error as e:
+            self._disconnect()
+            if retryCount == 0 and e.args[0] == 2006:
+                print >> sys.stderr, ("Database timeout error - reconnecting")
+                self._connect()
+                return self.execute_query(stmt, retryCount + 1)
+            else:
+                print >> sys.stderr, ("**********", stmt)
+                raise e
+
     def execute(self, stmt, retryCount=0):
         """ Execute stmt.  
         
@@ -120,7 +147,7 @@ class RF2DBConnection(object):
         try:
             self._connect()
             self._cursor = self._connection.cursor()
-            self._cursor.execute(stmt)
+            rval = self._cursor.execute(stmt)
             return self._cursor
         except db.Error as e:
             self._disconnect()
@@ -259,8 +286,11 @@ class RF2DBConnection(object):
 
         @return: record generator
         """
-        return self.ResultsGenerator(self) if self.execute(self.build_query(table, filter_, sort, active, ss, start,
-                                                                            maxtoreturn, refdate, moduleids)) else []
+        return self.ResultsGenerator(self) if self.execute(self.build_query(table, filter_=filter_, sort=sort,
+                                                                            active=active, ss=ss, start=start,
+                                                                            maxtoreturn=maxtoreturn, refdate=refdate,
+                                                                            moduleids=moduleids, order=order,
+                                                                            changesetid=changesetid)) else []
 
     def executeAndReturn(self, query):
         return self._cursor if self.execute(query) else []

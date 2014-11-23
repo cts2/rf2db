@@ -99,6 +99,9 @@ snomedCTmodelComponent = sctid(900000000000012004)
 cimiModule = sctid(11000160102)
 mayoModule = sctid(11000134103)
 
+# Reference set for change sets
+changeSetRefSet = sctid(21000160106)
+
 # Map from module to extension identifier
 moduleToExtensionMap = {
     snomedCTtoICD9CMequivalencyMappingModule:               snomedCTInternational,

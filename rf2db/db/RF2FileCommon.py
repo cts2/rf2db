@@ -35,13 +35,19 @@ import os
 import rf2db.db.RF2DBConnection
 from rf2db.parameterparser.ParmParser import booleanparam, sctidparam, strparam
 from ConfigManager.ConfigArgs import ConfigArg, ConfigArgs
+from ConfigManager.ConfigManager import ConfigManager
 
-config_parms = ConfigArgs( 'rf2',
+config_parms = ConfigArgs('rf2',
                            [ConfigArg('fileloc', abbrev='f', help='Location of primary RF2 Distribution'),
                             ConfigArg('addloc', abbrev='a', help='Add the location of a secondary RF2 Distribution'),
                             ConfigArg('release', abbrev='r', help='Current RF2 Revision (yyyymmdd)'),
-                            ConfigArg('namespace', abbrev='n', help='Default namespace')
                            ])
+
+extension_parms = ConfigArgs('extension',
+                              [ConfigArg('namespace', abbrev='n', help='Namespace for new identifiers'),
+                               ConfigArg('moduleid', abbrev='m', help='ModuleId for new entries'),
+                               ])
+extensionParms = ConfigManager(extension_parms)
 
 # TODO: initialize the PYTHONPATH variable - use WebServer as an example
 # TODO: load script for SNOMED_STY file
@@ -128,8 +134,6 @@ moduleId bigint(20) NOT NULL '''
 
 
     _existsQuery = """SHOW TABLES LIKE '%s';"""
-
-
 
 
     def __init__(self, load=False, noaction=False):
@@ -221,9 +225,18 @@ moduleId bigint(20) NOT NULL '''
         db.close()
         return []
 
+    @classmethod
+    def _rollback(cls, db, ss, changesetId):
+        fname = cls._fname(ss)
+        return db.execute_query("DELETE FROM %(fname)s WHERE changeSetId = '%(changesetId)s' AND locked=1" % vars() )
 
+    # TODO: deprecate this and switch to _fname class method
     def _tname(self, ss):
         return self._tabless if ss else self._tablefull
+
+    @classmethod
+    def _fname(cls, ss):
+        return (cls.table + '_ss') if ss else (cls.table + '_full')
 
     def _filesToLoad(self, ss, cfg):
         reldir = ('Snapshot' if ss else 'Full') if not self.isRF1File else ''

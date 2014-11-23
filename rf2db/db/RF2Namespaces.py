@@ -27,10 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from rf2db.db.RF2ConceptFile import ConceptDB
 from rf2db.utils.sctid_generator import sctid_generator
-from rf2db.db.RF2DescriptionFile import DescriptionDB
-from rf2db.db.RF2RelationshipFile import RelationshipDB
 
 
 class RF2Namespace():
@@ -53,7 +50,10 @@ class RF2Namespace():
 
 class IDGenerator():
     def __init__(self, namespace):
-        self._generators = {partition : self._generator(namespace, partition, db)
+        from rf2db.db.RF2ConceptFile import ConceptDB
+        from rf2db.db.RF2DescriptionFile import DescriptionDB
+        from rf2db.db.RF2RelationshipFile import RelationshipDB
+        self._generators = {partition : self._generator(int(namespace), partition, db)
                             for partition, db in ((sctid_generator.CONCEPT, ConceptDB),
                                                   (sctid_generator.DESCRIPTION, DescriptionDB),
                                                   (sctid_generator.RELATIONSHIP, RelationshipDB),)

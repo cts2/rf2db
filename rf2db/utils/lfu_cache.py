@@ -82,6 +82,9 @@ def lfu_cache(maxsize=100):
                     )
                 )
 
+            # Refresh the cache if needed
+            if kwargs.pop('_nocache', False):
+                cache.pop(key, None)
             # get cache entry or compute if not found
             try:
                 result = cache[key]

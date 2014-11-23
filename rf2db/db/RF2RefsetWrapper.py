@@ -32,11 +32,12 @@ from rf2db.db.RF2DBConnection import RF2DBConnection
 
 class RF2RefsetWrapper(RF2FileWrapper):
 
-    _file_base = '''id char(36) COLLATE utf8_bin NOT NULL,
+    _file_base_ = '''id char(36) COLLATE utf8_bin NOT NULL,
 effectiveTime int(11) NOT NULL,
 active tinyint(1) NOT NULL,
 moduleId bigint(20) NOT NULL,
-refsetId bigint(20) NOT NULL,
+refsetId bigint(20) NOT NULL,'''
+    _file_base = _file_base_ + '''
 referencedComponentId bigint(20) NOT NULL '''
 
     _wrapper_keys = '''KEY ars (active, refsetId),

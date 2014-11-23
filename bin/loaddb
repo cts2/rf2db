@@ -43,13 +43,14 @@ from rf2db.db import RF2ConceptFile, RF2DescriptionFile, RF2DescriptionTextFile,
 from rf2db.db import RF2SimpleMapFile, RF2SimpleReferencesetFile, RF2ModuleVersionsFile
 from rf2db.db import RF2TransitiveClosure, RF2TransitiveClosureCanonical, CTS2Entity
 from rf2db.db import RF2TransitiveChildren, RF2TransitiveChildrenCanonical, RF2ComplexMapFile
-from rf2db.db import RF2ModuleDependencyFile
+from rf2db.db import RF2ModuleDependencyFile, RF2ChangeSetFile
 from rf2db.db import RF2PnAndFSN
 from rf2db.db import RF1CanonicalCore
 from rf2db.db.RF2FileCommon import config_parms
 
 # NOTE: Remember the closing comma on the tuples
 load_sections = [
+    ('changeset', (RF2ChangeSetFile.ChangeSetDB, )),
     ('concept', (RF2ConceptFile.ConceptDB,)),
     ('description', (RF2DescriptionFile.DescriptionDB, RF2DescriptionTextFile.DescriptionTextDB,)),
     ('language', (RF2LanguageFile.LanguageDB,)),
@@ -102,9 +103,6 @@ def main(args):
     cfg.update(vars(opts))
     if cfg.flush():
         print("Configuration file updated")
-
-
-    # python RF2TransitiveClosure.py
 
     opts = parser.parse_args(args)
     if opts.show:

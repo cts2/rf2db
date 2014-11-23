@@ -29,13 +29,17 @@
 
 """ RF2 Concept File access routines
 """
+from time import gmtime, strftime
+from cherrypy import HTTPError
 
 from rf2db.parsers.RF2BaseParser import RF2Concept
 from rf2db.parsers.RF2Iterator import RF2ConceptList, iter_parms
-from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms
+from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, extensionParms
 from rf2db.utils.lfu_cache import lfu_cache
 from rf2db.utils.listutils import listify
-from rf2db.parameterparser.ParmParser import ParameterDefinitionList, intparam, strparam, enumparam, sctidparam
+from rf2db.utils.sctid_generator import sctid_generator
+from rf2db.db.RF2Namespaces import IDGenerator
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, intparam, enumparam, sctidparam
 from rf2db.constants.RF2ValueSets import primitive, defined
 
 
@@ -50,11 +54,17 @@ new_concept_parms.sctid = sctidparam()
 new_concept_parms.effectiveTime = intparam()
 new_concept_parms.definitionstatus = enumparam(['p', 'f'], default='p')
 
+update_concept_parms = ParameterDefinitionList(global_rf2_parms)
+update_concept_parms.definitionstatus = enumparam(['p', 'f'])
+
+delete_concept_parms = ParameterDefinitionList(global_rf2_parms)
 
 class ConceptDB(RF2FileWrapper):
     directory = 'Terminology'
     prefixes = ['sct2_Concept_']
     table = 'concept'
+
+    idGenerator = None
 
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
       %(base)s,
@@ -64,6 +74,15 @@ class ConceptDB(RF2FileWrapper):
 
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
+
+    def _idGenerator(self):
+        """ Return an id generator instance.  This isn't invoked until needed as it can entail some expense
+        :return: ID generator for the default namespace
+        """
+        if not self.idGenerator:
+            self.idGenerator = IDGenerator(extensionParms.namespace)
+        return self.idGenerator
+
 
     @lfu_cache(maxsize=100)
     def getConcept(self, cid, parmlist):
@@ -76,13 +95,128 @@ class ConceptDB(RF2FileWrapper):
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
+
+    def updateConcept(self, cid, parmlist):
+        """
+        The only thing that can be changed on an existing concept is the definition status.  All other parms are fixed
+        :param changesetid: Change set identifier for the udpate
+        :param sctid: Concept identifier to be changed
+        :param definitionstatus: New definition status
+        :return: Updated concept
+        """
+        if not parmlist.changesetid:
+            return HTTPError(status=400, message="UnknownChangeSet - change set is not present")
+        current_value = self.getConcept(cid, parmlist)
+        if not current_value:
+            return HTTPError(status=400, message="UnknownEntity - concept not found")
+        # Various situations:
+        # 1) record is not locked:
+        #     1a) record will change
+        #         1aa) snapshot:  Not allowed.
+        #         1ab) full:  update record with lock, changeset, new effectiveDate and changes
+        #     1b) record will not change
+        #         ???
+        # 2) Record is locked
+        #     2a) record changeset = changeset?
+        #       1aa) snapshot:  Change record value and effectivedate
+        #       1ab) full: add new record with lock, changeset, new effectiveDate and changes
+        #     2b) record changeset <> changeset
+        #       2aa) snapshot: Not allowed
+        #       2ab) full:  ????
+        #
+        # Don't update effective time if nothing will change (PUT is idempotent)
+        if parmlist.ss and not current_value.locked:
+            return HTTPError(status=400, message="Unable to update a snapshot")
+
+        if current_value.changesetid != parmlist.changesetid or \
+                not current_value.locked or \
+                (current_value.isPrimitive and parmlist.definitionstatus=='f') or \
+                (current_value.isFullyDefined and parmlist.definitionstatus=='p'):
+            parmlist.definitionStatusId = primitive if parmlist.definitionstatus == 'p' else defined
+            db = self.connect()
+            parmlist.fname = self._tname(parmlist.ss)
+            if not parmlist.effectivetime:
+                parmlist.effectivetime = strftime("%Y%m%d", gmtime())
+
+            parmlist.cid = cid
+            parmlist.cvet = current_value.effectiveTime
+
+            db.execute("UPDATE %(fname)s SET "
+                       "effectiveTime=%(effectivetime)s, "
+                       "definitionStatusId=%(definitionstatusid)s, "
+                       "changeSetId='%(changesetid)s', locked=1 "
+                       "WHERE id=%(cid)s AND effectiveTime=%(cvet)s" % parmlist.__dict__)
+
+            db.commit()
+        return self.getConcept(cid, parmlist, _nocache=True)
+
+
+    def deleteConcept(self, cid, parmlist):
+        if not parmlist.changesetid:
+            return HTTPError(status=400, message="UnknownChangeSet - change set is not present")
+        parmlist.active=0       # Include already deleted concepts
+        current_value = self.getConcept(cid, parmlist)
+        if not current_value:
+            return HTTPError(status=400, message="UnknownEntity - concept not found")
+        # If the concept is locked under our change set, we can just remove it.  If it isn't locked, we can only do
+        # the Full thingie for the time being
+        # Locked is only readable under our change set...
+        if parmlist.ss and not current_value.locked:
+            return HTTPError(status=400, message="Unable to delete from a snapshot")
+        if current_value.isActive():
+            db = self.connect()
+            fname = self._tname(parmlist.ss)
+            effectivetime = strftime("%Y%m%d", gmtime())
+            cvet = current_value.effectiveTime
+            db.execute("UPDATE %(fname)s SET "
+                       "effectiveTime=%(effectivetime)s, "
+                       "active=0 "
+                       "WHERE id=%(cid)s AND effectiveTime=%(cvet)s" % vars())
+            db.commit()
+        return self.getConcept(cid, parmlist, _nocache=True)
+
+
+    def newConcept_p(self, changesetid, sctid=None, effectivetime=None, moduleid=None, definitionstatus='p'):
+        """
+        Insert a new concept into the database.
+        :param changesetid: Change Set Identifier associated with the change
+        :type changesetid: UUID
+        :param sctid: SCTID of new concept.  If absent, sctid is generated using rf2 namespace parameter
+        :param effectivetime: Effective time of insertion.  If absent, today as 'yyyymmdd'
+        :param moduleid: module id of new concept. Default: rf2 moduleid parameter
+        :param definitionstatus: 'p' or 'd' (primitive or defined). Default: 'p'
+        :return: RF2Concept representation of new entry
+        """
+        return self.newConcept(new_concept_parms.parse(
+            **{'sctid': sctid, 'effectiveTime': effectivetime, 'moduleid': moduleid,
+               'definitionstatus': definitionstatus, 'changesetid': changesetid}))
+
+
     def newConcept(self, parmlist):
+        """
+        Parameterized newConcept.
+        :param changesetid: Change Set Identifier associated with the change
+        :type changesetid: UUID
+        :param sctid: SCTID of new concept.  If absent, sctid is generated using rf2 namespace parameter
+        :param effectivetime: Effective time of insertion.  If absent, today as 'yyyymmdd'
+        :param moduleid: module id of new concept. Default: rf2 moduleid parameter
+        :param definitionstatus: 'p' or 'd' (primitive or defined). Default: 'p'
+        :return: RF2Concept representation of new entry
+        """
         db = self.connect()
-        parmlist.fname = self._tname(True)
+        parmlist.fname = self._tname(parmlist.ss)
+        if not parmlist.sctid:
+            parmlist.sctid = self._idGenerator().next(sctid_generator.CONCEPT)
+        if not parmlist.effectivetime:
+            parmlist.effectivetime = strftime("%Y%m%d", gmtime())
+        if not parmlist.moduleid:
+            parmlist.moduleid = extensionParms.moduleid
+
         parmlist.definitionStatusId = primitive if parmlist.definitionstatus == 'p' else defined
         db.execute("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, definitionStatusId, changeSetId, locked) "
         "VALUES (%(sctid)s, %(effectivetime)s, 1, %(moduleid)s, %(definitionstatusid)s, '%(changesetid)s', 1 )" % parmlist.__dict__)
         db.commit()
+        return self.getConcept(parmlist.sctid, parmlist)
 
 
     def getAllConcepts_p(self, active=1, order='asc', page=0, maxtoreturn=100, after=0):
