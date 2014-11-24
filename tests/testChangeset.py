@@ -58,7 +58,7 @@ class NewChangeSetTestCase(unittest.TestCase):
 
     def tearDown(self):
         for e in self.addedSets:
-            parms = validate_changeset_parms.parse(**{'changesetid': e.referencedComponentId.uuid})
+            parms = validate_changeset_parms.parse(**{'changeset': e.referencedComponentId.uuid})
             self.csdb.rollback(parms)
 
     def testNew(self):
@@ -70,38 +70,47 @@ class NewChangeSetTestCase(unittest.TestCase):
         self.assertIsNotNone(matchptn2.match(str(self.addedSets[-1])))
 
     def testValid(self):
-        parms = validate_changeset_parms.parse(**{'changesetid': uuid.uuid4()})
+        parms = validate_changeset_parms.parse(**{'changeset': uuid.uuid4()})
         self.assertFalse(self.csdb.isValid(parms), "Random UUID should not be valid")
         csrec = self.csdb.new_changeset(add_changeset_parms.parse(**{}))
-        parms = validate_changeset_parms.parse(**{'changesetid': csrec.referencedComponentId.uuid})
+        parms = validate_changeset_parms.parse(**{'changeset': csrec.referencedComponentId.uuid})
         self.assertTrue(self.csdb.isValid(parms))
         self.assertEqual(self.csdb.rollback(parms).nChangesets, 1)
 
     def testHidden(self):
         csrec = self.csdb.new_changeset(add_changeset_parms.parse(**{}))
-        parms = validate_changeset_parms.parse(**{'changesetid': csrec.referencedComponentId.uuid})
+        parms = validate_changeset_parms.parse(**{'changeset': csrec.referencedComponentId.uuid})
         concRef = self.concdb.newConcept(parms)
         self.assertEqual(self.concdb.getConcept(concRef.id, parms).id, concRef.id)
-        parms.changesetid = uuid.uuid4()
+        parms.changeset = uuid.uuid4()
         self.assertIsNone(self.concdb.getConcept(concRef.id, parms))
-        parms.changesetid = None
+        parms.changeset = None
         self.assertIsNone(self.concdb.getConcept(concRef.id, parms))
-        parms.changesetid = concRef.changesetid
+        parms.changeset = concRef.changeset
         self.assertEqual(self.concdb.getConcept(concRef.id, parms).id, concRef.id)
         self.addedSets.append(csrec)
 
     def testRollback(self):
         csrec = self.csdb.new_changeset(add_changeset_parms.parse(**{}))
-        parms = validate_changeset_parms.parse(**{'changesetid': csrec.referencedComponentId.uuid})
+        parms = validate_changeset_parms.parse(**{'changeset': csrec.referencedComponentId.uuid})
         self.concdb.newConcept(parms)
         # TODO: Issue -- parms gets additional information added to it in the above call
-        parms = validate_changeset_parms.parse(**{'changesetid': csrec.referencedComponentId.uuid})
+        parms = validate_changeset_parms.parse(**{'changeset': csrec.referencedComponentId.uuid})
         self.concdb.newConcept(parms)
         rval = self.csdb.rollback(parms)
         self.assertEqual(2, rval.nConcepts)
         self.assertEqual(1, rval.nChangesets)
 
     def testCommit(self):
-        self.assertTrue(False, "Not implemented")
+        csrec = self.csdb.new_changeset(add_changeset_parms.parse(**{}))
+        parms = validate_changeset_parms.parse(**{'changeset': csrec.referencedComponentId.uuid})
+        self.concdb.newConcept(parms)
+        # TODO: Issue -- parms gets additional information added to it in the above call
+        parms = validate_changeset_parms.parse(**{'changeset': csrec.referencedComponentId.uuid})
+        self.concdb.newConcept(parms)
+        rval = self.csdb.commit(parms)
+        self.assertEqual(2, rval.nConcepts)
+        self.assertEqual(1, rval.nChangesets)
+
 
 

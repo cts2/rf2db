@@ -65,6 +65,7 @@ class RF2RefsetBase(rf2.RefsetBase, object):
             fields[self._rcididx] = rf2.SCTIDorUUID(uuid=e) if '-' in e else rf2.SCTIDorUUID(sctid=e)
         vals = filter(lambda f: f[1], zip(self._fieldNames, fields))
         self._baseClass.__init__(self, **dict(self._dropNulls(vals)) )
+        self._changeset, self._locked = fields[len(self._fieldNames):len(self._fieldNames)+2]
         return self
                     
     def __str__(self):
@@ -88,6 +89,14 @@ class RF2RefsetBase(rf2.RefsetBase, object):
 
     def isActive(self):
         return self.active == 1
+
+    @property
+    def locked(self):
+        return bool(self._locked)
+
+    @property
+    def changeset(self):
+        return self._changeset
 
     @classmethod
     def validateHeader(cls, headerfields):

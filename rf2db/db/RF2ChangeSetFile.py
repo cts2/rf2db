@@ -39,7 +39,6 @@ from rf2db.constants.RF2ValueSets import changeSetRefSet
 from rf2db.db.RF2ConceptFile import ConceptDB
 
 changeset_parms = ParameterDefinitionList(global_rf2_parms)
-changeset_parms.changeset = strparam()
 changeset_parms.open = booleanparam(default=True)
 
 add_changeset_parms = ParameterDefinitionList(global_rf2_parms)
@@ -50,6 +49,10 @@ validate_changeset_parms = ParameterDefinitionList(global_rf2_parms)
 
 class RollbackInfo():
     pass
+
+class CommitInfo():
+    pass
+
 
 class ChangeSetDB(RF2RefsetWrapper):
     """
@@ -84,7 +87,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         Read the changeset record
         @param parmlist: changeset_parms.
         """
-        filter_ = "refsetId=%s " % changeSetRefSet
+        filter_ = "refsetId=%s AND referencedComponentId='%s' " % (changeSetRefSet, parmlist.changeset)
         db = self.connect()
         rlist = [RF2ChangeSetReferenceEntry(c) for c in db.query_p(self._tname(parmlist.ss), parmlist, filter=filter_)]
         assert (len(rlist) < 2)
@@ -101,7 +104,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         creator = parmlist.creator
         description = parmlist.description
 
-        query = "INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, refsetId, referencedComponentId, changeSetId, locked"
+        query = "INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, refsetId, referencedComponentId, changeset, locked"
         query += ", creator" if parmlist.creator else ""
         query += ", description" if parmlist.description else ""
         query += ") values ('%(guid)s', %(effectiveTime)s, 1, %(moduleId)s, %(refsetId)s, '%(csid)s', '%(csid)s', 1"
@@ -111,7 +114,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         db = self.connect()
         db.execute(query % vars())
         db.commit()
-        parmlist.changesetid = csid
+        parmlist.changeset = csid
         return self.get_changeset(parmlist)
 
     def isValid(self, parmlist):
@@ -124,8 +127,16 @@ class ChangeSetDB(RF2RefsetWrapper):
     def rollback(self, parmlist):
         db = self.connect()
         rval = RollbackInfo()
-        rval.nConcepts = ConceptDB._rollback(db, parmlist.ss, parmlist.changesetid)['affected_rows']
-        rval.nChangesets = self._rollback(db, parmlist.ss, parmlist.changesetid)['affected_rows']
+        rval.nConcepts = ConceptDB._rollback(db, parmlist.ss, parmlist.changeset)['affected_rows']
+        rval.nChangesets = self._rollback(db, parmlist.ss, parmlist.changeset)['affected_rows']
+        db.commit()
+        return rval
+
+    def commit(self,parmlist):
+        db = self.connect()
+        rval = CommitInfo()
+        rval.nConcepts = ConceptDB._commit(db, parmlist.ss, parmlist.changeset)['affected_rows']
+        rval.nChangesets = self._commit(db, parmlist.ss, parmlist.changeset)['affected_rows']
         db.commit()
         return rval
 

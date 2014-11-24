@@ -49,7 +49,7 @@ class NewConceptTestCase(unittest.TestCase):
         sctid = RF2Namespace(CIMI_Namespace).nextConceptId()
         parms = new_concept_parms.parse(**{'effectiveTime': '20141131',
                                          'moduleId': str(cimiModule),
-                                         'changesetid': testChangeSet,
+                                         'changeset': testChangeSet,
                                          'sctid': sctid,
                                         })
         dbrec = self.concdb.newConcept(parms)
@@ -62,12 +62,12 @@ class NewConceptTestCase(unittest.TestCase):
                                        effectivetime='20141131',
                                        moduleid=str(cimiModule),
                                        definitionstatus='p',
-                                       changesetid=testChangeSet)
+                                       changeset=testChangeSet)
         self.assertIsNotNone(re.match(r'RF2Concept\(id:[0-9]+100016010[0-9], effectiveTime:20141131, active:1, moduleId:11000160102, definitionStatusId:900000000000074008\)', str(dbrec)))
 
 
     def testNew3(self):
-        dbrec = self.concdb.newConcept_p(changesetid=testChangeSet)
+        dbrec = self.concdb.newConcept_p(changeset=testChangeSet)
         self.assertIsNotNone(re.match(r'RF2Concept\(id:[0-9]+100016010[0-9], effectiveTime:[0-9]{8}, active:1, moduleId:11000160102, definitionStatusId:900000000000074008\)', str(dbrec)))
 
 

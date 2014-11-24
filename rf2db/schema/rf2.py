@@ -1,7 +1,7 @@
 # ../rf2db/schema/rf2.py
 # -*- coding: utf-8 -*-
 # PyXB bindings for NM:a62023a1e63ecb635c8d1a3482d1f64c6fb3e0f6
-# Generated 2014-11-20 20:26:57.828657 by PyXB version 1.2.4 using Python 2.7.8.final.0
+# Generated 2014-11-23 18:51:30.554760 by PyXB version 1.2.4 using Python 2.7.8.final.0
 # Namespace http://snomed.info/schema/rf2
 
 from __future__ import unicode_literals
@@ -15,7 +15,7 @@ import sys
 import pyxb.utils.six as _six
 
 # Unique identifier for bindings created at the same time
-_GenerationUID = pyxb.utils.utility.UniqueIdentifier('urn:uuid:dd736482-7125-11e4-baaa-6c40088fdb3a')
+_GenerationUID = pyxb.utils.utility.UniqueIdentifier('urn:uuid:0700d9e1-7374-11e4-b57f-6c40088fdb3a')
 
 # Version of PyXB used to generate the bindings
 _PyXBVersion = '1.2.4'
@@ -1883,11 +1883,11 @@ class Base (pyxb.binding.basis.complexTypeDefinition):
     moduleId = property(__moduleId.value, __moduleId.set, None, None)
 
     
-    # Element {http://snomed.info/schema/rf2}changeSetId uses Python identifier changeSetId
-    __changeSetId = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, 'changeSetId'), 'changeSetId', '__httpsnomed_infoschemarf2_Base_httpsnomed_infoschemarf2changeSetId', False, pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7629, 12), )
+    # Element {http://snomed.info/schema/rf2}changeset uses Python identifier changeset
+    __changeset = pyxb.binding.content.ElementDeclaration(pyxb.namespace.ExpandedName(Namespace, 'changeset'), 'changeset', '__httpsnomed_infoschemarf2_Base_httpsnomed_infoschemarf2changeset', False, pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7629, 12), )
 
     
-    changeSetId = property(__changeSetId.value, __changeSetId.set, None, None)
+    changeset = property(__changeset.value, __changeset.set, None, None)
 
     
     # Element {http://snomed.info/schema/rf2}locked uses Python identifier locked
@@ -1901,7 +1901,7 @@ class Base (pyxb.binding.basis.complexTypeDefinition):
         __effectiveTime.name() : __effectiveTime,
         __active.name() : __active,
         __moduleId.name() : __moduleId,
-        __changeSetId.name() : __changeSetId,
+        __changeset.name() : __changeset,
         __locked.name() : __locked
     })
     _AttributeMap.update({
@@ -2170,7 +2170,7 @@ class Concept_ (Base):
     
     # Element moduleId ({http://snomed.info/schema/rf2}moduleId) inherited from {http://snomed.info/schema/rf2}Base
     
-    # Element changeSetId ({http://snomed.info/schema/rf2}changeSetId) inherited from {http://snomed.info/schema/rf2}Base
+    # Element changeset ({http://snomed.info/schema/rf2}changeset) inherited from {http://snomed.info/schema/rf2}Base
     
     # Element locked ({http://snomed.info/schema/rf2}locked) inherited from {http://snomed.info/schema/rf2}Base
     
@@ -2209,7 +2209,7 @@ class Description_ (Base):
     
     # Element moduleId ({http://snomed.info/schema/rf2}moduleId) inherited from {http://snomed.info/schema/rf2}Base
     
-    # Element changeSetId ({http://snomed.info/schema/rf2}changeSetId) inherited from {http://snomed.info/schema/rf2}Base
+    # Element changeset ({http://snomed.info/schema/rf2}changeset) inherited from {http://snomed.info/schema/rf2}Base
     
     # Element locked ({http://snomed.info/schema/rf2}locked) inherited from {http://snomed.info/schema/rf2}Base
     
@@ -2280,7 +2280,7 @@ class Relationship_ (Base):
     
     # Element moduleId ({http://snomed.info/schema/rf2}moduleId) inherited from {http://snomed.info/schema/rf2}Base
     
-    # Element changeSetId ({http://snomed.info/schema/rf2}changeSetId) inherited from {http://snomed.info/schema/rf2}Base
+    # Element changeset ({http://snomed.info/schema/rf2}changeset) inherited from {http://snomed.info/schema/rf2}Base
     
     # Element locked ({http://snomed.info/schema/rf2}locked) inherited from {http://snomed.info/schema/rf2}Base
     
@@ -3745,7 +3745,7 @@ Base._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespac
 
 Base._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, 'moduleId'), SCTID, scope=Base, location=pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7628, 12)))
 
-Base._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, 'changeSetId'), UUID, scope=Base, location=pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7629, 12)))
+Base._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, 'changeset'), UUID, scope=Base, location=pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7629, 12)))
 
 Base._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, 'locked'), Boolean, scope=Base, location=pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7630, 12)))
 
@@ -3779,7 +3779,7 @@ def _BuildAutomaton_ ():
     states.append(st_3)
     final_update = set()
     final_update.add(fac.UpdateInstruction(cc_0, False))
-    symbol = pyxb.binding.content.ElementUse(Base._UseForTag(pyxb.namespace.ExpandedName(Namespace, 'changeSetId')), pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7629, 12))
+    symbol = pyxb.binding.content.ElementUse(Base._UseForTag(pyxb.namespace.ExpandedName(Namespace, 'changeset')), pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7629, 12))
     st_4 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_4)
     final_update = set()
@@ -4048,7 +4048,7 @@ def _BuildAutomaton_5 ():
     st_3 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_3)
     final_update = None
-    symbol = pyxb.binding.content.ElementUse(Concept_._UseForTag(pyxb.namespace.ExpandedName(Namespace, 'changeSetId')), pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7629, 12))
+    symbol = pyxb.binding.content.ElementUse(Concept_._UseForTag(pyxb.namespace.ExpandedName(Namespace, 'changeset')), pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7629, 12))
     st_4 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_4)
     final_update = None
@@ -4140,7 +4140,7 @@ def _BuildAutomaton_6 ():
     st_3 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_3)
     final_update = None
-    symbol = pyxb.binding.content.ElementUse(Description_._UseForTag(pyxb.namespace.ExpandedName(Namespace, 'changeSetId')), pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7629, 12))
+    symbol = pyxb.binding.content.ElementUse(Description_._UseForTag(pyxb.namespace.ExpandedName(Namespace, 'changeset')), pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7629, 12))
     st_4 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_4)
     final_update = None
@@ -4268,7 +4268,7 @@ def _BuildAutomaton_7 ():
     st_3 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_3)
     final_update = None
-    symbol = pyxb.binding.content.ElementUse(Relationship_._UseForTag(pyxb.namespace.ExpandedName(Namespace, 'changeSetId')), pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7629, 12))
+    symbol = pyxb.binding.content.ElementUse(Relationship_._UseForTag(pyxb.namespace.ExpandedName(Namespace, 'changeset')), pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7629, 12))
     st_4 = fac.State(symbol, is_initial=False, final_update=final_update, is_unordered_catenation=False)
     states.append(st_4)
     final_update = None

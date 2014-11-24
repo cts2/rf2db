@@ -99,12 +99,12 @@ class ConceptDB(RF2FileWrapper):
     def updateConcept(self, cid, parmlist):
         """
         The only thing that can be changed on an existing concept is the definition status.  All other parms are fixed
-        :param changesetid: Change set identifier for the udpate
+        :param changeset: Change set identifier for the udpate
         :param sctid: Concept identifier to be changed
         :param definitionstatus: New definition status
         :return: Updated concept
         """
-        if not parmlist.changesetid:
+        if not parmlist.changeset:
             return HTTPError(status=400, message="UnknownChangeSet - change set is not present")
         current_value = self.getConcept(cid, parmlist)
         if not current_value:
@@ -128,7 +128,7 @@ class ConceptDB(RF2FileWrapper):
         if parmlist.ss and not current_value.locked:
             return HTTPError(status=400, message="Unable to update a snapshot")
 
-        if current_value.changesetid != parmlist.changesetid or \
+        if current_value.changeset != parmlist.changeset or \
                 not current_value.locked or \
                 (current_value.isPrimitive and parmlist.definitionstatus=='f') or \
                 (current_value.isFullyDefined and parmlist.definitionstatus=='p'):
@@ -144,7 +144,7 @@ class ConceptDB(RF2FileWrapper):
             db.execute("UPDATE %(fname)s SET "
                        "effectiveTime=%(effectivetime)s, "
                        "definitionStatusId=%(definitionstatusid)s, "
-                       "changeSetId='%(changesetid)s', locked=1 "
+                       "changeset='%(changeset)s', locked=1 "
                        "WHERE id=%(cid)s AND effectiveTime=%(cvet)s" % parmlist.__dict__)
 
             db.commit()
@@ -152,7 +152,7 @@ class ConceptDB(RF2FileWrapper):
 
 
     def deleteConcept(self, cid, parmlist):
-        if not parmlist.changesetid:
+        if not parmlist.changeset:
             return HTTPError(status=400, message="UnknownChangeSet - change set is not present")
         parmlist.active=0       # Include already deleted concepts
         current_value = self.getConcept(cid, parmlist)
@@ -176,11 +176,11 @@ class ConceptDB(RF2FileWrapper):
         return self.getConcept(cid, parmlist, _nocache=True)
 
 
-    def newConcept_p(self, changesetid, sctid=None, effectivetime=None, moduleid=None, definitionstatus='p'):
+    def newConcept_p(self, changeset, sctid=None, effectivetime=None, moduleid=None, definitionstatus='p'):
         """
         Insert a new concept into the database.
-        :param changesetid: Change Set Identifier associated with the change
-        :type changesetid: UUID
+        :param changeset: Change Set Identifier associated with the change
+        :type changeset: UUID
         :param sctid: SCTID of new concept.  If absent, sctid is generated using rf2 namespace parameter
         :param effectivetime: Effective time of insertion.  If absent, today as 'yyyymmdd'
         :param moduleid: module id of new concept. Default: rf2 moduleid parameter
@@ -189,14 +189,14 @@ class ConceptDB(RF2FileWrapper):
         """
         return self.newConcept(new_concept_parms.parse(
             **{'sctid': sctid, 'effectiveTime': effectivetime, 'moduleid': moduleid,
-               'definitionstatus': definitionstatus, 'changesetid': changesetid}))
+               'definitionstatus': definitionstatus, 'changeset': changeset}))
 
 
     def newConcept(self, parmlist):
         """
         Parameterized newConcept.
-        :param changesetid: Change Set Identifier associated with the change
-        :type changesetid: UUID
+        :param changeset: Change Set Identifier associated with the change
+        :type changeset: UUID
         :param sctid: SCTID of new concept.  If absent, sctid is generated using rf2 namespace parameter
         :param effectivetime: Effective time of insertion.  If absent, today as 'yyyymmdd'
         :param moduleid: module id of new concept. Default: rf2 moduleid parameter
@@ -213,8 +213,8 @@ class ConceptDB(RF2FileWrapper):
             parmlist.moduleid = extensionParms.moduleid
 
         parmlist.definitionStatusId = primitive if parmlist.definitionstatus == 'p' else defined
-        db.execute("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, definitionStatusId, changeSetId, locked) "
-        "VALUES (%(sctid)s, %(effectivetime)s, 1, %(moduleid)s, %(definitionstatusid)s, '%(changesetid)s', 1 )" % parmlist.__dict__)
+        db.execute("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, definitionStatusId, changeset, locked) "
+        "VALUES (%(sctid)s, %(effectivetime)s, 1, %(moduleid)s, %(definitionstatusid)s, '%(changeset)s', 1 )" % parmlist.__dict__)
         db.commit()
         return self.getConcept(parmlist.sctid, parmlist)
 
@@ -235,8 +235,8 @@ class ConceptDB(RF2FileWrapper):
         db = self.connect()
         query = 'SELECT %s FROM %s' % ('*' if parmlist.maxtoreturn else 'count(*)', self._tname(parmlist.ss))
         query += ' WHERE %s ' % ('active=1' if parmlist.active else 'TRUE')
-        if parmlist.changesetid:
-            query += " AND (changeSetId = '%s' OR locked = 0)" % parmlist.changesetid
+        if parmlist.changeset:
+            query += " AND (changeset = '%s' OR locked = 0)" % parmlist.changeset
         else:
             query += ' AND locked = 0'
         if parmlist.after:

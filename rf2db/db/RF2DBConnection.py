@@ -176,7 +176,7 @@ class RF2DBConnection(object):
 
     @staticmethod
     def build_query(table, filter_="", sort=None, active=True, ss=True, start=0, maxtoreturn=100, refdate=None,
-                    moduleids=None, order='asc', changesetid=None):
+                    moduleids=None, order='asc', changeset=None):
         """ Query an RF2 table taking the historical information into account.
         
         @param table: table to query
@@ -206,8 +206,8 @@ class RF2DBConnection(object):
         @param moduleids: list of module ids to constrain the query
         @type moduleids: C{sctid} or C{list{sctid}}
 
-        @param changesetid: changeset to include in the query
-        @type changesetid: C{uuid}
+        @param changeset: changeset to include in the query
+        @type changeset: C{uuid}
         
         @return: query
         @rtype: C{String}
@@ -235,8 +235,8 @@ class RF2DBConnection(object):
             query += " AND active = 1 "
         if moduleids:
             query += " AND (" + ' OR '.join(['moduleid = %s' % m for m in listify(moduleids)]) + ') '
-        if changesetid:
-            query += " AND (changesetid = '%s' OR locked = 0)" % changesetid
+        if changeset:
+            query += " AND (changeset = '%s' OR locked = 0)" % changeset
         else:
             query += " AND locked = 0"
         if sort:
@@ -250,11 +250,11 @@ class RF2DBConnection(object):
         # TODO: add sort column to the parameters list
         return self.query(table, filter, sort=parms.sort, order=parms.order, active=parms.active, ss=parms.ss,
                           start=parms.start, maxtoreturn=parms.maxtoreturn, refdate=parms.refdate,
-                          moduleids=parms.moduleid, changesetid=parms.changesetid)
+                          moduleids=parms.moduleid, changeset=parms.changeset)
 
 
     def query(self, table, filter_="", sort=None, active=True, ss=True, start=0,
-              maxtoreturn=100, refdate=None, moduleids=None, order="asc", changesetid=None):
+              maxtoreturn=100, refdate=None, moduleids=None, order="asc", changeset=None):
         """ Query an RF2 table taking the historical information into account.
 
         @param table: table to query
@@ -290,7 +290,7 @@ class RF2DBConnection(object):
                                                                             active=active, ss=ss, start=start,
                                                                             maxtoreturn=maxtoreturn, refdate=refdate,
                                                                             moduleids=moduleids, order=order,
-                                                                            changesetid=changesetid)) else []
+                                                                            changeset=changeset)) else []
 
     def executeAndReturn(self, query):
         return self._cursor if self.execute(query) else []

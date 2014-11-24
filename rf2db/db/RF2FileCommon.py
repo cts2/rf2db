@@ -69,7 +69,7 @@ from rf2db.parameterparser.ParmParser import ParameterDefinitionList
 global_rf2_parms = ParameterDefinitionList()
 global_rf2_parms.ss = booleanparam(default=True, fixed=True)
 global_rf2_parms.active = booleanparam(default=True)
-global_rf2_parms.changesetid = strparam(required=False)
+global_rf2_parms.changeset = strparam(required=False)
 
 class moduleidparam(sctidparam):
 
@@ -103,10 +103,10 @@ effectiveTime int(11) NOT NULL,
 active tinyint(1) NOT NULL,
 moduleId bigint(20) NOT NULL '''
 
-    _file_extension = '''changeSetId char(36), locked tinyint(1) NOT NULL DEFAULT 0,'''
+    _file_extension = '''changeset char(36), locked tinyint(1) NOT NULL DEFAULT 0,'''
 
-    _keys_ss = '''KEY (changeSetId), PRIMARY KEY (id)'''
-    _keys_full = '''KEY (changeSetId), PRIMARY KEY (id, effectiveTime)'''
+    _keys_ss = '''KEY (changeset), PRIMARY KEY (id)'''
+    _keys_full = '''KEY (changeset), PRIMARY KEY (id, effectiveTime)'''
 
     # Directory layout
     # - py4cts2/RF2/rf2_source
@@ -226,9 +226,14 @@ moduleId bigint(20) NOT NULL '''
         return []
 
     @classmethod
-    def _rollback(cls, db, ss, changesetId):
+    def _rollback(cls, db, ss, changeset):
         fname = cls._fname(ss)
-        return db.execute_query("DELETE FROM %(fname)s WHERE changeSetId = '%(changesetId)s' AND locked=1" % vars() )
+        return db.execute_query("DELETE FROM %(fname)s WHERE changeset = '%(changeset)s' AND locked=1" % vars() )
+
+    @classmethod
+    def _commit(cls, db, ss, changeset):
+        fname = cls._fname(ss)
+        return db.execute_query("UPDATE %(fname)s SET locked=0 WHERE changeset = '%(changeset)s'" % vars() )
 
     # TODO: deprecate this and switch to _fname class method
     def _tname(self, ss):
