@@ -91,22 +91,22 @@ class NewChangeSetTestCase(unittest.TestCase):
         self.addedSets.append(csrec)
 
     def testRollback(self):
-        csrec = self.csdb.new_changeset(add_changeset_parms.parse(**{}))
-        parms = validate_changeset_parms.parse(**{'changeset': csrec.referencedComponentId.uuid})
+        csrec = self.csdb.new_changeset(add_changeset_parms.parse())
+        parms = validate_changeset_parms.parse(changeset = csrec.referencedComponentId.uuid)
         self.concdb.newConcept(parms)
         # TODO: Issue -- parms gets additional information added to it in the above call
-        parms = validate_changeset_parms.parse(**{'changeset': csrec.referencedComponentId.uuid})
+        parms = validate_changeset_parms.parse(changeset = csrec.referencedComponentId.uuid)
         self.concdb.newConcept(parms)
         rval = self.csdb.rollback(parms)
         self.assertEqual(2, rval.nConcepts)
         self.assertEqual(1, rval.nChangesets)
 
     def testCommit(self):
-        csrec = self.csdb.new_changeset(add_changeset_parms.parse(**{}))
-        parms = validate_changeset_parms.parse(**{'changeset': csrec.referencedComponentId.uuid})
+        csrec = self.csdb.new_changeset(add_changeset_parms.parse())
+        parms = validate_changeset_parms.parse(changeset = csrec.referencedComponentId.uuid)
         self.concdb.newConcept(parms)
         # TODO: Issue -- parms gets additional information added to it in the above call
-        parms = validate_changeset_parms.parse(**{'changeset': csrec.referencedComponentId.uuid})
+        parms = validate_changeset_parms.parse(changeset = csrec.referencedComponentId.uuid)
         self.concdb.newConcept(parms)
         rval = self.csdb.commit(parms)
         self.assertEqual(2, rval.nConcepts)

@@ -59,7 +59,7 @@ class ParameterDefinitionList(object):
                 self.__dict__[key.lower()] = value
 
         def __repr__(self):
-            return ''.join(k + ':' + repr(self.__dict__[k]) for k in self._orderedKeys())
+            return ','.join(k + ':' + repr(self.__dict__[k]) for k in self._orderedKeys())
 
         def _orderedKeys(self):
             """

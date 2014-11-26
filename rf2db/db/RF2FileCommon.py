@@ -30,12 +30,14 @@
 """ RF2 File Wrapper
 """
 
-
 import os
+from cherrypy import HTTPError
+
 import rf2db.db.RF2DBConnection
 from rf2db.parameterparser.ParmParser import booleanparam, sctidparam, strparam
 from ConfigManager.ConfigArgs import ConfigArg, ConfigArgs
 from ConfigManager.ConfigManager import ConfigManager
+
 
 config_parms = ConfigArgs('rf2',
                            [ConfigArg('fileloc', abbrev='f', help='Location of primary RF2 Distribution'),
@@ -135,6 +137,8 @@ moduleId bigint(20) NOT NULL '''
 
     _existsQuery = """SHOW TABLES LIKE '%s';"""
 
+    _csdb = None
+
 
     def __init__(self, load=False, noaction=False):
         self._existsss     = self._existsfull = False
@@ -229,6 +233,22 @@ moduleId bigint(20) NOT NULL '''
     def _rollback(cls, db, ss, changeset):
         fname = cls._fname(ss)
         return db.execute_query("DELETE FROM %(fname)s WHERE changeset = '%(changeset)s' AND locked=1" % vars() )
+
+    def validChangeSet(self, parms):
+        """ Validate the changeset identifier making sure it is present and open
+        :param parms: dictionary containing changesetid
+        :return: None if success else HTTPError instance
+        """
+        if not parms.changeset:
+            return HTTPError(status=400, message="Changeset identifier must be supplied")
+
+        if not self._csdb:
+            from rf2db.db.RF2ChangeSetFile import ChangeSetDB
+            self._csdb = ChangeSetDB()
+
+        if not self._csdb.isValid(parms):
+            return HTTPError(status=400, message="Change set is not valid or has been committed")
+        return None
 
     @classmethod
     def _commit(cls, db, ss, changeset):

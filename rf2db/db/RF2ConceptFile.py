@@ -66,6 +66,7 @@ class ConceptDB(RF2FileWrapper):
 
     idGenerator = None
 
+
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
       %(base)s,
       definitionStatusId bigint(20) NOT NULL,
@@ -104,8 +105,10 @@ class ConceptDB(RF2FileWrapper):
         :param definitionstatus: New definition status
         :return: Updated concept
         """
-        if not parmlist.changeset:
-            return HTTPError(status=400, message="UnknownChangeSet - change set is not present")
+        msg = self.validChangeSet(parmlist)
+        if msg:
+            return msg
+
         current_value = self.getConcept(cid, parmlist)
         if not current_value:
             return HTTPError(status=400, message="UnknownEntity - concept not found")
@@ -152,8 +155,10 @@ class ConceptDB(RF2FileWrapper):
 
 
     def deleteConcept(self, cid, parmlist):
-        if not parmlist.changeset:
-            return HTTPError(status=400, message="UnknownChangeSet - change set is not present")
+        msg = self.validChangeSet(parmlist)
+        if msg:
+            return msg
+
         parmlist.active=0       # Include already deleted concepts
         current_value = self.getConcept(cid, parmlist)
         if not current_value:
@@ -176,21 +181,6 @@ class ConceptDB(RF2FileWrapper):
         return self.getConcept(cid, parmlist, _nocache=True)
 
 
-    def newConcept_p(self, changeset, sctid=None, effectivetime=None, moduleid=None, definitionstatus='p'):
-        """
-        Insert a new concept into the database.
-        :param changeset: Change Set Identifier associated with the change
-        :type changeset: UUID
-        :param sctid: SCTID of new concept.  If absent, sctid is generated using rf2 namespace parameter
-        :param effectivetime: Effective time of insertion.  If absent, today as 'yyyymmdd'
-        :param moduleid: module id of new concept. Default: rf2 moduleid parameter
-        :param definitionstatus: 'p' or 'd' (primitive or defined). Default: 'p'
-        :return: RF2Concept representation of new entry
-        """
-        return self.newConcept(new_concept_parms.parse(
-            **{'sctid': sctid, 'effectiveTime': effectivetime, 'moduleid': moduleid,
-               'definitionstatus': definitionstatus, 'changeset': changeset}))
-
 
     def newConcept(self, parmlist):
         """
@@ -203,6 +193,10 @@ class ConceptDB(RF2FileWrapper):
         :param definitionstatus: 'p' or 'd' (primitive or defined). Default: 'p'
         :return: RF2Concept representation of new entry
         """
+        msg = self.validChangeSet(parmlist)
+        if msg:
+            return msg
+
         db = self.connect()
         parmlist.fname = self._tname(parmlist.ss)
         if not parmlist.sctid:
