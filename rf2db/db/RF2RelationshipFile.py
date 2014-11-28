@@ -32,7 +32,7 @@
 
 from rf2db.parsers.RF2BaseParser import RF2Relationship
 from rf2db.parsers.RF2Iterator import iter_parms
-from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms
+from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, rf2_values
 from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB, rel_id
 from rf2db.db.RF1CanonicalCore import CanonicalCoreDB
 from rf2db.parsers.RF2Iterator import RF2RelationshipList
@@ -94,17 +94,16 @@ class RelationshipDB(RF2FileWrapper):
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
     @lfu_cache(maxsize=100)
-    def _existsRecs(self, filtr, parmlist):
-        if parmlist.stated and self._srdb._existsRecs(filtr, parmlist):
+    def _existsRecs(self, filtr, stated=False, **kwargs):
+        if stated and self._srdb._existsrecs(filtr, **kwargs):
             return True
         db = self.connect()
-        return bool([r for r in db.query(self._tname(parmlist.ss), build_filtr(filtr, parmlist),
-                                         active=parmlist.active, ss=parmlist.ss)])
+        return bool([r for r in db.query(self._fname, build_filtr(filtr, **kwargs))])
 
-    def loadTable(self, rf2file, ss, cfg):
+    def loadTable(self, rf2file):
         import warnings
         warnings.filterwarnings("ignore", ".*doesn't contain data for all columns.*")
-        super(RelationshipDB,self).loadTable(rf2file, ss, cfg)
+        super(RelationshipDB,self).loadTable(rf2file)
         # Temporary fix.  There is an error in the 20140131 distro where a significant number of the
         # relations have two entries on the same date, one for active and one for inactive.  We have
         # remove all of the inactive duplicates.
@@ -116,7 +115,7 @@ class RelationshipDB(RF2FileWrapper):
                   r1.sourceId=r2.sourceId AND r1.destinationId=r2.destinationId AND
                   r1.relationshipGroup=r2.relationshipgroup AND r1.typeId=r2.typeId AND
                   r1.characteristicTypeId=r2.characteristicTypeId AND r1.modifierId = r2.modifierId AND
-                  r1.active=0 AND r2.active=1""" % {'tname':self._tname(ss)}
+                  r1.active=0 AND r2.active=1""" % {'tname':self._fname}
         db = self.connect()
         db.execute(q)
         db.commit()
@@ -155,9 +154,9 @@ class RelationshipDB(RF2FileWrapper):
                 db.commit()
             self.rowstoadd = []
 
-    def updateFromCanonical(self, canon_fname, ss, cfg):
+    def updateFromCanonical(self, canon_fname):
         ccdb = CanonicalCoreDB()
-        if not ccdb.hascontent(ss):
+        if not ccdb.hascontent():
             print("Canonical DB is empty -- relationship tables not updated")
             return
 
@@ -168,31 +167,31 @@ class RelationshipDB(RF2FileWrapper):
         db.execute("""UPDATE %s s, %s c SET isCanonical=1
             WHERE conceptid1 = sourceId AND conceptid2 = destinationId AND relationshiptype = typeId
             AND s.relationshipgroup=c.relationshipgroup AND active=1""" % (
-            self._tname(ss), ccdb._tname(ss)))
+            self._fname, ccdb._fname))
         db.commit()
 
         # Step 2: Add additional relationship entries for new assertions in the canonical table
-        bw = self._BlockWriter(self._tname(ss), cfg.release)
+        bw = self._BlockWriter(self._fname, rf2_values.release)
         query = """SELECT conceptid1, relationshiptype, conceptid2, c.relationshipgroup FROM %s c
              LEFT JOIN %s r ON (conceptid1=sourceid AND conceptid2=destinationid AND
              relationshiptype=typeid AND c.relationshipgroup=r.relationshipgroup) WHERE sourceid IS NULL OR active=0""" % (
-            canon_fname, self._tname(ss))
+            canon_fname, self._fname)
         for e in db.executeAndReturn(query):
             bw.addrec(e)
         bw.flush()
 
-    def existsSourceRecs(self, sourceId, parmlist):
-        return self._existsRecs('sourceId = %s ' % sourceId, parmlist)
+    def existsSourceRecs(self, sourceId, **kwargs):
+        return self._existsRecs('sourceId = %s ' % sourceId, **kwargs)
 
-    def existsPredicateRecs(self, predicateId, parmlist):
-        return self._existsRecs('typeId = %s ' % predicateId, parmlist)
+    def existsPredicateRecs(self, predicateId, **kwargs):
+        return self._existsRecs('typeId = %s ' % predicateId, **kwargs)
 
-    def existsTargetRecs(self, targetId, parmlist):
-        return self._existsRecs('destinationId = %s ' % targetId, parmlist)
+    def existsTargetRecs(self, targetId, **kwargs):
+        return self._existsRecs('destinationId = %s ' % targetId, **kwargs)
 
 
     @lfu_cache(maxsize=100)
-    def _getRecs(self, filtr, parmlist, key):
+    def _getRecs(self, filtr, key, maxtoreturn=None, inferred=True, stated=True, **kwargs):
         """ Return all relationship records matching the given filter. Inferred is ignored in the stated relationship file
         Note that we have 4 controlling parameters:
             - stated -- if true, we return stated relationships
@@ -201,73 +200,79 @@ class RelationshipDB(RF2FileWrapper):
             - canonical -- if true we return I{only} canonical relationships meeting the above criteria
 
         """
-        if not parmlist.maxtoreturn:    # we're getting counts
-            infcount = int(list(self.connect().query_p(self._tname(parmlist.ss),
-                                           parmlist,
-                                           filter=build_filtr(filtr, parmlist)))[0]) \
-                if parmlist.inferred else 0
-            statedcount = self._srdb._getRecs(filtr, parmlist) if parmlist.stated else 0
+        if maxtoreturn == 0:    # we're getting counts
+            infcount = int(list(self.connect().query(self._fname,
+                                                     filter=build_filtr(filtr, **kwargs),
+                                                     inferred=inferred,
+                                                     stated=stated,
+                                                     maxtoreturn=maxtoreturn,
+                                                     **kwargs))[0]) \
+                if inferred else 0
+            statedcount = self._srdb._getRecs(filtr, maxtoreturn=maxtoreturn, stated=stated, inferred=inferred, **kwargs) if stated else 0
             # TODO: the count is not accurate unless we subtract out both inferred and stated...
             return [infcount + statedcount]
 
 
         rval = {k:v for k,v in map(lambda r:(rel_id(r), r),
                                    map(lambda r: RF2Relationship(r),
-                                       self.connect().query_p(self._tname(parmlist.ss),
-                                                              parmlist,
-                                                              filter=build_filtr(filtr, parmlist))))} \
-            if parmlist.inferred else {}
-        if parmlist.stated:
-            for r in self._srdb._getRecs(filtr, parmlist):
+                                       self.connect().query(self._fname,
+                                                              filter=build_filtr(filtr, **kwargs),
+                                                              maxtoreturn=maxtoreturn,
+                                                              stated=stated,
+                                                              inferred=inferred,
+                                                              **kwargs)))} \
+            if inferred else {}
+        if stated:
+            for r in self._srdb._getRecs(filtr, **kwargs):
                 rval[rel_id(r)] = r
 
         return sorted(rval.values(), key=key)
 
 
-    def getSourceRecs(self, sourceId, parmlist):
+    def getSourceRecs(self, sourceId, **kwargs):
         """ Return all relationship records with the given sourceId. """
-        return self._getRecs('sourceId = %s ' % sourceId, parmlist, lambda r: (r.relationshipGroup, r.destinationId))
+        return self._getRecs('sourceId = %s ' % sourceId, lambda r: (r.relationshipGroup, r.destinationId), **kwargs)
 
 
-    def getPredicateRecs(self, predicateId, parmlist):
-        return self._getRecs('typeId = %s ' % predicateId, parmlist,
-                             lambda r: (r.sourceId, r.relationshipGroup, r.destinationId))
+    def getPredicateRecs(self, predicateId, **kwargs):
+        return self._getRecs('typeId = %s ' % predicateId,
+                             lambda r: (r.sourceId, r.relationshipGroup, r.destinationId),
+                             **kwargs)
 
 
-    def getTargetRecs(self, targetId, parmlist):
+    def getTargetRecs(self, targetId, **kwargs):
         """ Return all Relationship records associated with the given targetId """
-        return self._getRecs('destinationId = %s ' % targetId, parmlist, lambda r: (r.relationshipGroup, r.sourceId))
+        return self._getRecs('destinationId = %s ' % targetId, lambda r: (r.relationshipGroup, r.sourceId), **kwargs)
 
 
-    def getSourcesForTarget(self, targetId, parmlist):
+    def getSourcesForTarget(self, targetId, stated=True, inferred=True, **kwargs):
         """ Return a list of sourceId's connected with the given targetId."""
 
-        sources = self._srdb.getSourcesForTarget(targetId, parmlist) if parmlist.stated else set()
-        if parmlist.inferred:
+        sources = self._srdb.getSourcesForTarget(targetId, stated=stated, inferred=inferred, **kwargs) if stated else set()
+        if inferred:
             db = self.connect()
             return sources.union(map(lambda r: RF2Relationship(r).sourceId,
-                db.query(self._tname(parmlist.ss),
-                         build_filtr("destinationId = '%s' " % targetId, parmlist),
-                         active=parmlist.active, ss=parmlist.ss)))
+                db.query(self._fname,
+                         build_filtr("destinationId = '%s' " % targetId, **kwargs),
+                         **kwargs)))
 
     @lfu_cache(maxsize=100)
-    def getRelationship(self, relId, parmlist):
+    def getRelationship(self, relId, **kwargs):
         """ Return the relationship record identified by relId"""
-        rel = self._srdb.getRelationship(relId, parmlist)
+        rel = self._srdb.getRelationship(relId, **kwargs)
         if rel:
             return rel
         db = self.connect()
-        rlist = [RF2Relationship(r) for r in db.query(self._tname(parmlist.ss),
-                                                      "id = '%s'" % relId,
-                                                      active=parmlist.active,
-                                                      maxtoreturn=1,
-                                                      ss=parmlist.ss)]
+        kwargs['maxtoreturn'] = 1
+        rlist = [RF2Relationship(r) for r in db.query(self._fname,
+                                                      filter="id = '%s'" % relId,
+                                                      **kwargs)]
         return rlist[0] if len(rlist) else None
 
-    def asRelationshipList(self, rels, parmlist):
+    def asRelationshipList(self, rels, maxtoreturn=None, **kwargs):
         """ Format rels as a Relationship List """
-        thelist = RF2RelationshipList(parmlist)
-        if not parmlist.maxtoreturn:
+        thelist = RF2RelationshipList(**kwargs)
+        if maxtoreturn == 0:
             return thelist.finish(True, total=list(rels)[0])
         for d in rels:
             if thelist.at_end:

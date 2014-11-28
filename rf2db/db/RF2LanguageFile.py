@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2013, Mayo Clinic
+# Copyright (c) 2014, Mayo Clinic
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification,
@@ -57,11 +57,6 @@ language_map = {'en': us_english,
                 'en-gb': gb_english,
                 'es': spanish}
 
-""" Default parameters to use of the caller doesn't know them """
-default_parmlist = language_list_parms.parse(**{'active': True,
-                                                'language': 'en',
-                                                'ss': True})
-
 
 class LanguageDB(RF2RefsetWrapper):
     directory = 'Refset/Language'
@@ -87,56 +82,52 @@ class LanguageDB(RF2RefsetWrapper):
 
     # We have to override the refset wrapper because the call would be recursive otherwise
 
-    def _build_knowns(self, language, ss):
-        self._known_refsets = self.valid_refsets(self._tname(ss))
+    def _build_knowns(self, language):
+        self._known_refsets = self.valid_refsets(self._fname)
         self._refset_names = {k: v[0] for k, v in self.preferred_term_for_concepts(self._known_refsets.items(),
                                                                                    language=language)}
         for k, v in list(language_map.items()):
             if v not in self._known_refsets:
                 language_map.pop(k)
 
-    def loadTable(self, rf2file, ss, cfg):
+    def loadTable(self, rf2file):
         from rf2db.db.RF2DescriptionFile import DescriptionDB
 
-        if not DescriptionDB().hascontent(ss):
-            print("Description database must be loaded before loading %s" % self._tname(ss))
+        if not DescriptionDB().hascontent():
+            print("Description database must be loaded before loading %s" % self._fname)
             return
 
         import warnings
 
         warnings.filterwarnings("ignore", ".*doesn't contain data for all columns.*")
-        super(LanguageDB, self).loadTable(rf2file, ss, cfg)
+        super(LanguageDB, self).loadTable(rf2file)
         db = self.connect()
         print("\t...adding concept identifiers")
-        db.execute(self.updateSTMT % {'table': self._tname(ss)})
+        db.execute(self.updateSTMT % {'table': self._fname})
         db.commit()
 
     @staticmethod
-    def _languageFilter(fltr, parmlist):
-        return fltr + " AND refsetId=%s " % language_map[
-            parmlist.language] if parmlist.language in language_map else fltr
+    def _langfltr(fltr, language=None, **kwargs):
+        return (fltr + " AND refsetId=%s " % language_map[language]) if (language and language in language_map) else fltr
 
     @lfu_cache(maxsize=100)
-    def get_entries_for_description(self, descId, parmlist):
+    def get_entries_for_description(self, descId, **kwargs):
         db = self.connect()
-        return [RF2LanguageRefsetEntry(d) for d in db.query_p(self._tname(parmlist.ss),
-                                                              parmlist,
-                                                              self._languageFilter(
-                                                                  "referencedComponentId = %s" % descId, parmlist)
-        )]
+        return [RF2LanguageRefsetEntry(d) for d in db.query(self._fname,
+                                                            self._langfltr(
+                                                                  "referencedComponentId = %s" % descId, **kwargs),
+                                                              **kwargs)]
 
 
     @lfu_cache(maxsize=20)
-    def get_entries_for_concept(self, conceptId, parmlist):
+    def get_entries_for_concept(self, conceptId, **kwargs):
         db = self.connect()
-        return [RF2LanguageRefsetEntry(d) for d in db.query_p(self._tname(parmlist.ss),
-                                                              parmlist,
-                                                              self._languageFilter("conceptId = %s" % conceptId,
-                                                                                   parmlist)
-        )]
+        return [RF2LanguageRefsetEntry(d) for d in db.query(self._fname,
+                                                            self._langfltr("conceptId = %s" % conceptId, **kwargs),
+                                                            **kwargs)]
 
     # This can't be cached because it returns a list...
-    def preferred_term_for_concepts(self, conceptIds, language=None, parmlist=None):
+    def preferred_term_for_concepts(self, conceptIds, language='en', active=True, moduleid=[], **kwargs):
         """ Return a list of concept id to prefname/desc id.  Note: If you just want the PN or FSN, use RF2PnAndFSN instead
 
         @param conceptIds: concept id(s) too lookup
@@ -144,31 +135,27 @@ class LanguageDB(RF2RefsetWrapper):
         @param parmlist: parameters.  We use active, moduleid, language.
         @return: dictionary - key is concept id, value is (prefname/description id) tuple
         """
-        if not parmlist:
-            parmlist = default_parmlist
-        if language:
-            parmlist.language = language
         db = self.connect()
         conceptIds = listify(conceptIds)
         stmt = "SELECT l.conceptId, d.id, d.term FROM %s l, %s d WHERE l.conceptId IN(%s) AND l.referencedComponentId = d.id " \
                "AND l.acceptabilityId = %s AND d.typeid = %s" % \
-               (self._tname(parmlist.ss),
-                self.descdb._tname(parmlist.ss),
+               (self._fname,
+                self.descdb.fname(),
                 ', '.join(str(c) for c in conceptIds),
                 preferred,
                 synonym)
-        stmt += ' AND l.active=1 AND d.active=1' if parmlist.active else 'True '
-        if parmlist.moduleid:
-            stmt += "AND moduleId in (" + ', '.join(str(m) for m in parmlist.moduleid)
-        stmt += self._languageFilter('', parmlist)
+        stmt += ' AND l.active=1 AND d.active=1' if active else 'True '
+        if moduleid:
+            stmt += "AND moduleId in (" + ', '.join(str(m) for m in moduleid)
+        stmt += self._langfltr('', language=language **kwargs)
         db.execute(stmt)
         return {e[0]: (e[2], e[1]) for e in map(lambda r: r.split('\t', 2), db.ResultsGenerator(db))}
 
 
     @staticmethod
-    def as_reference_set(llist, parmlist):
-        thelist = RF2LanguageReferenceSet(parmlist)
-        if not parmlist.maxtoreturn:
+    def as_reference_set(llist, maxtoreturn=None, **kwargs):
+        thelist = RF2LanguageReferenceSet(maxtoreturn=maxtoreturn, **kwargs)
+        if maxtoreturn == 0:
             return thelist.finish(True, total=list(llist)[0])
         for l in llist:
             if thelist.at_end:

@@ -53,27 +53,26 @@ KEY component (referencedComponentId)'''
         self._known_refsets = None
         self._refset_names = None
 
-    def known_refsets(self, language='en', ss=True, refresh=False):
+    def known_refsets(self, language='en', refresh=False):
         if not self._known_refsets or refresh:
-            self._build_knowns(language, ss)
+            self._build_knowns(language)
         return self._known_refsets
 
-    def refset_names(self, language='en', ss=True, refresh=False):
+    def refset_names(self, language='en', refresh=False):
         if not self._refset_names or refresh:
-            self._build_knowns(language, ss)
+            self._build_knowns(language)
         return self._refset_names
 
-    def _build_knowns(self, language, ss):
+    def _build_knowns(self, language):
         # Note: LanguageDB must be local, as it inherits from this class
-        self._known_refsets = self.valid_refsets(self._tname(ss))
+        self._known_refsets = self.valid_refsets(self._fname)
         from rf2db.db.RF2LanguageFile import LanguageDB
         self._refset_names = {k:v[0] for k,v in LanguageDB().preferred_term_for_concepts(self._known_refsets,
                                                                                          language=language).items()}
 
 
-
-    def valid_refsets(self, ss=True, active=True, moduleids=None):
-        stmt = "SELECT DISTINCT refsetId FROM %s WHERE " % self._tname(ss)
+    def valid_refsets(self, active=True, moduleids=None):
+        stmt = "SELECT DISTINCT refsetId FROM %s WHERE " % self._fname
         stmt += 'active=1 ' if active else 'True '
         if moduleids:
             stmt += "AND moduleId in (" + ', '.join(str(m) for m in moduleids)

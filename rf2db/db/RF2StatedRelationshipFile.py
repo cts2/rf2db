@@ -30,7 +30,7 @@
 from rf2db.parsers.RF2BaseParser import RF2Relationship
 from rf2db.db.RF2FileCommon import RF2FileWrapper
 
-def canon_filtr(filtr, canonical):
+def canon_filtr(filtr, canonical=False, **_):
     return (filtr + ' AND isCanonical=1 ') if canonical else filtr
 
 def rel_id(r):
@@ -42,9 +42,9 @@ def rel_id(r):
     
 class StatedRelationshipDB(RF2FileWrapper):
     
-    directory   = 'Terminology'
-    prefixes    = ['sct2_StatedRelationship_']
-    table       = 'statedRelationship'
+    directory = 'Terminology'
+    prefixes = ['sct2_StatedRelationship_']
+    table = 'statedRelationship'
     
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
       %(base)s,
@@ -63,72 +63,75 @@ class StatedRelationshipDB(RF2FileWrapper):
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
-    def _existsRecs(self, filtr, parmlist):
+    def _existsrecs(self, filtr, **kwargs):
         db = self.connect()
-        return bool([r for r in db.query(self._tname(parmlist.ss),
-                                         canon_filtr(filtr, parmlist.canonical),
-                                         active=parmlist.active, ss=parmlist.ss,maxtoreturn=1)])
+        kwargs['maxtoreturn'] = 1
+        return bool([r for r in db.query(self._fname,
+                                         filter_=canon_filtr(filtr, **kwargs),
+                                         **kwargs)])
 
 
-    def loadTable(self, rf2file, ss, cfg):
+    def loadTable(self, rf2file):
         import warnings
         warnings.filterwarnings("ignore", ".*doesn't contain data for all columns.*")
-        super(StatedRelationshipDB,self).loadTable(rf2file, ss, cfg)
+        super(StatedRelationshipDB,self).loadTable(rf2file)
 
-    def updateFromCanonical(self, canon_fname, ss, _):
+    def updateFromCanonical(self, canon_fname, **_):
         db = self.connect()
         db.execute("""UPDATE %s s, %s c SET isCanonical=1
             WHERE conceptid1 = sourceId AND conceptid2 = destinationId AND relationshiptype = typeId
-            AND s.relationshipgroup=c.relationshipgroup""" % (self._tname(ss), canon_fname))
+            AND s.relationshipgroup=c.relationshipgroup""" % (self._fname, canon_fname))
         db.commit()
 
 
-    def existsSourceRecs(self, sourceId, parmlist):
-        return self._existsRecs('sourceId = %s ' % sourceId, parmlist)
+    def existsSourceRecs(self, sourceId, **kwargs):
+        return self._existsrecs('sourceId = %s ' % sourceId, **kwargs)
      
-    def existsTargetRecs(self, targetId, parmlist):
-        return self._existsRecs('destinationId = %s ' % targetId, parmlist)
+    def existsTargetRecs(self, targetId, **kwargs):
+        return self._existsrecs('destinationId = %s ' % targetId, **kwargs)
     
-    def existsPredicateRecs(self, predicateId, parmlist):
-        return self._existsRecs('typeId = %s ' % predicateId, parmlist)
+    def existsPredicateRecs(self, predicateId, **kwargs):
+        return self._existsrecs('typeId = %s ' % predicateId, **kwargs)
 
 
-    def _getRecs(self, filtr, parmlist):
+    def _getRecs(self, filtr, maxtoreturn=None, **kwargs):
         """ Return all relationship records matching the given filter. Inferred is ignored in the stated relationship file
         """
         db = self.connect()
-        if not parmlist.maxtoreturn:    # we're getting counts
-            return int(list(self.connect().query_p(self._tname(parmlist.ss),
-                                           parmlist,
-                                           filter=canon_filtr(filtr, parmlist.canonical)))[0])
-        return map(lambda r:RF2Relationship(r), db.query_p(self._tname(parmlist.ss),
-                                                           parmlist,
-                                                           filter=canon_filtr(filtr, parmlist.canonical)))
+        if maxtoreturn == 0:    # we're getting counts
+            return int(list(self.connect().query(self._fname,
+                                                 filter=canon_filtr(filtr, **kwargs),
+                                                 maxtoreturn=maxtoreturn,
+                                                 **kwargs))[0])
+        return map(lambda r:RF2Relationship(r), db.query(self._fname,
+                                                         filter=canon_filtr(filtr, **kwargs),
+                                                         maxtoreturn=maxtoreturn,
+                                                         **kwargs))
         
         
-    def getSourceRecs(self, sourceId, parmlist):
+    def getSourceRecs(self, sourceId, **kwargs):
         """ Return all relationship records with the given sourceId. """
-        return self._getRecs("sourceId = '%s'" % sourceId, parmlist)
+        return self._getRecs("sourceId = '%s'" % sourceId, **kwargs)
     
-    def getPredicateRecs(self, predicateId, parmlist):
-        return self._getRecs("typeId = '%s'" % predicateId, parmlist)
+    def getPredicateRecs(self, predicateId, **kwargs):
+        return self._getRecs("typeId = '%s'" % predicateId, **kwargs)
 
 
-    def getTargetRecs(self, targetId, parmlist):
+    def getTargetRecs(self, targetId, **kwargs):
         """ Return all Relationship records associated with the given targetId """
-        return self._getRecs("destinationId = '%s'" %targetId, parmlist)
+        return self._getRecs("destinationId = '%s'" %targetId, **kwargs)
     
-    def getSourcesForTarget(self, targetId, parmlist):
+    def getSourcesForTarget(self, targetId, **kwargs):
         """ Return a list of sourceId's connected with the given targetId.  Inferred is ignored"""
         db = self.connect()
-        return set(map(lambda r: RF2Relationship(r).sourceId, db.query_p(self._tname(parmlist.ss),
-                                                                         parmlist,
-                                                                   filter=canon_filtr("destinationId = '%s' " % targetId, parmlist.canonical))))
+        return set(map(lambda r: RF2Relationship(r).sourceId, db.query_p(self._fname,
+                                                                        filter=canon_filtr("destinationId = '%s' " % targetId, **kwargs),
+                                                                        **kwargs)))
 
-    def getRelationship(self, relId, parmlist):
+    def getRelationship(self, relId, **kwargs):
         """ Return the relationship record identified by relId"""
         db = self.connect()
-        rlist = [RF2Relationship(r) for r in db.query_p(self._tname(parmlist.ss),  parmlist, filter="id = '%s'" % relId)]
+        rlist = [RF2Relationship(r) for r in db.query(self._fname, filter="id = '%s'" % relId, **kwargs)]
         return rlist[0] if len(rlist) else None
 
 

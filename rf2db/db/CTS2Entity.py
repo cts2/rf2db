@@ -27,8 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-""" CTS2 Entity File -- used by the py4cts2 package for caching, but it makes more sense
-to just build it here.
+""" CTS2 Entity File -- A cache of responses for a particular entity identifier.
 """
 
 from rf2db.db.RF2FileCommon import RF2FileWrapper

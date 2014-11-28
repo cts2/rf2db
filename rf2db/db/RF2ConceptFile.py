@@ -34,11 +34,10 @@ from cherrypy import HTTPError
 
 from rf2db.parsers.RF2BaseParser import RF2Concept
 from rf2db.parsers.RF2Iterator import RF2ConceptList, iter_parms
-from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, extensionParms
+from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, ep_values, rf2_values
+from rf2db.db.RF2DBConnection import cp_values
 from rf2db.utils.lfu_cache import lfu_cache
 from rf2db.utils.listutils import listify
-from rf2db.utils.sctid_generator import sctid_generator
-from rf2db.db.RF2Namespaces import IDGenerator
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, intparam, enumparam, sctidparam
 from rf2db.constants.RF2ValueSets import primitive, defined
 
@@ -64,9 +63,6 @@ class ConceptDB(RF2FileWrapper):
     prefixes = ['sct2_Concept_']
     table = 'concept'
 
-    idGenerator = None
-
-
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
       %(base)s,
       definitionStatusId bigint(20) NOT NULL,
@@ -76,49 +72,56 @@ class ConceptDB(RF2FileWrapper):
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
-    def _idGenerator(self):
-        """ Return an id generator instance.  This isn't invoked until needed as it can entail some expense
-        :return: ID generator for the default namespace
-        """
-        if not self.idGenerator:
-            self.idGenerator = IDGenerator(extensionParms.namespace)
-        return self.idGenerator
-
-
     @lfu_cache(maxsize=100)
-    def getConcept(self, cid, parmlist):
+    def read(self, cid, **kwargs):
         """
         Read the concept record
         @param cid: concept sctid
+        @return: Updated RF2Concept record if valid else None
         """
         db = self.connect()
-        rlist = [RF2Concept(c) for c in db.query_p(self._tname(parmlist.ss), parmlist, filter="id=%s" % cid)]
+        rlist = [RF2Concept(c) for c in db.query_p(self._fname, filter="id=%s" % cid, **kwargs)]
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
-
-    def updateConcept(self, cid, parmlist):
+    def _doupdate(self, cid, changeset, effectivetime=None, definitionstatusid=None, **kwargs):
+        """ Helper function to update a concept record
+        @param cid: concept id to update
+        @param changeset: changeset
+        @param effectivetime: new effective time
+        @param definitionstatusid: new definition status is not empty
+        @param kwargs: context
         """
-        The only thing that can be changed on an existing concept is the definition status.  All other parms are fixed
-        :param changeset: Change set identifier for the udpate
-        :param sctid: Concept identifier to be changed
-        :param definitionstatus: New definition status
-        :return: Updated concept
-        """
-        msg = self.validChangeSet(parmlist)
-        if msg:
-            return msg
+        fname = self._fname
+        if not effectivetime:
+            effectivetime = strftime("%Y%m%d", gmtime())
+        query = "UPDATE %(fname)s SET effectiveTime=%(effectivetime)s, "
+        query += "definitionStatusId=%(definitionstatusid)s, " if definitionstatusid else ""
+        query += "WHERE id=%(cid)s AND changeset='%changeset)s AND locked=1"
+        db = self.connect()
+        db.execute_query(query % vars(), **kwargs)
+        db.commit()
 
-        current_value = self.getConcept(cid, parmlist)
+    def update(self, cid, changeset=None, definitionstatus=None, **kwargs):
+        """ Update an existing concept record
+        @param cid: sctid of concept to update
+        @param changeset: containing changeset
+        @param definitionstatus: field to update
+        @param kwargs: context
+        @return: new record if update successful, otherwise an error message.
+        """
+        if not self.changesetisvalid(changeset):
+            return self.changeseterror(changeset)
+        current_value = self.read(cid, **kwargs)
         if not current_value:
-            return HTTPError(status=400, message="UnknownEntity - concept not found")
+            return "UnknownEntity - concept not found"
         # Various situations:
         # 1) record is not locked:
         #     1a) record will change
         #         1aa) snapshot:  Not allowed.
         #         1ab) full:  update record with lock, changeset, new effectiveDate and changes
         #     1b) record will not change
-        #         ???
+        #         Return existing record untouched
         # 2) Record is locked
         #     2a) record changeset = changeset?
         #       1aa) snapshot:  Change record value and effectivedate
@@ -128,132 +131,126 @@ class ConceptDB(RF2FileWrapper):
         #       2ab) full:  ????
         #
         # Don't update effective time if nothing will change (PUT is idempotent)
-        if parmlist.ss and not current_value.locked:
-            return HTTPError(status=400, message="Unable to update a snapshot")
-
-        if current_value.changeset != parmlist.changeset or \
-                not current_value.locked or \
-                (current_value.isPrimitive and parmlist.definitionstatus=='f') or \
-                (current_value.isFullyDefined and parmlist.definitionstatus=='p'):
-            parmlist.definitionStatusId = primitive if parmlist.definitionstatus == 'p' else defined
-            db = self.connect()
-            parmlist.fname = self._tname(parmlist.ss)
-            if not parmlist.effectivetime:
-                parmlist.effectivetime = strftime("%Y%m%d", gmtime())
-
-            parmlist.cid = cid
-            parmlist.cvet = current_value.effectiveTime
-
-            db.execute("UPDATE %(fname)s SET "
-                       "effectiveTime=%(effectivetime)s, "
-                       "definitionStatusId=%(definitionstatusid)s, "
-                       "changeset='%(changeset)s', locked=1 "
-                       "WHERE id=%(cid)s AND effectiveTime=%(cvet)s" % parmlist.__dict__)
-
-            db.commit()
-        return self.getConcept(cid, parmlist, _nocache=True)
+        if not current_value.locked:
+            if current_value.changeset != changeset or \
+                current_value.isPrimitive and definitionstatus == 'f' or \
+                current_value.isFullyDefined and definitionstatus == 'p':
+                if cp_values.ss:
+                    return "Concept: Cannot update an existing snapshot record"
+                else:
+                    return "Concept: Full record update is not implemented"
+            else:
+                return current_value
+        else:
+            if current_value.changeset == changeset:
+                if cp_values.ss:
+                    definitionstatusid = primitive if (definitionstatus=='p' and current_value.isFullyDefined) else defined if (definitionstatus=='f' and current_value.isPrimitive) else None
+                    self._doUpdate(cid, changeset, definitionstatusid=definitionstatusid, **kwargs)
+                    return self.read(cid, _nocache=True, **kwargs)
+                else:
+                    return "Concept: Full record update is not implemented"
+            else:
+                return "Concept: Record is locked under a different changeset"
 
 
-    def deleteConcept(self, cid, parmlist):
-        msg = self.validChangeSet(parmlist)
-        if msg:
-            return msg
-
-        parmlist.active=0       # Include already deleted concepts
-        current_value = self.getConcept(cid, parmlist)
-        if not current_value:
-            return HTTPError(status=400, message="UnknownEntity - concept not found")
-        # If the concept is locked under our change set, we can just remove it.  If it isn't locked, we can only do
-        # the Full thingie for the time being
-        # Locked is only readable under our change set...
-        if parmlist.ss and not current_value.locked:
-            return HTTPError(status=400, message="Unable to delete from a snapshot")
-        if current_value.isActive():
-            db = self.connect()
-            fname = self._tname(parmlist.ss)
-            effectivetime = strftime("%Y%m%d", gmtime())
-            cvet = current_value.effectiveTime
-            db.execute("UPDATE %(fname)s SET "
-                       "effectiveTime=%(effectivetime)s, "
-                       "active=0 "
-                       "WHERE id=%(cid)s AND effectiveTime=%(cvet)s" % vars())
-            db.commit()
-        return self.getConcept(cid, parmlist, _nocache=True)
-
-
-
-    def newConcept(self, parmlist):
+    def delete(self, cid, changeset=None, **kwargs):
+        """ Delete or deactivate a concept
+        @param cid: concept identifier
+        @param changeset: containing changeset
+        @param kwargs: context
+        @return: None if success otherwise an error message
         """
-        Parameterized newConcept.
-        :param changeset: Change Set Identifier associated with the change
-        :type changeset: UUID
-        :param sctid: SCTID of new concept.  If absent, sctid is generated using rf2 namespace parameter
-        :param effectivetime: Effective time of insertion.  If absent, today as 'yyyymmdd'
-        :param moduleid: module id of new concept. Default: rf2 moduleid parameter
-        :param definitionstatus: 'p' or 'd' (primitive or defined). Default: 'p'
-        :return: RF2Concept representation of new entry
+        if not self.changesetisvalid(changeset):
+            return self.changeseterror(changeset)
+
+        # delete is idempotent, so if we can't find it or it is already gone claim success
+        kwargs['active'] = 0        # read even if inactive
+        current_value = self.read(cid, **kwargs)
+        if not current_value or not current_value.isActive():
+            return None
+
+        if not current_value.locked:
+            if cp_values.ss:
+                return "Cannot delete committed concepts in a snapshot database"
+            else:
+                return "Concept: Full record delete is not implemented"
+        else:
+            if current_value.changeset == changeset:
+                db = self.connect()
+                db.execute_query("DELETE FROM %(fname)s WHERE id=%(cid)s AND changeset=%(changeset)s AND locked=1" % vars())
+                db.commit()
+                return None
+            else:
+                return "Concept: Record is locked under a different changeset"
+
+
+    def add(self, changeset, cid=None, effectivetime=None, moduleid=None, definitionstatus='p', **kwargs):
         """
-        msg = self.validChangeSet(parmlist)
-        if msg:
-            raise msg
+        @param changeset: Changeset identifier.
+        @type changeset: UUID
+        @param cid: concept identifier.  Default: next concept in server namespace
+        @param effectivetime: Timestamp for record.  Default: today's date
+        @param moduleid: owning module.  Default: service module (ep_values.moduleId)
+        @param definitionstatus: 'p' (primitive) or 'f' (fully defined).  Default: 'p'
+        @return: Concept record or none if error.
+        """
+        if not self.changesetisvalid(changeset):
+            return self.changeseterror(changeset)
 
         db = self.connect()
-        parmlist.fname = self._tname(parmlist.ss)
-        if not parmlist.sctid:
-            parmlist.sctid = self._idGenerator().next(sctid_generator.CONCEPT)
-        if not parmlist.effectivetime:
-            parmlist.effectivetime = strftime("%Y%m%d", gmtime())
-        if not parmlist.moduleid:
-            parmlist.moduleid = extensionParms.moduleid
+        if not cid:
+            cid = self.newconceptid()
+        if not effectivetime:
+            effectivetime = strftime("%Y%m%d", gmtime())
+        if not moduleid:
+            moduleid = ep_values.moduleid
 
-        parmlist.definitionStatusId = primitive if parmlist.definitionstatus == 'p' else defined
-        db.execute("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, definitionStatusId, changeset, locked) "
-        "VALUES (%(sctid)s, %(effectivetime)s, 1, %(moduleid)s, %(definitionstatusid)s, '%(changeset)s', 1 )" % parmlist.__dict__)
+        definitionStatusId = defined if definitionstatus == 'f' else primitive
+        db.execute("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, "
+                   "definitionStatusId, changeset, locked) "
+                   "VALUES (%(sctid)s, %(effectivetime)s, 1, %(moduleid)s, "
+                   "%(definitionstatusid)s, '%(changeset)s', 1 )" % vars())
         db.commit()
-        return self.getConcept(parmlist.sctid, parmlist)
+        return self.read(cid, **kwargs)
 
 
-    def getAllConcepts_p(self, active=1, order='asc', page=0, maxtoreturn=100, after=0):
-        return self.getAllConcepts(concept_list_parms.parse(
-            **{'active': active, 'order': order, 'page': page, 'maxtoreturn': maxtoreturn, 'after': after}))
-
-
-    def getAllConcepts(self, parmlist):
+    def getAllConcepts(self, active=1, order='asc', page=0, maxtoreturn=100, after=0, changeset=None, moduleids=[], **kwargs):
         """
         Read a number of concept records
         @param parmlist: parsed parameter list
         """
 
-        if not parmlist.ss:
+        if not cp_values.ss:
             raise Exception('FULL table not supported for complete concept list')
-        db = self.connect()
-        query = 'SELECT %s FROM %s' % ('*' if parmlist.maxtoreturn else 'count(*)', self._tname(parmlist.ss))
-        query += ' WHERE %s ' % ('active=1' if parmlist.active else 'TRUE')
-        if parmlist.changeset:
-            query += " AND (changeset = '%s' OR locked = 0)" % parmlist.changeset
+
+        start = (page * maxtoreturn) if maxtoreturn > 0 else 0
+
+        query = 'SELECT %s FROM %s' % ('*' if maxtoreturn else 'count(*)', self._fname)
+        query += ' WHERE %s ' % ('active=1' if active else 'TRUE')
+        if changeset:
+            query += " AND (changeset = '%s' OR locked = 0)" % changeset
         else:
             query += ' AND locked = 0'
-        if parmlist.after:
-            query += ' AND id > %s' % parmlist.after
-        if parmlist.moduleid:
-            query += ' AND ' + ' AND '.join(['moduleid = %s' % m for m in listify(parmlist.moduleid)])
-        if parmlist.order:
-            query += ' ORDER BY id %s' % parmlist.order
-        if parmlist.maxtoreturn:
-            query += ' LIMIT %s, %s' % (parmlist.start, parmlist.maxtoreturn + 1)
+        if after:
+            query += ' AND id > %s' % after
+        if moduleids:
+            query += ' AND ' + ' AND '.join(['moduleid = %s' % m for m in listify(moduleids)])
+        if order:
+            query += ' ORDER BY id %s' % order
+        if maxtoreturn > 0:
+            query += ' LIMIT %s, %s' % (start, maxtoreturn + 1)
+        db = self.connect()
         db.execute(query)
-        return [RF2Concept(c) for c in db.ResultsGenerator(db)] if parmlist.maxtoreturn else list(
+        return [RF2Concept(c) for c in db.ResultsGenerator(db)] if maxtoreturn else list(
             db.ResultsGenerator(db))
 
-    @staticmethod
-    def asConceptList_p(clist, active=1, order='asc', page=0, maxtoreturn=100, after=0):
-        return ConceptDB.asConceptList(clist, concept_list_parms.parse(
-            **{'active': active, 'order': order, 'page': page, 'maxtoreturn': maxtoreturn, 'after': after}))
 
     @staticmethod
-    def asConceptList(clist, parmlist):
-        thelist = RF2ConceptList(parmlist)
-        if not parmlist.maxtoreturn:
+    def asConceptList(clist, maxtoreturn=None, **kwargs):
+        if maxtoreturn is None:
+            maxtoreturn=rf2_values.defaultblocksize
+        thelist = RF2ConceptList(maxtoreturn=maxtoreturn, **kwargs)
+        if maxtoreturn==0:
             return thelist.finish(True, total=list(clist)[0])
         for c in clist:
             if thelist.at_end:

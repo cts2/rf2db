@@ -90,19 +90,19 @@ class TransitiveClosureDB(RF2FileWrapper):
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
-    def loadTable(self, rf2file, ss, cfg):
+    def loadTable(self, rf2file):
         print("Reading active relationships from relationship snapshot table")
         db = RF2DBConnection()
         rdb = RelationshipDB()
-        if not rdb.hascontent(True):
+        if not rdb.hascontent():
             print("Error: Transitive table load requires Snapshot releationship table")
             return
 
         db.execute("""SELECT sourceId, destinationId FROM %s WHERE %s AND typeId = %s""" %
-                   (rdb._tname(True), self.fltr, is_a))
+                   (rdb._fname, self.fltr, is_a))
 
         print("Computing transitive closure")
-        tbl = {'tname':self._tname(ss)}
+        tbl = {'tname':self._fname}
         tc = list(transitive_closure(db))
         print("Dropping indices")
         TransitiveClosureDB._dropIndexes(tbl)
@@ -116,7 +116,7 @@ class TransitiveClosureDB(RF2FileWrapper):
         print("Computing root entries")
         db.execute("""UPDATE %s t1 LEFT JOIN %s t2 ON t1.sourceid=t2.destinationid
                       SET t1.isRoot=1
-                      WHERE t1.depth=1 AND t2.destinationid IS null""" % (self._tname(True), self._tname(True)))
+                      WHERE t1.depth=1 AND t2.destinationid IS null""" % (self._fname, self._fname))
         db.commit()
 
 
@@ -176,11 +176,11 @@ class TransitiveClosureDB(RF2FileWrapper):
     def hasChildren(self, sctid, **kwargs):
         return bool(self.children(sctid, maxtoreturn=1, **kwargs))
 
-    def children(self, sctid, start=0, maxtoreturn=0, **kwargs):
+    def children(self, sctid, start=0, maxtoreturn=0, **_):
         return self.doquery("SELECT destinationId FROM %s WHERE sourceId = %s AND depth=1 ORDER BY destinationId" %
                             (self._tname(True), sctid), start, maxtoreturn)
 
-    def parents(self, sctid, **kwargs):
+    def parents(self, sctid, **_):
         return self.doquery("SELECT sourceId FROM %s WHERE destinationId = %s AND depth=1 ORDER BY sourceId" %
                             (self._tname(True), sctid), start=0, maxtoreturn=0)
 

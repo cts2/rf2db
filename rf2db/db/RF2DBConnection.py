@@ -47,15 +47,17 @@ config_parms = ConfigArgs('dbparms',
                            ConfigArg('passwd', abbrev='p', help='MySQL Password'),
                            ConfigArg('db', abbrev='db', help='Database', default='rf2'),
                            ConfigArg('charset', help='MySQL Character Set', default='utf8'),
-                           ConfigArg('dodecode', help='Decode paramater needed for some implementations'),
+                           ConfigArg('dodecode', help='If true, convert data to UTF8 for return.  '
+                                                      'Needed for some implementations.'),
+                           ConfigArg('ss', help="Snapshot(True) or Full(False) tables", default=True)
                           ])
-config = ConfigManager(config_parms)
+cp_values = ConfigManager(config_parms)
 
 debug_parms = ConfigArgs('debug',
                          [ConfigArg('trace', help='Trace SQL Calls', action='store_true'),
                           ConfigArg('nocache', help='Turn off cache for debugging', action='store_true')
                          ])
-dbconfig = ConfigManager(debug_parms)
+db_values = ConfigManager(debug_parms)
 
 db = pool.manage(mysql)
 
@@ -72,8 +74,8 @@ class RF2DBConnection(object):
     def __iter__(self):
         return self
 
-    def newDB(self, config_mgr):
-        nondb_config = config_mgr.asdict().copy()
+    def newDB(self):
+        nondb_config = cp_values.asdict().copy()
         dbname = nondb_config.pop('db')
         nondb_config.pop('dodecode', None)
         self._connection = db.connect(**nondb_config)
@@ -90,7 +92,7 @@ class RF2DBConnection(object):
     def _connect(self):
         """ Make sure there is a database connection active """
         if not self._connection:
-            parms = config.asdict().copy()
+            parms = cp_values.asdict().copy()
             parms.pop('dodecode', None)
             self._connection = db.connect(**parms)
             # self._connection.set_character_set("utf8")
@@ -116,7 +118,7 @@ class RF2DBConnection(object):
 
         @return: Result of cursor.execute(stmt)
         """
-        if booleanparam.v(dbconfig.trace, False):
+        if booleanparam.v(db_values.trace, False):
             print("===== %s" % stmt)
         try:
             self._connect()
@@ -142,7 +144,7 @@ class RF2DBConnection(object):
         
         @return: Result of cursor.execute(stmt)
         """
-        if booleanparam.v(dbconfig.trace, False):
+        if booleanparam.v(db_values.trace, False):
             print("===== %s" % stmt)
         try:
             self._connect()
@@ -175,8 +177,8 @@ class RF2DBConnection(object):
             raise StopIteration
 
     @staticmethod
-    def build_query(table, filter_="", sort=None, active=True, ss=True, start=0, maxtoreturn=100, refdate=None,
-                    moduleids=None, order='asc', changeset=None):
+    def build_query(table, filter_="", sort=[], active=True, start=0, maxtoreturn=100, refdate=None,
+                    moduleids=None, order='asc', changeset=None, **_):
         """ Query an RF2 table taking the historical information into account.
         
         @param table: table to query
@@ -185,14 +187,11 @@ class RF2DBConnection(object):
         @param filter_: filter_ to apply to the query.
         @type filter_: C{str}
         
-        @param sort: name of column to sort on
+        @param sort: name of column or ordered list of columns to sort on
         @type sort: C{str}
         
         @param active: retrieve active only or all
         @type active: C{bool}
-        
-        @param ss: snapshot or full table query
-        @type ss: C{bool}
         
         @param start: first record to retrieve (0 based)
         @type start: C{int}
@@ -216,15 +215,15 @@ class RF2DBConnection(object):
         maxtoreturn = int(maxtoreturn) if maxtoreturn is not None else 100
         if not filter_:
             filter_ = "1"
-        if ss and refdate:
+        if cp_values.ss and refdate:
             raise Exception("Cannot use reference date with snapshot")
-        if not ss:
+        if not cp_values.ss:
             key_query = "(SELECT id, MAX(effectiveTime) AS effectiveTime from %(table)s WHERE %(filter_)s" % locals()
             if refdate:
                 key_query += " AND effectiveTime <= '%s'" % refdate.strftime("%Y%m%d%H%M")
             key_query += " GROUP BY id) as tbl_keys"
 
-        if not ss:
+        if not cp_values.ss:
             tf = RF2DBConnection.tweakFilter(filter_)
             query = """ SELECT tbl.* FROM %(table)s tbl, %(key_query)s 
                         WHERE tbl.id = tbl_keys.id AND tbl.effectiveTime = tbl_keys.effectiveTime AND %(tf)s""" % locals()
@@ -245,16 +244,8 @@ class RF2DBConnection(object):
             query += " LIMIT %d, %d " % (start, maxtoreturn + 1)
         return query
 
-    def query_p(self, table, parms, filter=""):
-        """ Alternate query where parameters doen't have to be disassembled """
-        # TODO: add sort column to the parameters list
-        return self.query(table, filter, sort=parms.sort, order=parms.order, active=parms.active, ss=parms.ss,
-                          start=parms.start, maxtoreturn=parms.maxtoreturn, refdate=parms.refdate,
-                          moduleids=parms.moduleid, changeset=parms.changeset)
-
-
-    def query(self, table, filter_="", sort=None, active=True, ss=True, start=0,
-              maxtoreturn=100, refdate=None, moduleids=None, order="asc", changeset=None):
+    def query(self, table, filter_="", sort=None, active=True, start=0,
+              maxtoreturn=100, refdate=None, moduleids=None, order="asc", changeset=None, **kwargs):
         """ Query an RF2 table taking the historical information into account.
 
         @param table: table to query
@@ -268,9 +259,6 @@ class RF2DBConnection(object):
 
         @param active: retrieve active only or all
         @type active: C{bool}
-
-        @param ss: snapshot or full table query
-        @type ss: C{bool}
 
         @param start: first record to retrieve (0 based)
         @type start: C{int}
@@ -286,11 +274,7 @@ class RF2DBConnection(object):
 
         @return: record generator
         """
-        return self.ResultsGenerator(self) if self.execute(self.build_query(table, filter_=filter_, sort=sort,
-                                                                            active=active, ss=ss, start=start,
-                                                                            maxtoreturn=maxtoreturn, refdate=refdate,
-                                                                            moduleids=moduleids, order=order,
-                                                                            changeset=changeset)) else []
+        return self.ResultsGenerator(self) if self.execute(self.build_query(table, **kwargs)) else []
 
     def executeAndReturn(self, query):
         return self._cursor if self.execute(query) else []
@@ -307,7 +291,7 @@ class RF2DBConnection(object):
         # the "decode" part has to do with the fact that some SQL db's won't return in utf8
         try:
             return '\t'.join(map(lambda r: \
-                                     (r.decode('utf8') if booleanparam.v(config.dodecode, False) else r) \
+                                     (r.decode('utf8') if booleanparam.v(cp_values.dodecode, False) else r) \
                                          if isinstance(r, basestring) else str(r), tup)) if tup else None
         except Exception as e:
             print ("FAILING TUPLE:", tup)

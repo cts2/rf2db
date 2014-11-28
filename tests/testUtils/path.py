@@ -32,5 +32,3 @@ import sys
 _curdir = os.path.join(os.getcwd(), os.path.dirname(__file__))
 sys.path.append(os.path.join(_curdir,'..', '..'))
 print(sys.path[-1])
-
-# NOTE: there is a local settings.conf that is used for the test code...

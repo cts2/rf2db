@@ -65,46 +65,48 @@ class ModuleVersionsDB(RF2FileWrapper):
     
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
-        
+
+    @staticmethod
+    def _d(**kwargs):
+        return vars()['kwargs']
                
-    def loadTable(self, rf2file, ss, cfg):
+    def loadTable(self, rf2file):
         for vt in self._versionTables:
-            if not vt.hascontent(ss):
-                print(vt._tname(ss), "is empty - load it first")
+            if not vt.hascontent():
+                print(vt._tname(), "is empty - load it first")
         for vt in self._versionTables:
             # print("Loading", vt.table, '...',end='')
             print('Reading versions from %s ...' % vt.table)
             db = self.connect()
-            db.execute('INSERT IGNORE INTO %s (moduleId, effectiveTime) VALUES' % self._tname(ss) + \
-                            ','.join(["("+ str(m) + "," +str(e) + ")" for (m,e) in vt.moduleVersions(ss)]))
+            db.execute('INSERT IGNORE INTO %s (moduleId, effectiveTime) VALUES' % self._fname + \
+                            ','.join(["("+ str(m) + "," +str(e) + ")" for (m,e) in vt.moduleVersions()]))
             db.commit()
         db = self.connect()
         print "Loading moduleid view"
-        db.execute(self.createModulesSTMT % {'mvtable':self._tname(ss), 'desctable':DescriptionDB()._tname(ss),
-                                             'langtable':LanguageDB()._tname(ss),'acceptable':acceptable,
-                                             'preferred':preferred, 'synonym':synonym})
+        db.execute(self.createModulesSTMT % self._d(mvtable=self._fname, desctable=DescriptionDB.fname(),
+                                                    langtable=LanguageDB.fname(), acceptable=acceptable,
+                                                    preferred=preferred, synonym=synonym))
         db.commit()
 
             
-    def loadFile(self, fname, ss):
-        print(self.table, "must be loaded from", ConceptDB()._tname(ss), "and", DescriptionDB()._tname(ss), "tables")
+    def loadFile(self, fname):
+        print(self.table, "must be loaded from", ConceptDB.fname(), "and", DescriptionDB.fname(), "tables")
         
-    def getVersions(self, moduleId, ss=True):
+    def getVersions(self, moduleId):
         """ Return module id versions in descending order """
         db = self.connect()
-        db.execute("SELECT effectiveTime FROM %s WHERE moduleId = %s ORDER by effectiveTime DESC" % (self._tname(ss), moduleId) )
+        db.execute("SELECT effectiveTime FROM %s WHERE moduleId = %s ORDER by effectiveTime DESC" % (self._fname, moduleId) )
         return list(db.ResultsGenerator(db))
 
 
-    def knownVersions(self, refdate=None, ss=True):
+    def knownVersions(self, refdate=None):
         """
         @param refdate: reference date (format: YYYYMMDD) - return entries <= date
-        @param ss:  Snapshot (True) or Full (False)
         @return: ordered list of dates in descending order
         """
         whereStmt = " WHERE effectiveTime <= '%s' " % refdate if refdate else ""
         db = self.connect()
-        db.execute("SELECT distinct effectiveTime FROM %s %s ORDER by effectiveTime DESC" % (self._tname(ss), whereStmt))
+        db.execute("SELECT distinct effectiveTime FROM %s %s ORDER by effectiveTime DESC" % (self._fname, whereStmt))
         return list(db.ResultsGenerator(db))
 
     def getModulesids(self):
@@ -113,7 +115,7 @@ class ModuleVersionsDB(RF2FileWrapper):
         return list(db.ResultsGenerator(db))
 
     @lfu_cache(20)
-    def getModuleid(self,moduleid):
+    def getModuleid(self, moduleid):
         db = self.connect()
         db.execute("SELECT * FROM moduleids WHERE moduleid=%s" % moduleid)
         rval = list(db.ResultsGenerator(db))

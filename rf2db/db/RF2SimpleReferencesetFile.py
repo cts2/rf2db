@@ -31,7 +31,7 @@
 """
 
 
-from rf2db.db.RF2FileCommon import global_rf2_parms
+from rf2db.db.RF2FileCommon import global_rf2_parms, rf2_values
 from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
 from rf2db.parsers.RF2RefsetParser import RF2SimpleReferenceSetEntry
 from rf2db.parsers.RF2Iterator import RF2SimpleReferenceSet, iter_parms
@@ -57,14 +57,15 @@ class SimpleReferencesetDB(RF2RefsetWrapper):
     def __init__(self, *args, **kwargs):
         RF2RefsetWrapper.__init__(self, *args, **kwargs)
 
-    def get_simple_refset(self, parmlist):
-        filtr = 'refsetId=%s' % parmlist.refset if parmlist.refset else 'True'
-        filtr += (' AND referencedComponentId = %s ' % parmlist.component) if parmlist.component else ' '
+    def get_simple_refset(self,  refset=None, component=None, sort=None, **kwargs):
+        filtr = 'refsetId=%s' % refset if refset else 'True'
+        filtr += (' AND referencedComponentId = %s ' % component) if component else ' '
         db = self.connect()
         # TODO: Sort
-        return [RF2SimpleReferenceSetEntry(e) for e in db.query_p(self._tname(parmlist.ss),
-                                                                              parmlist,
-                                                                              filter=filtr)]
+        return [RF2SimpleReferenceSetEntry(e) for e in db.query(self._fname,
+                                                                filter=filtr,
+                                                                sort=sort,
+                                                                **kwargs)]
 
     @classmethod
     def simplerefset_list_parms(cls):
@@ -72,9 +73,11 @@ class SimpleReferencesetDB(RF2RefsetWrapper):
 
 
     @staticmethod
-    def as_reference_set(mlist, parmlist):
-        thelist=RF2SimpleReferenceSet(parmlist)
-        if not parmlist.maxtoreturn:
+    def as_reference_set(mlist, maxtoreturn=None, **kwargs):
+        if maxtoreturn is None:
+            maxtoreturn=rf2_values.defaultblocksize
+        thelist=RF2SimpleReferenceSet(maxtoreturn=maxtoreturn, **kwargs)
+        if maxtoreturn == 0:
             return thelist.finish(True, total=list(mlist)[0])
         for m in mlist:
             if thelist.at_end:

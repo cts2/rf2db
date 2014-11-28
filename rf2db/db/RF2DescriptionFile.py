@@ -32,7 +32,7 @@
 
 from rf2db.parsers.RF2BaseParser import RF2Description
 from rf2db.parsers.RF2Iterator import RF2DescriptionList, iter_parms
-from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms
+from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, rf2_values
 from rf2db.utils.lfu_cache import lfu_cache
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList
 
@@ -47,6 +47,8 @@ class DescriptionDB(RF2FileWrapper):
     directory = 'Terminology'
     prefixes  = ['sct2_Description_', 'sct2_TextDefinition_']
     table = 'description'
+
+    idGenerator = None
     
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
      %(base)s,
@@ -63,34 +65,33 @@ class DescriptionDB(RF2FileWrapper):
         self._descTextDB = None
     
     @lfu_cache(maxsize=100)
-    def getConceptDescription(self, conceptId, parmlist):
+    def getConceptDescription(self, conceptId, maxtoreturn=None, **kwargs):
         db = self.connect()
-        rval = db.query_p(self._tname(parmlist.ss), parmlist, filter="conceptId = %s" % conceptId)
-        return [RF2Description(d) for d in rval] if parmlist.maxtoreturn else list(rval)
+        rval = db.query(self._fname, filter="conceptId = %s" % conceptId, maxtoreturn=maxtoreturn, **kwargs)
+        return [RF2Description(d) for d in rval] if maxtoreturn != 0 else list(rval)
 
-    def getConceptIdForDescription(self, descId, parmlist):
-        rlist = self.getDescriptionById(descId, parmlist)
+    def getConceptIdForDescription(self, descId, **kwargs):
+        rlist = self.getDescriptionById(descId, **kwargs)
         return str(rlist.conceptId) if rlist else None
 
-    def getDescriptionById_p(self, descId):
-        return self.getDescriptionById(descId, description_parms.parse(**{}))
 
     @lfu_cache(maxsize=20)
-    def getDescriptionById(self, descId, parmlist):
+    def getDescriptionById(self, descId, **kwargs):
         db = self.connect()
-        rlist = [RF2Description(d) for d in db.query_p(self._tname(parmlist.ss), parmlist, filter="id = %s" % descId)]
+        rlist = [RF2Description(d) for d in db.query_p(self._fname, filter="id = %s" % descId, **kwargs)]
         return rlist[0] if len(rlist) else None
 
 
     @staticmethod
-    def asDescriptionList(dlist, parmlist):
-        thelist = RF2DescriptionList(parmlist)
-        if not parmlist.maxtoreturn:
+    def asDescriptionList(dlist, maxtoreturn=None, **kwargs):
+        if maxtoreturn is None:
+            maxtoreturn=rf2_values.defaultblocksize
+        thelist = RF2DescriptionList(maxtoreturn=maxtoreturn, **kwargs)
+        if maxtoreturn == 0:
             return thelist.finish(True, total=list(dlist)[0])
         for d in dlist:
             if thelist.at_end:
                 return thelist.finish(True)
             thelist.add_entry(d)
         return thelist.finish(False)
-
 

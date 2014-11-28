@@ -58,7 +58,7 @@ class NewConceptTestCase(unittest.TestCase):
                                          moduleId=str(cimiModule),
                                          changeset=self.testChangeSet,
                                          sctid=sctid)
-        dbrec = self.concdb.newConcept(parms)
+        dbrec = self.concdb.add(parms)
         # We would like to do the test below, but RF2Concept has a wrapper and, as such, evaluates as a function
         # self.assertTrue(isinstance(dbrec, RF2Concept))
         self.assertIsNotNone(re.match(r'RF2Concept\(id:[0-9]+100016010[0-9], effectiveTime:20141131, active:1, moduleId:11000160102, definitionStatusId:900000000000074008\)', str(dbrec)))
@@ -69,14 +69,14 @@ class NewConceptTestCase(unittest.TestCase):
                                        moduleid=str(cimiModule),
                                        definitionstatus='p',
                                        changeset=self.testChangeSet)
-        dbrec = self.concdb.newConcept(parms)
+        dbrec = self.concdb.add(parms)
         self.assertIsNotNone(re.match(r'RF2Concept\(id:[0-9]+100016010[0-9], effectiveTime:20141131, active:1, moduleId:11000160102, definitionStatusId:900000000000074008\)', str(dbrec)))
 
 
     def testNew3(self):
-        dbrec = self.concdb.newConcept(new_concept_parms.parse(changeset=self.testChangeSet))
+        dbrec = self.concdb.add(new_concept_parms.parse(changeset=self.testChangeSet))
         self.assertIsNotNone(re.match(r'RF2Concept\(id:[0-9]+100016010[0-9], effectiveTime:[0-9]{8}, active:1, moduleId:11000160102, definitionStatusId:900000000000074008\)', str(dbrec)))
 
 
     def testNewNoChangeset(self):
-        self.assertRaises(HTTPError, self.concdb.newConcept, new_concept_parms.parse())
+        self.assertRaises(HTTPError, self.concdb.add, new_concept_parms.parse())

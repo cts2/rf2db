@@ -39,7 +39,7 @@ import collections
 from heapq import nsmallest
 from operator import itemgetter
 
-from rf2db.db.RF2DBConnection import dbconfig
+from rf2db.db.RF2DBConnection import db_values
 from rf2db.parameterparser.ParmParser import booleanparam
 
 class Counter(dict):
@@ -67,7 +67,7 @@ def lfu_cache(maxsize=100):
 
         @functools.wraps(user_function)
         def wrapper(*args, **kwargs):
-            if booleanparam.v(dbconfig.nocache, False):
+            if booleanparam.v(db_values.nocache, False):
                 return user_function(*args, **kwargs)
             key = ''.join(str(e) for e in args[1:])
             if kwargs:

@@ -33,13 +33,11 @@
 from rf2db.db.RF2FileCommon import RF2FileWrapper
 from rf2db.db.RF2DescriptionFile import DescriptionDB
 from rf2db.db.RF2LanguageFile import LanguageDB
-from rf2db.db.RF2DBConnection import RF2DBConnection
+from rf2db.db.RF2DBConnection import RF2DBConnection, cp_values
 from rf2db.constants import RF2ValueSets
 from rf2db.utils.lfu_cache import lfu_cache
 
-
 BATCH_SIZE = 1000
-
 
 class PNandFSNDB(RF2FileWrapper):
     directory = ''        # Loaded strictly from other tables
@@ -84,33 +82,34 @@ class PNandFSNDB(RF2FileWrapper):
             self._insertList = []
 
 
-    def loadTable(self, _, ss, __):
+    @staticmethod
+    def _d(**kwargs):
+        return vars()['kwargs']
+
+    def loadTable(self, _):
         """
         @param _: unused
-        @param ss: True means snapshot, False means full
-        @param __: unused
         """
-        if not ss:
+        if not cp_values.ss:
             print "Index only works on snapshot files at the moment"
             return
 
         descdb = DescriptionDB()
         langdb = LanguageDB()
 
-        if not (descdb.hascontent(ss) and langdb.hascontent(ss)):
-            print "Description and Language tables must be loaded before loading %s" % self._tname(ss)
+        if not (descdb.hascontent() and langdb.hascontent()):
+            print "Description and Language tables must be loaded before loading %s" % self._fname
             return
 
         db = self.connect()
 
-        args = {"descfn": descdb._tname(ss),
-                "langfn": langdb._tname(ss),
-                "pref": RF2ValueSets.preferred,
-                "fsn": RF2ValueSets.fsn,
-                "syn": RF2ValueSets.synonym,
-        }
+        args = self._d(descfn = descdb._fname,
+                       langfn = langdb._fname,
+                       pref = RF2ValueSets.preferred,
+                       fsn = RF2ValueSets.fsn,
+                       synv = RF2ValueSets.synonym)
 
-        loader = self._inserter(RF2DBConnection(), self._tname(ss), BATCH_SIZE)
+        loader = self._inserter(RF2DBConnection(), self._fname, BATCH_SIZE)
         key = [0, 0]
         fsn = ""
         pn = ""
@@ -131,23 +130,23 @@ class PNandFSNDB(RF2FileWrapper):
         loader.flush()
 
     @lfu_cache(maxsize=200)
-    def getfsn(self, cid, language=RF2ValueSets.us_english):
+    def getfsn(self, cid, language=RF2ValueSets.us_english, **_):
         rlist = [e[0] for e in self.connect().executeAndReturn(
-            "SELECT fsn FROM %s WHERE id = %s AND lang = %s" % (self._tname(True), cid, language))]
+            "SELECT fsn FROM %s WHERE id = %s AND lang = %s" % (self._fname, cid, language))]
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
     @lfu_cache(maxsize=200)
-    def getpn(self, cid, language=RF2ValueSets.us_english):
+    def getpn(self, cid, language=RF2ValueSets.us_english, **_):
         rlist = [e[0] for e in self.connect().executeAndReturn(
-            "SELECT pn FROM %s WHERE id = %s AND lang = %s" % (self._tname(True), cid, language))]
+            "SELECT pn FROM %s WHERE id = %s AND lang = %s" % (self._fname, cid, language))]
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
     @lfu_cache(maxsize=200)
-    def getpnfsn(self, cid, language=RF2ValueSets.us_english):
+    def getpnfsn(self, cid, language=RF2ValueSets.us_english, **_):
         rlist = [(e[0], e[1]) for e in self.connect().executeAndReturn(
-            "SELECT pn, fsn FROM %s WHERE id = %s AND lang = %s" % (self._tname(True), cid, language))]
+            "SELECT pn, fsn FROM %s WHERE id = %s AND lang = %s" % (self._fname, cid, language))]
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 

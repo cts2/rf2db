@@ -31,7 +31,7 @@ import re
 import uuid
 
 from rf2db.db.RF2ChangeSetFile import ChangeSetDB, add_changeset_parms, validate_changeset_parms
-from rf2db.db.RF2FileCommon import extensionParms
+from rf2db.db.RF2FileCommon import ep_values
 from rf2db.constants.RF2ValueSets import changeSetRefSet
 from rf2db.db.RF2ConceptFile import ConceptDB
 from SetConfig import setConfig
@@ -41,7 +41,7 @@ from ClearConfig import clearConfig
 class NewChangeSetTestCase(unittest.TestCase):
     def setUp(self):
         setConfig()
-        moduleid = extensionParms.moduleid
+        moduleid = ep_values.moduleid
         uuidre = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
         tsre = '[0-9]{8}'
         rsid = changeSetRefSet
@@ -79,23 +79,23 @@ class NewChangeSetTestCase(unittest.TestCase):
     def testHidden(self):
         csrec = self.csdb.new_changeset(add_changeset_parms.parse(**{}))
         parms = validate_changeset_parms.parse(**{'changeset': csrec.referencedComponentId.uuid})
-        concRef = self.concdb.newConcept(parms)
-        self.assertEqual(self.concdb.getConcept(concRef.id, parms).id, concRef.id)
+        concRef = self.concdb.add(parms)
+        self.assertEqual(self.concdb.read(concRef.id, parms).id, concRef.id)
         parms.changeset = uuid.uuid4()
-        self.assertIsNone(self.concdb.getConcept(concRef.id, parms))
+        self.assertIsNone(self.concdb.read(concRef.id, parms))
         parms.changeset = None
-        self.assertIsNone(self.concdb.getConcept(concRef.id, parms))
+        self.assertIsNone(self.concdb.read(concRef.id, parms))
         parms.changeset = concRef.changeset
-        self.assertEqual(self.concdb.getConcept(concRef.id, parms).id, concRef.id)
+        self.assertEqual(self.concdb.read(concRef.id, parms).id, concRef.id)
         self.addedSets.append(csrec)
 
     def testRollback(self):
         csrec = self.csdb.new_changeset(add_changeset_parms.parse())
         parms = validate_changeset_parms.parse(changeset = csrec.referencedComponentId.uuid)
-        self.concdb.newConcept(parms)
+        self.concdb.add(parms)
         # TODO: Issue -- parms gets additional information added to it in the above call
         parms = validate_changeset_parms.parse(changeset = csrec.referencedComponentId.uuid)
-        self.concdb.newConcept(parms)
+        self.concdb.add(parms)
         rval = self.csdb.rollback(parms)
         self.assertEqual(2, rval.nConcepts)
         self.assertEqual(1, rval.nChangesets)
@@ -103,10 +103,10 @@ class NewChangeSetTestCase(unittest.TestCase):
     def testCommit(self):
         csrec = self.csdb.new_changeset(add_changeset_parms.parse())
         parms = validate_changeset_parms.parse(changeset = csrec.referencedComponentId.uuid)
-        self.concdb.newConcept(parms)
+        self.concdb.add(parms)
         # TODO: Issue -- parms gets additional information added to it in the above call
         parms = validate_changeset_parms.parse(changeset = csrec.referencedComponentId.uuid)
-        self.concdb.newConcept(parms)
+        self.concdb.add(parms)
         rval = self.csdb.commit(parms)
         self.assertEqual(2, rval.nConcepts)
         self.assertEqual(1, rval.nChangesets)

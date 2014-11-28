@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2013, Mayo Clinic
+# Copyright (c) 2014, Mayo Clinic
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification,
@@ -28,12 +28,9 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 import os
 
-
 from rf2db.db.RF2FileCommon import RF2FileWrapper
 
-
 class CanonicalCoreDB(RF2FileWrapper):
-
     directory = os.path.join('OtherResources', 'Canonical Table')
     prefixes = ['res1_Canonical_Core_']
     table = 'canonical_core'
@@ -49,20 +46,19 @@ class CanonicalCoreDB(RF2FileWrapper):
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
-    def loadTable(self, rf2file, ss, cfg):
+    def loadTable(self, rf2file):
         from rf2db.db.RF2RelationshipFile import RelationshipDB
         from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB
         rdb = RelationshipDB()
         srdb = StatedRelationshipDB()
-        if not rdb.hascontent(ss) or not srdb.hascontent(ss):
-            print("Relationship databases must be loaded before loading %s" % self._tname(ss))
+        if not rdb.hascontent() or not srdb.hascontent():
+            print("Relationship databases must be loaded before loading %s" % self._fname)
             return
 
-
-        super(CanonicalCoreDB, self).loadTable(rf2file,ss,cfg)
+        super(CanonicalCoreDB, self).loadTable(rf2file)
 
         print("Updating Stated Relationship File")
-        srdb.updateFromCanonical(self._tname(ss), ss, cfg)
+        srdb.updateFromCanonical(self._fname)
 
         print("Updating Relationship File")
-        rdb.updateFromCanonical(self._tname(ss), ss, cfg)
+        rdb.updateFromCanonical(self._fname)

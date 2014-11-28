@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2013, Mayo Clinic
+# Copyright (c) 2014, Mayo Clinic
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification,
@@ -31,7 +31,7 @@ from rf2db.db.RF2ConceptFile import ConceptDB
 from rf2db.db.RF2DescriptionFile import DescriptionDB
 from rf2db.parsers.RF2Iterator import iter_parms
 from rf2db.parsers.RF2BaseParser import RF2Description
-from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms
+from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, rf2_values
 from rf2db.utils.lfu_cache import lfu_cache
 from rf2db.utils.listutils import listify
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, strparam, enumparam
@@ -76,49 +76,64 @@ class DescriptionTextDB(RF2FileWrapper):
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
-    def loadTable(self, rf2file, ss, cfg):
+    @staticmethod
+    def _d(**kwargs):
+        return vars()['kwargs']
+
+    def loadTable(self, rf2file):
         cdb = ConceptDB()
         ddb = DescriptionDB()
-        if cdb.hascontent(ss) and ddb.hascontent(ss):
+        if cdb.hascontent() and ddb.hascontent():
             db = self.connect()
             db.execute(
-                self._loadStmt1 % {'table': self._tname(ss), 'desctable': ddb._tname(ss), 'conctable': cdb._tname(ss)})
+                self._loadStmt1 % self._d(table=self._fname, desctable=ddb._fname, conctable=cdb._fname))
             db.commit()
             db.execute(
-                self._loadStmt2 % {'table': self._tname(ss), 'desctable': ddb._tname(ss), 'conctable': cdb._tname(ss)})
+                self._loadStmt2 % self._d(table=self._fname, desctable=ddb._fname, conctable=cdb._fname))
             db.commit()
         else:
             print("Concept and Description tables must be loaded first")
 
 
-    def loadFile(self, fname, ss):
-        print(self.table, "must be loaded from", ConceptDB.table, "and", DescriptionDB.table, "tables")
+    def loadFile(self):
+        print(self.table, "must be loaded from", ConceptDB.fname(), "and", DescriptionDB.fname(), "tables")
 
-    def getDescriptions_p(self, matchvalues, matchalgorithm='wordstart', maxtoreturn=100):
-        return self.getDescriptions(description_match_parms.parse(**{'matchvalue': matchvalues,
-                                                                     'matchalgorithm': matchalgorithm,
-                                                                     'maxtoreturn': maxtoreturn}))
 
     @lfu_cache(100)
-    def getDescriptions(self, parmlist):
-        """ 
+    def getDescriptions(self,
+                        matchvalue,
+                        matchalgorithm='wordstart',
+                        maxtoreturn=None,
+                        active=True,
+                        moduleid=[],
+                        order='asc',
+                        start=0,
+                        **kwargs):
+        """
         Return all descriptions that match the matchvalues(s) using the supplied match algorithm.
-        
+
         Note: description_ss is the combination of the description and definition snapshots joined
         to active (conceptActive) on the conceptfile
+        @param matchvalues: set of values to match
+        @param matchalgorithm: algorithm or set of algorithms to match
+        @param maxtoreturn: max to return
+        @param kwargs: context
+        @return: matching descriptions (or count if maxtoreturn == 0)
         """
 
         # If we have more algorithms than values, repeat the last value out to match the algorithms
-        matchalgorithms = listify(parmlist.matchalgorithm)
-        matchvalues = listify(parmlist.matchvalue)
+        if maxtoreturn is None:
+            maxtoreturn=rf2_values.defaultblocksize
+        matchalgorithms = listify(matchalgorithm)
+        matchvalues = listify(matchvalue)
         diff = len(matchalgorithms) - len(matchvalues)
         if diff > 0:
             matchvalues += matchvalues[-1:] * diff
         elif diff < 0:
             matchalgorithms += matchalgorithms[-1:] * -diff
 
-        query = "SELECT %s FROM %s WHERE 1" % ('*' if parmlist.maxtoreturn else 'count(*)', self._tname(parmlist.ss))
-        # TODO: Prevent injections here by escaping quotes
+        query = "SELECT %s FROM %s WHERE 1" % ('*' if maxtoreturn != 0 else 'count(*)', self._fname)
+        # TODO: Make sure that injections have been filtered before we get here
         for (v, a) in zip(matchvalues, matchalgorithms):
             if v:
                 if a == 'contains':
@@ -141,17 +156,17 @@ class DescriptionTextDB(RF2FileWrapper):
                 else:
                     raise RF2Exceptions.UnknownMatchAlgorithm(
                         a + ' : valid values are contains, startswith, endswith, exactmatch, word, wordstart and phrase')
-        if parmlist.active:
+        if active:
             query += " AND active = 1 AND conceptActive = 1"
-        if parmlist.moduleid:
-            query += ' AND ' + ' AND '.join(['moduleid = %s' % m for m in listify(parmlist.moduleid)])
-        query += " ORDER BY length(term) %s, term %s" % (parmlist.order, parmlist.order)
+        if moduleid:
+            query += ' AND ' + ' AND '.join(['moduleid = %s' % m for m in listify(moduleid)])
+        query += " ORDER BY length(term) %s, term %s" % (order, order)
 
-        if parmlist.maxtoreturn:
-            query += " LIMIT %s, %s" % (parmlist.start, parmlist.maxtoreturn + 1)
+        if maxtoreturn > 0:
+            query += " LIMIT %s, %s" % (start, maxtoreturn + 1)
         db = self.connect()
         db.execute(query)
-        return [RF2Description(d) for d in db.ResultsGenerator(db)] if parmlist.maxtoreturn else list(
+        return [RF2Description(d) for d in db.ResultsGenerator(db)] if maxtoreturn != 0 else list(
             db.ResultsGenerator(db))
 
 

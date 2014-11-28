@@ -29,29 +29,35 @@
 
 """ RF2 File Wrapper
 """
+from __future__ import print_function
 
 import os
-from cherrypy import HTTPError
+import sys
 
-import rf2db.db.RF2DBConnection
+from rf2db.db.RF2DBConnection import RF2DBConnection, cp_values
 from rf2db.parameterparser.ParmParser import booleanparam, sctidparam, strparam
+from rf2db.utils.sctid_generator import sctid_generator
+from rf2db.db.RF2Namespaces import DecodedNamespace
+
 from ConfigManager.ConfigArgs import ConfigArg, ConfigArgs
 from ConfigManager.ConfigManager import ConfigManager
 
-
+# config_parms are used for file loading
 config_parms = ConfigArgs('rf2',
                            [ConfigArg('fileloc', abbrev='f', help='Location of primary RF2 Distribution'),
                             ConfigArg('addloc', abbrev='a', help='Add the location of a secondary RF2 Distribution'),
                             ConfigArg('release', abbrev='r', help='Current RF2 Revision (yyyymmdd)'),
+                            ConfigArg('defaultblocksize', help="Default return block size", default=100)
                            ])
+rf2_values = ConfigManager(config_parms)
 
+# extension_parms are used for managing a read/write space
 extension_parms = ConfigArgs('extension',
                               [ConfigArg('namespace', abbrev='n', help='Namespace for new identifiers'),
                                ConfigArg('moduleid', abbrev='m', help='ModuleId for new entries'),
                                ])
-extensionParms = ConfigManager(extension_parms)
+ep_values = ConfigManager(extension_parms)
 
-# TODO: initialize the PYTHONPATH variable - use WebServer as an example
 # TODO: load script for SNOMED_STY file
 #  Query: create table rf2.UMLS_STY as SELECT sty.cui CUI, tui TUI, sty STU, scui SCUI, sab SAB from MRSTY sty, MRCONSO con
 #         WHERE con.cui = sty.cui
@@ -63,17 +69,17 @@ from rf2db.parameterparser.ParmParser import ParameterDefinitionList
 #  Base line parameters used for the REST RF2 Services
 #
 # Global Parameters
-#     - ss - C{True} means dealing with the snapshot db, C{False} means full.  Full is not completely
-#     implemented at this point.  When it is, this will be moved to a configuration parameter.  Default: C{True}
 #     - active - C{True} means inactive entries will not be visible.  C{False} means that both active
 #     and inactive entries are treated as present.  Default: C{True}
 #     - moduleid - a list of module id's.  If supplied access will be restricted to the specific modules.
+#     - changeset - a changeset id.  If supplied and the changeset is open, values will be visible in service
 global_rf2_parms = ParameterDefinitionList()
-global_rf2_parms.ss = booleanparam(default=True, fixed=True)
 global_rf2_parms.active = booleanparam(default=True)
 global_rf2_parms.changeset = strparam(required=False)
 
 class moduleidparam(sctidparam):
+    """ Module id parameter.  Validate sctid's that are also children of the module file
+    """
 
     def __init__(self, **args):
         self._mvdb = None
@@ -110,22 +116,6 @@ moduleId bigint(20) NOT NULL '''
     _keys_ss = '''KEY (changeset), PRIMARY KEY (id)'''
     _keys_full = '''KEY (changeset), PRIMARY KEY (id, effectiveTime)'''
 
-    # Directory layout
-    # - py4cts2/RF2/rf2_source
-    #      - symbolic link to RF2Release directory 1
-    #          - Full
-    #              - Terminology
-    #              - Refset
-    #          - Snapshot
-    #              - Terminology
-    #              - Refset
-    #      - symbolic link to RF2Release directory 2
-    #          - Full
-    #              - Terminology
-    #              - Refset
-    #          ...
-
-
     _loadSTMT = """LOAD DATA  local INFILE '%(tsvfile)s'
               INTO TABLE %(table)s  
               FIELDS TERMINATED BY '\\t' 
@@ -134,95 +124,124 @@ moduleId bigint(20) NOT NULL '''
 
     _hasContentSTMT = """SELECT * FROM %s LIMIT 1;"""
 
-
     _existsQuery = """SHOW TABLES LIKE '%s';"""
-
     _csdb = None
+    _idGenerator = None
 
 
     def __init__(self, load=False, noaction=False):
-        self._existsss     = self._existsfull = False
-        self._hascontentss = self._hascontentfull = False
-        self._tabless      = self.table + '_ss'
-        self._tablefull    = self.table + '_full'
+        """
+        @param load:
+        @param noaction:
+        @return:
+        """
+        self._exists= False
+        self._hascontents = False
+
 
     def connect(self):
-        return rf2db.db.RF2DBConnection.RF2DBConnection()
+        """
+        @return: Database connection.
+        """
+        return RF2DBConnection()
 
-    def exists(self, ss):
-        if ss:
-            if not self._existsss:
-                db = self.connect()
-                self._existsss   = len(db.execute(self._existsQuery % self._tabless).fetchall()) > 0
-                db.close()
-            return self._existsss
-        else:
-            if not self._existsfull:
-                db = self.connect()
-                self._existsfull = len(db.execute(self._existsQuery % self._tablefull).fetchall()) > 0
-                db.close()
-            return self._existsfull
-
-    def createTable(self, ss):
-        db = self.connect()
-        db.execute(self.createSTMT % {'table': self._tabless,
-                                      'base': self._file_base,
-                                      'keys': self._file_extension + (self._keys_ss if ss else self._keys_full)})
-        db.commit()
-        if ss: self._existsss = True
-        else: self._existsfull = True
-
-
-    def hascontent(self, ss):
-        if ss:
-            if not self._hascontentss:
-                db = self.connect()
-                self._hascontentss   = db.execute(self._hasContentSTMT % self._tabless) if self.exists(ss) else False
-                db.close()
-            return self._hascontentss
-        else:
-            if not self._hascontentfull:
-                db = self.connect()
-                self._hascontentfull = db.execute(self._hasContentSTMT % self._tabless) if self.exists(ss) else False
-                db.close()
-            return self._hascontentfull
-
-    def numrecs(self, ss):
-        db = self.connect()
-        if db.execute("SELECT COUNT(*) FROM %s" % self._tname(ss) ):
-            rval = db.next()[0]
+    def exists(self):
+        """ Determine whether the table exists
+        @param ss: Not used
+        @return: True if the table is there false otherwise
+        """
+        if not self._exists:
+            db = self.connect()
+            self._exists = len(db.execute(self._existsQuery % self._fname).fetchall()) > 0
             db.close()
-            return rval
+        return self._exists
 
-    def loadTable(self, rf2file, ss, cfg):
-        for fname,fullpath in rf2file._filesToLoad(ss, cfg):
-            self.loadFile(fullpath, ss)
-
-    def loadFile(self, fname, ss):
+    def create(self):
+        """ Create the table
+        """
         db = self.connect()
-        db.execute(self._loadSTMT % {'table':self._tname(ss), 'tsvfile':fname})
+        db.execute(self.createSTMT % {'table': self._fname,
+                                      'base': self._file_base,
+                                      'keys': self._file_extension + (self._keys_ss if cp_values.ss else self._keys_full)})
+        db.commit()
+        self._exists = True
+
+    def hascontent(self):
+        """ Determine whether the table exists and has something in it
+        @return: True if the table has something in it, false otherwise
+        """
+        if not self._hascontents:
+            db = self.connect()
+            self._hascontents = db.execute(self._hasContentSTMT % self._fname) if self.exists() else False
+            db.close()
+        return self._hascontents
+
+
+    def numrecs(self):
+        """ Return the number of records in the table
+        @return: Number of records in the table
+        """
+        rval = 0
+        if self.exists():
+            db = self.connect()
+            if db.execute("SELECT COUNT(*) FROM %s" % self._fname):
+                rval = db.next()[0]
+            db.close()
+        return rval
+
+    def loadTable(self, rf2file):
+        """ Load the table from the contents of the supplied rf2 file
+        @param rf2file: Descendant of RF2FileWrapper to load
+        """
+        for fname,fullpath in rf2file._filestoload():
+            self.loadFile(fullpath)
+
+    def loadFile(self, fname):
+        """ Load the supplied file into the table
+        @param fname: Name of file to load
+        """
+        db = self.connect()
+        table = self._fname
+        tsvfile = fname
+        db.execute(self._loadSTMT % vars())
         db.commit()
 
 
-    def dropTable(self, ss):
+    def dropTable(self):
+        """ Drop the table
+        """
         db = self.connect()
-        db.execute("DROP TABLE IF EXISTS %s" % self._tname(ss))
+        db.execute("DROP TABLE IF EXISTS %s" % self._fname)
         db.commit()
 
-    def truncateTable(self, ss):
+    def truncateTable(self):
+        """ Truncate the table
+        """
         db = self.connect()
-        db.execute("TRUNCATE TABLE %s" % self._tname(ss))
+        db.execute("TRUNCATE TABLE %s" % self._fname)
         db.commit()
+
 
     def getMaxId(self, namespace):
+        """ Return the highest identifier value in the table for the supplied namespace.
+        This is only meaningful on core tables, not refsets...
+        @param namespace: 7 digit namespace to be tested.
+        @return: DecodedNamespace entry for highest value
+        """
         db = self.connect()
-        query = 'SELECT MAX(id div 10000000000) from %s WHERE (id %% 10000000000) div 1000 = %s' % (self._tname(True), namespace)
+        query = 'SELECT MAX(id) from %s WHERE (id %% 10000000000) div 1000 = %s' % (self._fname, namespace)
         db.execute(query)
-        return db.next()
+        ns = db.next()[0]
+        return DecodedNamespace(0 if ns is None else ns)
 
-    def moduleVersions(self, ss):
+
+    def moduleVersions(self):
+        """ Return a set of module identifiers and versions from the file.
+        @return: list of moduleId/effectiveTime tuples
+        """
         db = self.connect()
-        if db.execute("SELECT DISTINCT moduleId, effectiveTime FROM %s ORDER BY moduleid ASC, effectiveTime DESC" % self._tname(ss)):
+        if db.execute("SELECT DISTINCT moduleId, effectiveTime FROM %s "
+                      "ORDER BY moduleid ASC, effectiveTime DESC" % self._fname):
             rval = list(db)
             db.close()
             return rval
@@ -230,50 +249,78 @@ moduleId bigint(20) NOT NULL '''
         return []
 
     @classmethod
-    def _rollback(cls, db, ss, changeset):
-        fname = cls._fname(ss)
-        return db.execute_query("DELETE FROM %(fname)s WHERE changeset = '%(changeset)s' AND locked=1" % vars() )
-
-    def validChangeSet(self, parms):
-        """ Validate the changeset identifier making sure it is present and open
-        :param parms: dictionary containing changesetid
-        :return: None if success else HTTPError instance
+    def idGenerator(cls):
+        """ Return an id generator instance.  This isn't invoked until needed as it can entail some expense
+        :return: ID generator for the default namespace
         """
-        if not parms.changeset:
-            return HTTPError(status=400, message="Changeset identifier must be supplied")
+        if not cls._idGenerator:
+            from rf2db.db.RF2Namespaces import IDGenerator
+            cls._idGenerator = IDGenerator(ep_values.namespace)
+        return cls._idGenerator
 
-        if not self._csdb:
+    @classmethod
+    def newconceptid(cls):
+        return cls.idGenerator().next(sctid_generator.CONCEPT)
+
+    @classmethod
+    def newdescriptionid(cls):
+        return cls.idGenerator().next(sctid_generator.DESCRIPTION)
+
+    @classmethod
+    def newrelationshipid(cls):
+        return cls.idGenerator().next(sctid_generator.RELATIONSHIP)
+
+    @classmethod
+    def _rollback(cls, db, changeset, **_):
+        fname = cls.fname()
+        return db.execute_query("DELETE FROM %(fname)s WHERE changeset = '%(changeset)s' AND locked=1" % vars())
+
+    @classmethod
+    def _commit(cls, db, changeset, **_):
+        fname = cls.fname()
+        return db.execute_query("UPDATE %(fname)s SET locked=0 WHERE changeset = '%(changeset)s'" % vars())
+
+    @classmethod
+    def changesetisvalid(cls, changeset):
+        return cls.changeseterror(changeset) is None
+
+    @classmethod
+    def changeseterror(cls, changeset):
+        if not changeset:
+            return "Changeset identifier must be supplied"
+        if not cls._csdb:
             from rf2db.db.RF2ChangeSetFile import ChangeSetDB
-            self._csdb = ChangeSetDB()
-
-        if not self._csdb.isValid(parms):
-            return HTTPError(status=400, message="Change set is not valid or has been committed")
+            cls._csdb = ChangeSetDB()
+        if not cls._csdb.isValid(changeset):
+            return "Change set is not valid or has been committed"
         return None
 
-    @classmethod
-    def _commit(cls, db, ss, changeset):
-        fname = cls._fname(ss)
-        return db.execute_query("UPDATE %(fname)s SET locked=0 WHERE changeset = '%(changeset)s'" % vars() )
-
-    # TODO: deprecate this and switch to _fname class method
-    def _tname(self, ss):
-        return self._tabless if ss else self._tablefull
+    @property
+    def _fname(self):
+        return (self.table + '_ss') if cp_values.ss else (self.table + '_full')
 
     @classmethod
-    def _fname(cls, ss):
-        return (cls.table + '_ss') if ss else (cls.table + '_full')
+    def fname(cls):
+        """
+        @return: The name of the wrappered file
+        """
+        return (cls.table + '_ss') if cp_values.ss else (cls.table + '_full')
 
-    def _filesToLoad(self, ss, cfg):
-        reldir = ('Snapshot' if ss else 'Full') if not self.isRF1File else ''
-        if cfg.fileloc:
-            base = os.path.join(cfg.fileloc, 'RF1Release' if self.isRF1File else 'RF2Release', reldir, self.directory)
+    def _filestoload(self):
+        """ Return a list of paths to files that need to be loaded
+        @return: Generator of files to return
+        """
+        reldir = ('Snapshot' if cp_values.ss else 'Full') if not self.isRF1File else ''
+        if rf2_values.fileloc:
+            base = os.path.join(rf2_values.fileloc, 'RF1Release' if self.isRF1File else 'RF2Release', reldir, self.directory)
             if os.path.exists(base):
                 for fname in os.listdir(base):
                     for p in self.prefixes:
                         if fname.startswith(p) or fname.startswith('x'+p):
                             yield fname, os.path.join(base, fname)
             else:
-                print ("Directory %s does not exist!" % base)
+                print("Directory %s does not exist!" % base, file=sys.stderr)
+                raise StopIteration
 
 
 

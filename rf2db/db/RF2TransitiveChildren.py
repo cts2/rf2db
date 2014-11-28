@@ -49,15 +49,15 @@ class TransitiveChildrenDB(RF2FileWrapper):
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
-    def loadTable(self, rf2file, ss, cfg):
+    def loadTable(self, rf2file):
         db = RF2DBConnection()
         print("Populating transitive children table")
         tcdb = self.closuredb()
-        if not tcdb.hascontent(True):
+        if not tcdb.hascontent():
             print("Error: Transitive children load requires transitive closure table")
             return
-        tname = self._tname(ss)
-        tcdbname = tcdb._tname(ss)
+        tname = self._fname
+        tcdbname = TransitiveClosureDB.fname()
         db.execute("""INSERT INTO %(tname)s
                       SELECT DISTINCT sourceid, depth, 0 FROM %(tcdbname)s""" % locals())
         db.commit()
@@ -73,9 +73,9 @@ class TransitiveChildrenDB(RF2FileWrapper):
         db.commit()
 
 
-    def numDescendants(self, sctid, maxDepth=0, ss=True):
+    def numDescendants(self, sctid, maxDepth=0, ss=True, **_):
         # The following assumes that count can't increase as depth increases
-        query = "SELECT max(count) FROM %s WHERE sourceId = %s " % (self._tname(ss), sctid)
+        query = "SELECT max(count) FROM %s WHERE sourceId = %s " % (self._fname, sctid)
         if maxDepth:
             query += " AND depth <= %s " % maxDepth
         db = RF2DBConnection()

@@ -30,8 +30,7 @@
 """ RF2 SimpleMap reference processing routines
 """
 
-
-from rf2db.db.RF2FileCommon import global_rf2_parms
+from rf2db.db.RF2FileCommon import global_rf2_parms, rf2_values
 from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
 from rf2db.db.RF2SimpleMapFile import SimpleMapDB
 from rf2db.parsers.RF2Iterator import iter_parms, RF2ComplexMapReferenceSet
@@ -69,15 +68,15 @@ class ComplexMapDB(RF2RefsetWrapper):
     def __init__(self, *args, **kwargs):
         RF2RefsetWrapper.__init__(self, *args, **kwargs)
 
-    def loadTable(self, rf2file, ss, cfg):
+    def loadTable(self, rf2file):
         smdb = SimpleMapDB()
-        if not smdb.hascontent(ss):
+        if not smdb.hascontent():
             print("Error: Simple map table must be loaded before complex map table")
             return
 
         # Load the native data
         filterwarnings("ignore", ".*doesn't contain data for all columns.*")
-        super(ComplexMapDB, self).loadTable(rf2file, ss, cfg)
+        super(ComplexMapDB, self).loadTable(rf2file)
 
         # Copy the simple map file data across
         db = self.connect()
@@ -86,28 +85,31 @@ class ComplexMapDB(RF2RefsetWrapper):
                                                  referencedComponentId, mapGroup, mapPriority, mapTarget)
                       SELECT id, effectiveTime, active, moduleId, refsetId,
                                                  referencedComponentId, 1, 1, mapTarget from %s;""" %
-                   (self._tname(ss), smdb._tname(ss)))
+                   (self._fname, smdb._fname))
         db.commit()
 
-    def get_complex_map(self, parmlist):
-        filtr = 'refsetId=%s' % parmlist.refset if parmlist.refset else 'True'
-        filtr += (' AND referencedComponentId = %s ' % parmlist.component) if parmlist.component else ' '
-        filtr += (" AND mapTarget = '%s' " % parmlist.target) if parmlist.target else ' '
+    def get_complex_map(self, component=None, target=None, sort=None, **kwargs):
+        filtr = 'refsetId=%s' % kwargs.get('refset', 'True')
+        filtr += (' AND referencedComponentId = %s ' % component) if component else ' '
+        filtr += (" AND mapTarget = '%s' " % target) if target else ' '
         db = self.connect()
-        if not parmlist.sort:
-            parmlist.sort=['refsetId', 'referencedComponentId', 'mapGroup', 'mapPriority']
-        return [RF2ComplexMapReferenceSetEntry(e) for e in db.query_p(self._tname(parmlist.ss),
-                                                                     parmlist,
-                                                                     filter=filtr)]
+        if not sort:
+            sort=['refsetId', 'referencedComponentId', 'mapGroup', 'mapPriority']
+        return [RF2ComplexMapReferenceSetEntry(e) for e in db.query_p(self._fname,
+                                                                      sort=sort,
+                                                                      filter=filtr,
+                                                                      **kwargs)]
 
     @classmethod
     def complexmap_list_parms(cls):
         return cls._complexmap_list_parms
 
     @staticmethod
-    def as_reference_set(mlist, parmlist):
-        thelist=RF2ComplexMapReferenceSet(parmlist)
-        if not parmlist.maxtoreturn:
+    def as_reference_set(mlist, maxtoreturn=None, **kwargs):
+        if maxtoreturn is None:
+            maxtoreturn=rf2_values.defaultblocksize
+        thelist=RF2ComplexMapReferenceSet(maxtoreturn=maxtoreturn, **kwargs)
+        if maxtoreturn == 0:
             return thelist.finish(True, total=list(mlist)[0])
         for m in mlist:
             if thelist.at_end:

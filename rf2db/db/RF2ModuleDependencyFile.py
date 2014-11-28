@@ -30,13 +30,7 @@
 """ RF2 ModuleDependency reference file
 """
 
-
-from rf2db.db.RF2FileCommon import global_rf2_parms
 from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
-from rf2db.parsers.RF2RefsetParser import RF2SimpleMapReferenceSetEntry
-from rf2db.parsers.RF2Iterator import RF2SimpleMapReferenceSet, iter_parms
-from rf2db.parameterparser.ParmParser import ParameterDefinitionList, sctidparam, strparam
-
 
 class ModuleDependencyDB(RF2RefsetWrapper):
 

@@ -74,9 +74,8 @@ class IDGenerator():
 
 
     def _generator(self, namespace, partition, db):
-        cur = db().getMaxId(namespace)[0]
-        if cur is None: cur = 0
-        return sctid_generator(namespace, partition, cur+1)
+        item = db().getMaxId(namespace).item
+        return sctid_generator(namespace, partition, item+1)
 
     def next(self, partition):
         return self._generators[partition].next()

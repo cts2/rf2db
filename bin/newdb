@@ -32,55 +32,54 @@ import argparse
 import os
 
 # Assuming that we are running in the bin directory
-_curdir = os.path.join(os.getcwd(), os.path.dirname(__file__), '..')
+_curdir = os.path.join(os.getcwd(), os.path.dirname(__file__))
+sys.path.append(os.path.join(_curdir, '..'))
+# TODO: Make this into a package
+sys.path.append(os.path.join(_curdir, '..', '..', 'ConfigManager'))
 
-# There needs to be a ConfigManager at our root
-sys.path.append(_curdir)
-sys.path.append(os.path.join(_curdir, '..',  'ConfigManager'))
-
-from ConfigManager.ConfigManager import ConfigManager
-from rf2db.db import RF2DBConnection
+from rf2db.db.RF2DBConnection import config_parms, cp_values, RF2DBConnection
 
 helpargs = ['-h', '-?']
 
 
 def main(argv):
     """ Create a MySQL database for RF2 files and/or manage the connection parameters.  Example sequence:
-    * python newdb -upd ../../rf2service/settings.conf --host localhost --db rf220140731 --charset utf8 --user root --passwd pw
-    * python newdb -show ../../rf2service/settings.conf
+    * python newdb --upd ../../rf2service/settings.conf --host localhost --db rf220140731 --charset utf8 --user root --passwd pw
+    * python newdb --show ../../rf2service/settings.conf
     * python newdb --create ../../rf2service/settings.conf
     """
 
-    # Get the configuration file name established
-    # TODO: newdb -h doesn't work because the parse_known_args doesn't have a setting
     parser = argparse.ArgumentParser(description="Set up RF2 DB parameters and optionally create a database")
     parser.add_argument('configfile', help="configuration file location")
-
-    holdargs = [e for e in helpargs if e in argv]
-    args = [e for e in argv if e not in helpargs]
-    fileopt, remargs = parser.parse_known_args(args)
-
-    # Open the existing configuration file so we know what the defaults should be
-    cfg = ConfigManager(RF2DBConnection.config_parms)
-    cfg.set_configfile(fileopt.configfile)
-    parser = argparse.ArgumentParser(description="Set up RF2 DB parameters and optionally create a database")
-    RF2DBConnection.config_parms.add_to_parser(parser, cfg)
-
-    parser.add_argument('-show', dest='show', action="store_true", help="show current configuration")
-    parser.add_argument('-upd', dest='update', action="store_true", help="update configuration file")
+    parser.add_argument('--show', dest='show', action="store_true", help="show current configuration")
+    parser.add_argument('--upd', dest='update', action="store_true", help="update configuration file")
     parser.add_argument('--create', action="store_true", help="create database if it doesn't exist")
 
-    opts = parser.parse_args(remargs + holdargs)
+    # Can't do a lot more if there isn't configuration file
+    if len(argv) == 0 or (len(argv) == 1 and argv[0] in helpargs):
+        config_parms.add_to_parser(parser)
+        parser.parse_args(argv)
+        return
 
-    cfg.update(vars(opts))
+    # There is (or should be) a configuration file -- pick it out of the arguments and then reparse
+    args = [e for e in argv if e not in helpargs]
+    fileopt, _ = parser.parse_known_args(args)
+
+    # Open the existing configuration file so we know what the defaults should be
+    cp_values.set_configfile(fileopt.configfile)
+    config_parms.add_to_parser(parser, cp_values)
+
+    opts = parser.parse_args(argv)
+
+    cp_values.update(vars(opts))
     if opts.show:
-        print(str(cfg))
+        print(str(cp_values))
     if opts.update or not opts.show:
-        if cfg.flush():
+        if cp_values.flush():
             print("\nConfiguration file updated")
     if opts.create:
-        RF2DBConnection.RF2DBConnection().newDB(cfg)
-        print("Database %s created in %s" % (cfg.db, cfg.host + ((':' + cfg.port) if cfg.port else '')))
+        RF2DBConnection().newDB()
+        print("Database %s created in %s" % (cp_values.db, cp_values.host + ((':' + cp_values.port) if cp_values.port else '')))
 
 
 if __name__ == '__main__':

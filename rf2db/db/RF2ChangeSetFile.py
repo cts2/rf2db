@@ -32,11 +32,15 @@ import uuid
 from time import gmtime, strftime
 
 from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
-from rf2db.db.RF2FileCommon import global_rf2_parms, extensionParms
+from rf2db.db.RF2FileCommon import global_rf2_parms, ep_values
 from rf2db.parsers.RF2RefsetParser import RF2ChangeSetReferenceEntry
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, booleanparam, strparam
 from rf2db.constants.RF2ValueSets import changeSetRefSet
 from rf2db.db.RF2ConceptFile import ConceptDB
+from rf2db.db.RF2DescriptionFile import DescriptionDB
+from rf2db.db.RF2DescriptionTextFile import DescriptionTextDB
+from rf2db.db.RF2RelationshipFile import RelationshipDB
+from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB
 
 changeset_parms = ParameterDefinitionList(global_rf2_parms)
 changeset_parms.open = booleanparam(default=True)
@@ -47,11 +51,12 @@ add_changeset_parms.description = strparam(splittable=False)
 
 validate_changeset_parms = ParameterDefinitionList(global_rf2_parms)
 
-class RollbackInfo():
-    pass
-
-class CommitInfo():
-    pass
+class CountList():
+    """ This carries various counts of things that rolled back.  Anything not referenced
+    returns a count of 0
+    """
+    def __getattribute__(self, item):
+        return self.__dict__.get(item, 0)
 
 
 class ChangeSetDB(RF2RefsetWrapper):
@@ -67,7 +72,7 @@ class ChangeSetDB(RF2RefsetWrapper):
     """
     directory = 'Refset/Language'
     # TODO: Correct file name
-    prefixes = ['der2_cRefset_Changeset']
+    prefixes = ['der2_sssiiRefset_Changeset']
     table = 'changeset'
 
     createSTMT = "CREATE TABLE IF NOT EXISTS %(table)s (" + RF2RefsetWrapper._file_base_ + """
@@ -82,61 +87,87 @@ class ChangeSetDB(RF2RefsetWrapper):
     def __init__(self, *args, **kwargs):
         RF2RefsetWrapper.__init__(self, *args, **kwargs)
 
-    def get_changeset(self, parmlist):
-        """ Retrieve the accompanying changeset record
-        Read the changeset record
-        @param parmlist: changeset_parms.
+    def get_changeset(self, changeset=None, **kwargs):
+        """ Read the supplied changeset record
+        @param changeset: UUID of the changeset
+        @param kwargs: Contextual arguments
+        @return: RF2ChangeSetReferenceEntry or None if refset doesn't exist
         """
-        filter_ = "refsetId=%s AND referencedComponentId='%s' " % (changeSetRefSet, parmlist.changeset)
+        if not changeset:
+            return None
+        filter_ = "refsetId=%s AND referencedComponentId='%s' " % (changeSetRefSet, changeset)
         db = self.connect()
-        rlist = [RF2ChangeSetReferenceEntry(c) for c in db.query_p(self._tname(parmlist.ss), parmlist, filter=filter_)]
+        rlist = [RF2ChangeSetReferenceEntry(c) for c in db.query_p(self._fname, filter=filter_, **kwargs)]
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
-    def new_changeset(self, parmlist):
-        fname = self._tname(parmlist.ss)
+    def new_changeset(self, creator=None, description=None, **kwargs):
+        """ Create a new locked changeset record
+        @param creator: Changeset creator
+        @param description: Changeset description
+        @return: New record
+        """
+        fname = self._fname
         db = self.connect()
         guid = uuid.uuid4()
-        effectiveTime = strftime("%Y%m%d", gmtime())
-        moduleId = extensionParms.moduleid
-        refsetId = changeSetRefSet
+        effectivetime = strftime("%Y%m%d", gmtime())
+        moduleid = ep_values.moduleid
+        refsetid = changeSetRefSet
         csid = uuid.uuid4()
-        creator = parmlist.creator
-        description = parmlist.description
 
-        query = "INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, refsetId, referencedComponentId, changeset, locked"
-        query += ", creator" if parmlist.creator else ""
-        query += ", description" if parmlist.description else ""
+        query = "INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, " \
+                "refsetId, referencedComponentId, changeset, locked"
+        query += ", creator" if creator is not None else ""
+        query += ", description" if description is not None else ""
         query += ") values ('%(guid)s', %(effectiveTime)s, 1, %(moduleId)s, %(refsetId)s, '%(csid)s', '%(csid)s', 1"
-        query += ", '%(creator)s'" if parmlist.creator else ""
-        query += ", '%(description)s'" if parmlist.description else ""
+        query += ", '%(creator)s'" if creator is not None else ""
+        query += ", '%(description)s'" if description is not None else ""
         query += ")"
         db = self.connect()
         db.execute(query % vars())
         db.commit()
-        parmlist.changeset = csid
-        return self.get_changeset(parmlist)
+        return self.get_changeset(changeset=csid, **kwargs)
 
-    def isValid(self, parmlist):
-        """ Determine whether the changeset accompanying the parameter list is valid.
-        :param parmlist: validate_changeset_parms entry
-        :return: True if valid.
+    def isValid(self, changeset=None, **kwargs):
+        """ Determine whether the supplied changeset is valid in the given context
+        @param changeset: uuid of changeset
+        @param kwargs: contextual args
+        @return: True if valid
         """
-        return self.get_changeset(parmlist) is not None
+        return self.get_changeset(changeset, **kwargs) is not None
 
-    def rollback(self, parmlist):
-        db = self.connect()
-        rval = RollbackInfo()
-        rval.nConcepts = ConceptDB._rollback(db, parmlist.ss, parmlist.changeset)['affected_rows']
-        rval.nChangesets = self._rollback(db, parmlist.ss, parmlist.changeset)['affected_rows']
-        db.commit()
+
+    def rollback(self, changeset=None, **kwargs):
+        """ Roll back all of the changes identified in the supplied changeset. If the changeset isn't supplied or
+        there is no record of it existing, the function returns success.  This function is always considered successful,
+        and has no impact on records that aren't locked.
+        @param changeset: uuid of changeset
+        @param kwargs: context
+        @return: Count of things that are rolled back.
+        """
+        rval = CountList()
+        if changeset:
+            db = self.connect()
+            rval.nConcepts = ConceptDB._rollback(db, changeset, **kwargs)['affected_rows']
+            rval.nChangesets = self._rollback(db, changeset, **kwargs)['affected_rows']
+            db.commit()
         return rval
 
-    def commit(self,parmlist):
-        db = self.connect()
-        rval = CommitInfo()
-        rval.nConcepts = ConceptDB._commit(db, parmlist.ss, parmlist.changeset)['affected_rows']
-        rval.nChangesets = self._commit(db, parmlist.ss, parmlist.changeset)['affected_rows']
-        db.commit()
+    def commit(self, changeset=None, **kwargs):
+        """ Commit all of the changes identified in the supplied changeset. If the changeset isn't supplied or
+        there is no record of it existing, the function returns success.  This function is always considered successful,
+        and has no impact on records that aren't locked.
+        @param changeset: uuid of changeset
+        @param kwargs: context
+        @return: Count of things that are rolled back.
+        """
+        rval = CountList()
+        if changeset:
+            db = self.connect()
+            rval.nConcepts = ConceptDB._commit(db, changeset, **kwargs)['affected_rows']
+            rval.nChangesets = self._commit(db, changeset, **kwargs)['affected_rows']
+            db.commit()
         return rval
+
+
 
