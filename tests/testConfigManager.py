@@ -31,8 +31,8 @@ import unittest
 import argparse
 import os
 
-from config.ConfigArgs import ConfigArgs, ConfigArg
-from config.ConfigManager import ConfigManager
+from ConfigManager.ConfigManager import ConfigManager
+from ConfigManager.ConfigArgs import ConfigArgs, ConfigArg
 
 
 # TODO: add a way to clear out the configuration manager completely so that all of the test cases can run without
@@ -60,6 +60,7 @@ class ConfigManagerTestCase(unittest.TestCase):
             os.remove(test_config_file)
 
     def test_load_args(self):
+        ConfigManager.clear_configfile()
         cfg = ConfigManager(config_parms)
         cfg.set_configfile(test_config_file)
         self.assertEqual(str(cfg), """[dbparms]

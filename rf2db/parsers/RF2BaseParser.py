@@ -57,7 +57,8 @@ class RF2Base(rf2.Base, object):
         if nFields < self._nFields:
             fields += [None] * (self._nFields - nFields)
         self._baseClass.__init__(self, **dict(zip(self._fieldNames, fields)))
-        self._changeset, self._locked = fields[len(self._fieldNames):len(self._fieldNames)+2]
+        self._changeset, self._locked = fields[len(self._fieldNames):len(self._fieldNames)+2] \
+            if len(fields) > len(self._fieldNames) else (None, 0)
         return self
 
     def __str__(self):

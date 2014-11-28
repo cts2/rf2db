@@ -29,9 +29,12 @@
 
 import unittest
 import os
+
 from rf2db.parameterparser import ParmParser
 from rf2db.utils.sctid import sctid
 from rf2db.db.RF2FileCommon import moduleidparam
+
+from tests.SetConfig import setConfig
 
 
 class ParmParserTestCase(unittest.TestCase):
@@ -53,10 +56,7 @@ class ParmParserTestCase(unittest.TestCase):
 
     def test_baddefault(self):
         arglist = ParmParser.ParameterDefinitionList()
-        arglist.p2 = ParmParser.enumparam(["Buy", "SELL", "Hold"], default="hold", casesensitive=True)
-        self.assertIsNotNone(arglist.p2)
-        args = arglist.parse()
-        self.assertIsNone(args.p2)
+        self.assertRaises(ValueError, ParmParser.enumparam, ["Buy", "SELL", "Hold"], default="hold", casesensitive=True)
 
     def test_multiple(self):
         arglist = ParmParser.ParameterDefinitionList()
@@ -87,7 +87,7 @@ class ParmParserTestCase(unittest.TestCase):
         self.assertTrue(args.p1)
         self.assertFalse(args.p2)
         self.assertIsNone(args.p3)
-        self.assertRaises(ParmParser.booleanparam, *[], **{'default': 'sam'})
+        self.assertRaises(ValueError, ParmParser.booleanparam, default='sam')
 
 
     def test_integer(self):
@@ -101,7 +101,7 @@ class ParmParserTestCase(unittest.TestCase):
         self.assertEqual(args.p2, 0)
         self.assertIsNone(args.p3)
         self.assertEqual(args.p4, 10001771)
-        self.assertRaises(ParmParser.intparam, *[], **{'default': '123a'})
+        self.assertRaises(ValueError, ParmParser.intparam, default='123a')
 
     def test_string(self):
         arglist = ParmParser.ParameterDefinitionList()
@@ -116,7 +116,7 @@ class ParmParserTestCase(unittest.TestCase):
         self.assertEqual(args.p4, "10001771")
         args = arglist.parse(**{'p1': ["a", 17, True]})
         self.assertEqual(args.p1, ["a", "17", "True"])
-        self.assertRaises(ParmParser.intparam, *[], **{'default': ''})
+        self.assertRaises(ValueError, ParmParser.intparam, default='a')
         self.assertFalse(arglist.validate(**{'p1': ""}))
 
     def test_sctid(self):
@@ -130,7 +130,7 @@ class ParmParserTestCase(unittest.TestCase):
         self.assertEqual(str(args.p2), "74400008")
         self.assertEqual(args.p3, sctid(900000000000020002))
         self.assertEqual(args.p4, [sctid("447565001"), sctid(0)])
-        self.assertRaises(ParmParser.sctidparam, *[], **{'default': '17'})
+        self.assertRaises(ValueError, ParmParser.sctidparam, default='17')
         self.assertFalse(arglist.validate(**{'p1': ""}))
         self.assertFalse(arglist.validate(**{'p1': "17"}))
 
@@ -152,12 +152,23 @@ class ParmParserTestCase(unittest.TestCase):
         arglist.p2 = ParmParser.strparam()
         arglist.p3 = ParmParser.intparam()
         arglist.p4 = ParmParser.sctidparam()
-        self.assertRaises(self.assertRaises(arglist.parse, **{'p1': 'true true'}))
-        args = arglist.parse(p2="abc def", p3="1 2 17", p4="74400008 900000000000020002 447565001")
-        self.assertEqual(args.p2, "abc def")
+        args = arglist.parse(p1 = "true false", p2="abc def", p3="1 2 17", p4="74400008 900000000000020002 447565001")
+        self.assertEqual(args.p1, [True, False])
+        self.assertEqual(args.p2, ['abc', 'def'])
         self.assertEqual(args.p3, [1, 2, 17])
         self.assertEqual(args.p4, ['74400008', '900000000000020002', '447565001'])
         self.assertIsInstance(args.p4[0], sctid)
+        arglist = ParmParser.ParameterDefinitionList()
+        arglist.p1 = ParmParser.booleanparam(splittable=False)
+        arglist.p2 = ParmParser.strparam(splittable=False)
+        arglist.p3 = ParmParser.intparam(splittable=False)
+        arglist.p4 = ParmParser.sctidparam(splittable=False)
+        self.assertRaises(ValueError, arglist.parse, p1='true true')
+        self.assertRaises(ValueError, arglist.parse, p3="1 2 17")
+        self.assertRaises(ValueError, arglist.parse, p4="74400008 900000000000020002 447565001")
+        args = arglist.parse(p2="abc def")
+        self.assertEqual(args.p2, 'abc def')
+
 
     def test_defaulted(self):
         arglist = ParmParser.ParameterDefinitionList()
@@ -187,20 +198,18 @@ class ParmParserTestCase(unittest.TestCase):
         self.assertEqual(args.p4, 12)
 
     def test_moduleid(self):
-        from config.ConfigManager import ConfigManager
-
-        ConfigManager.set_configfile(os.path.join(os.getcwd(), '..', 'settings.cfg'), override=True)
+        setConfig()
         arglist = ParmParser.ParameterDefinitionList()
 
         arglist.p1 = moduleidparam()
         args = arglist.parse(p1='900000000000207008')
         self.assertEqual(args.p1, 900000000000207008)
-        args = arglist.parse(p1='74400008')
-        self.assertIsNone(args.p1, "Should not accept an invalid module identifier")
+        self.assertRaises(ValueError, arglist.parse, p1='74400008')
+
 
     def test_sql_escape(self):
         arglist = ParmParser.ParameterDefinitionList()
-        arglist.p1 = ParmParser.strparam()
+        arglist.p1 = ParmParser.strparam(splittable=False)
         args = arglist.parse(p1="';drop table Student;")
         self.assertEqual("\\';drop table Student;", args.p1)
         inval = "\0 ' \" \b \n \r \t \x1a \\ % _"

@@ -30,6 +30,18 @@
 from rf2db.utils.sctid_generator import sctid_generator
 
 
+class DecodedNamespace():
+    def __init__(self, sctid):
+        sctid = int(sctid)
+        self.checkdigit = sctid % 10
+        self.partition = (sctid / 10) % 100
+        if self.partition / 10:
+            self.namespace = (sctid / 1000) % 10000000
+            self.item = (sctid / 10000000000)
+        else:
+            self.namespace = 0
+            self.item = sctid / 1000
+
 class RF2Namespace():
     activeNamespaces = {}
     def __init__(self, namespace):

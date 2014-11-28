@@ -40,7 +40,7 @@ from rf2db.exceptions import RF2Exceptions
 """ Parameters for text matching. """
 description_match_parms = ParameterDefinitionList(global_rf2_parms)
 description_match_parms.add(iter_parms)
-description_match_parms.matchvalue = strparam(splitable=True)
+description_match_parms.matchvalue = strparam(splittable=True)
 description_match_parms.matchalgorithm = enumparam(['contains', 'startswith', 'endswith', 'exactmatch', 'wordstart',
                                                     'wordend', 'phrase'], default='wordstart')
 

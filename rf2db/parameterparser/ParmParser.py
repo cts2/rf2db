@@ -124,7 +124,7 @@ class ParameterDefinitionList(object):
             if not (arg.startswith('_')):
                 if not self._caseSensitive:
                     arg = arg.lower()
-                if isinstance(val, str) and ' ' in val and self._splitable:
+                if isinstance(val, str) and ' ' in val and self._splittable:
                     val = val.split()
                 parser = self.__dict__.get(arg)
                 if parser and not parser.isValid(val):
@@ -167,7 +167,7 @@ class ParameterDefinitionList(object):
         for name, parser in self.definitions():
             v = remainingargs.pop(name, None)
             if v is not None and not parser.isFixed():
-                parmdefs.__dict__[name] = parser.value(v)
+                parmdefs.__dict__[name] = parser.value(v, name)
             elif parser.hasDefault() and not parser._computed:
                 parmdefs.__dict__[name] = parser.defaultValue()
                 parmdefs._defaulted.append(name)
@@ -186,16 +186,18 @@ class ParameterDefinitionList(object):
 class ParameterDefinition(object):
     _computed = False
 
-    def __init__(self, typename, default=None, splitable=True, fixed=False, required=True):
+    def __init__(self, typename, default=None, splittable=True, fixed=False, required=True):
         self._typename = typename
-        self._default = default
         self._required = required
-        self._splitable = splitable
+        self._splittable = splittable
         self._fixed = fixed
+        if default and not self.isValid(default):
+            raise ValueError("Default value: '%s' not valid" % default)
+        self._default = default
 
 
     def _splitmaybe(self, val):
-        return val.split() if self._splitable and isinstance(val, str) and ' ' in val else val
+        return val.split() if self._splittable and isinstance(val, str) and ' ' in val else val
 
     def isValid(self, val):
         if self._computed:
@@ -208,14 +210,14 @@ class ParameterDefinition(object):
     def isFixed(self):
         return self._fixed
 
-    def value(self, val):
+    def value(self, val, name=""):
         if self.isValid(val) and not self._computed:
             val = self._splitmaybe(val)
             if isinstance(val, list):
                 return map(self._value, val)
             return self._value(val)
-        print("Invalid module id: %s" % val)
-        return None
+        raise ValueError("Invalid parameter value ('%s') for parameter %s" % (val, name))
+
 
     def hasDefault(self):
         return self._default is not None or not self._required
@@ -311,9 +313,10 @@ class sctidparam(ParameterDefinition):
 
 class enumparam(ParameterDefinition):
     def __init__(self, possvalues, casesensitive=False, **args):
-        ParameterDefinition.__init__(self, "enum", **args)
         self._possvalues = [str(v) if casesensitive else str(v).lower() for v in possvalues]
         self._casesensitive = casesensitive
+        ParameterDefinition.__init__(self, "enum", **args)
+
 
     def possibleValues(self):
         return self._possvalues

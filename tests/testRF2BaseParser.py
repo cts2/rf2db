@@ -61,7 +61,7 @@ class RF2DescriptionTestCase(unittest.TestCase):
         xmlutils.defaultNS = rf2.Namespace
         
     def test(self):    
-        d = RF2Description('517048016	20100131	1	900000000000380005	10027005	en	900000000000003001	Patchy (qualifier value)	900000000000022005')
+        d = RF2Description('517048016	20100131	1	900000000000380005	10027005	en	900000000000003001	Patchy (qualifier value)	900000000000020002')
         self.assertTrue(xmlutils.testxml(d, """<?xml version="1.0" ?>
 <Description xmlns="http://schema.ihtsdo.org/rf2/schema/Concept">
     <id>517048016</id>
@@ -72,13 +72,13 @@ class RF2DescriptionTestCase(unittest.TestCase):
     <languageCode>en</languageCode>
     <typeId>900000000000003001</typeId>
     <term>Patchy (qualifier value)</term>
-    <caseSignificanceId>900000000000022005</caseSignificanceId>
+    <caseSignificanceId>900000000000020002</caseSignificanceId>
 </Description>"""))
         self.assertEqual(str(d), "RF2Description(id:517048016, effectiveTime:20100131, active:1, "
                                  "moduleId:900000000000380005, conceptId:10027005, languageCode:en, "
-                                 "typeId:900000000000003001, term:Patchy (qualifier value), caseSignificanceId:900000000000022005)")
+                                 "typeId:900000000000003001, term:Patchy (qualifier value), caseSignificanceId:900000000000020002)")
      
-        d1 = RF2Description('525229014	20100131	1	900000000000380005	145945003	en	900000000000003001	Entire muscular branches of occipital artery (body structure)	900000000000022005')
+        d1 = RF2Description('525229014	20100131	1	900000000000380005	145945003	en	900000000000003001	Entire muscular branches of occipital artery (body structure)	900000000000020002')
         self.assertTrue(xmlutils.testxml(d1, """<?xml version="1.0" ?>
 <Description xmlns="http://schema.ihtsdo.org/rf2/schema/Concept">
     <id>525229014</id>
@@ -89,12 +89,12 @@ class RF2DescriptionTestCase(unittest.TestCase):
     <languageCode>en</languageCode>
     <typeId>900000000000003001</typeId>
     <term>Entire muscular branches of occipital artery (body structure)</term>
-    <caseSignificanceId>900000000000022005</caseSignificanceId>
+    <caseSignificanceId>900000000000020002</caseSignificanceId>
 </Description>"""))
         self.assertEqual(str(d1), "RF2Description(id:525229014, effectiveTime:20100131, active:1, "
                                   "moduleId:900000000000380005, conceptId:145945003, languageCode:en, "
                                   "typeId:900000000000003001, term:Entire muscular branches of occipital artery (body structure), "
-                                  "caseSignificanceId:900000000000022005)")
+                                  "caseSignificanceId:900000000000020002)")
 
      
 class RF2RelationshipTestCase(unittest.TestCase):
@@ -125,7 +125,7 @@ class RF2RelationshipTestCase(unittest.TestCase):
 class RF2ReprTestCase(unittest.TestCase):
     def test1(self):
         conc = '10027005\t20020131\t1\t900000000000207008\t900000000000074008'
-        desc = '517048016\t20100131\t1\t900000000000380005\t10027005\ten\t900000000000003001\tPatchy (qualifier value)\t900000000000022005'
+        desc = '517048016\t20100131\t1\t900000000000380005\t10027005\ten\t900000000000003001\tPatchy (qualifier value)\t900000000000020002'
         rel  = '452025\t20100131\t1\t900000000000380005\t10027005\t106234000\t0\t116680003\t900000000000006009\t900000000000451002\t0'
         lang = '0000097d-42b2-500d-88bb-46066baa9bad\t20020131\t1\t900000000000207008\t900000000000508004\t132462014\t900000000000548007\t79838002'
 

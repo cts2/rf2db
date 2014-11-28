@@ -26,10 +26,7 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-import os
 
-
-def setConfig(cfgfile='settings.conf'):
-    cfg_conf = os.path.join(os.path.dirname(__file__), 'testdata', cfgfile)
+def clearConfig():
     from ConfigManager.ConfigManager import ConfigManager
-    ConfigManager.set_configfile(cfg_conf, override=True)
+    ConfigManager.clear_configfile()

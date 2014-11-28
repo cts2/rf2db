@@ -83,7 +83,7 @@ class moduleidparam(sctidparam):
         if not val:
             return True
         if not self._mvdb:
-            from rf2db.db.RF2ModuleVersionsFile import ModuleVersionsDB
+            from RF2ModuleVersionsFile import ModuleVersionsDB
             self._mvdb = ModuleVersionsDB()
 
         return self._mvdb.validModuleids(val)

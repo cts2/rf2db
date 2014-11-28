@@ -42,8 +42,8 @@ changeset_parms = ParameterDefinitionList(global_rf2_parms)
 changeset_parms.open = booleanparam(default=True)
 
 add_changeset_parms = ParameterDefinitionList(global_rf2_parms)
-add_changeset_parms.creator = strparam(splitable=False)
-add_changeset_parms.description = strparam(splitable=False)
+add_changeset_parms.creator = strparam(splittable=False)
+add_changeset_parms.description = strparam(splittable=False)
 
 validate_changeset_parms = ParameterDefinitionList(global_rf2_parms)
 

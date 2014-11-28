@@ -195,7 +195,7 @@ class ConceptDB(RF2FileWrapper):
         """
         msg = self.validChangeSet(parmlist)
         if msg:
-            return msg
+            raise msg
 
         db = self.connect()
         parmlist.fname = self._tname(parmlist.ss)

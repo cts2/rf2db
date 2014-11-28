@@ -39,7 +39,6 @@ from rf2db.db.RF2LanguageFile import LanguageDB
 from rf2db.constants.RF2ValueSets import acceptable, synonym, preferred
 from rf2db.utils.listutils import listify
 from rf2db.utils.lfu_cache import lfu_cache
-from rf2db.parameterparser.ParmParser import sctidparam
 
 
 class ModuleVersionsDB(RF2FileWrapper):
@@ -125,7 +124,7 @@ class ModuleVersionsDB(RF2FileWrapper):
         moduleids = list(set(listify(moduleids)))
         if moduleids:
             db = self.connect()
-            db.execute("SELECT * FROM moduleids WHERE moduleid IN (" + ', '.join(moduleids) + ");")
+            db.execute("SELECT distinct(moduleid) FROM moduleids WHERE moduleid IN (" + ', '.join(moduleids) + ");")
             rval = list(db.ResultsGenerator(db))
             return len(rval) == len(moduleids)
 

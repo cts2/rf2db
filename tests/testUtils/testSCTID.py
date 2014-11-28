@@ -27,7 +27,9 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 import unittest
+import sys
 from rf2db.utils.sctid import *
+from rf2db.utils.check_digit import generate_verhoeff
 
 # sctid won't construct an entry unless it is valid.  It treats
 # an sctid as either a string or a long depending on context
@@ -41,6 +43,11 @@ class testSCTID(unittest.TestCase):
         self.assertEqual("B" + sctid(74400008), "B74400008")
         self.assertEqual(74400008, sctid(74400008))
         self.assertEqual("74400008", sctid(74400008))
+        target = sctid(generate_verhoeff(10**17 - 1))
+        self.assertEqual(str(target), "999999999999999994")
+        self.assertEqual(int(target), 999999999999999994)
+        if sys.version_info.major < 3:
+            self.assertEqual(long(target), 999999999999999994L)
 
 
 

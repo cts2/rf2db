@@ -26,7 +26,7 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-
+import sys
 import check_digit
 
 
@@ -36,7 +36,7 @@ class sctid(object):
     """
     def __init__(self, value):
         assert self.isValid(value), "Invalid sctid: " + str(value)
-        self._value = long(value)
+        self._value = long(value) if sys.version_info.major < 3 else int(value)
 
     @staticmethod
     def isValid(sctid):
@@ -69,6 +69,9 @@ class sctid(object):
 
     def __long__(self):
         return self._value
+
+    def __int__(self):
+        return int(self._value)
     
     def __repr__(self):
         return str(self._value)

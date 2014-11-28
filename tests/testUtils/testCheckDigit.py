@@ -27,8 +27,10 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 import unittest
-import os
+
 from rf2db.utils.check_digit import *
+
+from tests.SetConfig import setConfig
 
 
 class CheckDigitTestCase1(unittest.TestCase):
@@ -57,9 +59,7 @@ class CheckDigitSnomedTestCase(unittest.TestCase):
         Note that this seems simple because sctid does a check digit validation
         """
         from rf2db.utils.sctid import sctid
-        from config.ConfigManager import ConfigManager
-
-        ConfigManager.set_configfile(os.path.join(os.getcwd(), '..', 'settings.cfg'), override=True)
+        setConfig()
 
         self.assertRaises(AssertionError, sctid, 100004)
         self.assertEqual(long(sctid(100005)), 100005)

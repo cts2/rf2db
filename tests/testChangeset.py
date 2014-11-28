@@ -30,28 +30,27 @@ import unittest
 import re
 import uuid
 
-
-
 from rf2db.db.RF2ChangeSetFile import ChangeSetDB, add_changeset_parms, validate_changeset_parms
 from rf2db.db.RF2FileCommon import extensionParms
 from rf2db.constants.RF2ValueSets import changeSetRefSet
 from rf2db.db.RF2ConceptFile import ConceptDB
-
-import SetConfig
-
-uuidre = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
-tsre = '[0-9]{8}'
-rsid = changeSetRefSet
-moduleid = extensionParms.moduleid
-matchptn_ =  (r'RF2ChangeSetReferenceEntry\(id:%(uuidre)s, '
-        r'effectiveTime:%(tsre)s, active:1, moduleId:%(moduleid)s, '
-        r'refsetId:%(rsid)s, referencedComponentId:%(uuidre)s, ' % vars())
-matchptn1 = re.compile(matchptn_ + r'creator:None, changeDescription:None, isFinal:0, inRelease:None\)')
-matchptn2 = re.compile(matchptn_ + r'creator:Joel Stevens, changeDescription:my really happy changeset, isFinal:0, inRelease:None\)')
+from SetConfig import setConfig
+from ClearConfig import clearConfig
 
 
 class NewChangeSetTestCase(unittest.TestCase):
     def setUp(self):
+        setConfig()
+        moduleid = extensionParms.moduleid
+        uuidre = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+        tsre = '[0-9]{8}'
+        rsid = changeSetRefSet
+
+        matchptn_ =  (r'RF2ChangeSetReferenceEntry\(id:%(uuidre)s, '
+                r'effectiveTime:%(tsre)s, active:1, moduleId:%(moduleid)s, '
+                r'refsetId:%(rsid)s, referencedComponentId:%(uuidre)s, ') % vars()
+        self.matchptn1 = re.compile(matchptn_ + r'creator:None, changeDescription:None, isFinal:0, inRelease:None\)')
+        self.matchptn2 = re.compile(matchptn_ + r'creator:Joel Stevens, changeDescription:my really happy changeset, isFinal:0, inRelease:None\)')
         self.csdb = ChangeSetDB()
         self.concdb = ConceptDB()
         self.addedSets = []
@@ -60,14 +59,14 @@ class NewChangeSetTestCase(unittest.TestCase):
         for e in self.addedSets:
             parms = validate_changeset_parms.parse(**{'changeset': e.referencedComponentId.uuid})
             self.csdb.rollback(parms)
+        clearConfig()
 
     def testNew(self):
         self.addedSets.append(self.csdb.new_changeset(add_changeset_parms.parse(**{})))
-        print(self.addedSets[-1])
-        self.assertIsNotNone(matchptn1.match(str(self.addedSets[-1])))
+        self.assertIsNotNone(self.matchptn1.match(str(self.addedSets[-1])))
         parms = {'creator':'Joel Stevens', 'description':'my really happy changeset'}
         self.addedSets.append(self.csdb.new_changeset(add_changeset_parms.parse(**parms)))
-        self.assertIsNotNone(matchptn2.match(str(self.addedSets[-1])))
+        self.assertIsNotNone(self.matchptn2.match(str(self.addedSets[-1])))
 
     def testValid(self):
         parms = validate_changeset_parms.parse(**{'changeset': uuid.uuid4()})

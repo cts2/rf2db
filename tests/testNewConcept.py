@@ -32,24 +32,31 @@ import re
 from rf2db.db.RF2ConceptFile import ConceptDB, new_concept_parms
 from rf2db.constants.RF2ValueSets import cimiModule
 from rf2db.db.RF2Namespaces import RF2Namespace
+from rf2db.db.RF2ChangeSetFile import ChangeSetDB, add_changeset_parms, changeset_parms
 from rf2db.utils.sctid_generator import CIMI_Namespace
 
+from cherrypy import HTTPError
 
+from SetConfig import setConfig
 
-testChangeSet = 'F95FE83F-3B93-4193-B922-8B9D82097B07'
 
 
 
 class NewConceptTestCase(unittest.TestCase):
     def setUp(self):
-        import SetConfig
+        setConfig()
         self.concdb = ConceptDB()
+        self.csdb = ChangeSetDB()
+        self.testChangeSet = self.csdb.new_changeset(add_changeset_parms.parse()).referencedComponentId.uuid
+
+    def tearDown(self):
+        self.csdb.rollback(changeset_parms.parse(changeset=self.testChangeSet))
 
     def testNew1(self):
         sctid = RF2Namespace(CIMI_Namespace).nextConceptId()
         parms = new_concept_parms.parse(effectiveTime='20141131',
                                          moduleId=str(cimiModule),
-                                         changeset=testChangeSet,
+                                         changeset=self.testChangeSet,
                                          sctid=sctid)
         dbrec = self.concdb.newConcept(parms)
         # We would like to do the test below, but RF2Concept has a wrapper and, as such, evaluates as a function
@@ -61,14 +68,15 @@ class NewConceptTestCase(unittest.TestCase):
                                        effectivetime='20141131',
                                        moduleid=str(cimiModule),
                                        definitionstatus='p',
-                                       changeset=testChangeSet)
+                                       changeset=self.testChangeSet)
         dbrec = self.concdb.newConcept(parms)
         self.assertIsNotNone(re.match(r'RF2Concept\(id:[0-9]+100016010[0-9], effectiveTime:20141131, active:1, moduleId:11000160102, definitionStatusId:900000000000074008\)', str(dbrec)))
 
 
     def testNew3(self):
-        dbrec = self.concdb.newConcept_p(changeset=testChangeSet)
+        dbrec = self.concdb.newConcept(new_concept_parms.parse(changeset=self.testChangeSet))
         self.assertIsNotNone(re.match(r'RF2Concept\(id:[0-9]+100016010[0-9], effectiveTime:[0-9]{8}, active:1, moduleId:11000160102, definitionStatusId:900000000000074008\)', str(dbrec)))
 
 
-
+    def testNewNoChangeset(self):
+        self.assertRaises(HTTPError, self.concdb.newConcept, new_concept_parms.parse())
