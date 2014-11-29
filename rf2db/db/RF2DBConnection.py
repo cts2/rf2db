@@ -78,6 +78,7 @@ class RF2DBConnection(object):
         nondb_config = cp_values.asdict().copy()
         dbname = nondb_config.pop('db')
         nondb_config.pop('dodecode', None)
+        nondb_config.pop('ss', None)
         self._connection = db.connect(**nondb_config)
         self._cursor = self._connection.cursor()
         self._cursor.execute("CREATE DATABASE IF NOT EXISTS %s" % dbname)
@@ -94,6 +95,7 @@ class RF2DBConnection(object):
         if not self._connection:
             parms = cp_values.asdict().copy()
             parms.pop('dodecode', None)
+            parms.pop('ss', None)
             self._connection = db.connect(**parms)
             # self._connection.set_character_set("utf8")
 

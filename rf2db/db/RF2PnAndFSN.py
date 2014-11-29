@@ -107,7 +107,7 @@ class PNandFSNDB(RF2FileWrapper):
                        langfn = langdb._fname,
                        pref = RF2ValueSets.preferred,
                        fsn = RF2ValueSets.fsn,
-                       synv = RF2ValueSets.synonym)
+                       syn = RF2ValueSets.synonym)
 
         loader = self._inserter(RF2DBConnection(), self._fname, BATCH_SIZE)
         key = [0, 0]
