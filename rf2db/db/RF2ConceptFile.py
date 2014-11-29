@@ -80,7 +80,7 @@ class ConceptDB(RF2FileWrapper):
         @return: Updated RF2Concept record if valid else None
         """
         db = self.connect()
-        rlist = [RF2Concept(c) for c in db.query_p(self._fname, filter="id=%s" % cid, **kwargs)]
+        rlist = [RF2Concept(c) for c in db.query(self._fname, filter_="id=%s" % cid, **kwargs)]
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
@@ -205,13 +205,14 @@ class ConceptDB(RF2FileWrapper):
         if not moduleid:
             moduleid = ep_values.moduleid
 
-        definitionStatusId = defined if definitionstatus == 'f' else primitive
+        definitionstatusid = defined if definitionstatus == 'f' else primitive
+        fname = self._fname
         db.execute("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, "
                    "definitionStatusId, changeset, locked) "
-                   "VALUES (%(sctid)s, %(effectivetime)s, 1, %(moduleid)s, "
+                   "VALUES (%(cid)s, %(effectivetime)s, 1, %(moduleid)s, "
                    "%(definitionstatusid)s, '%(changeset)s', 1 )" % vars())
         db.commit()
-        return self.read(cid, **kwargs)
+        return self.read(cid, changeset=changeset, **kwargs)
 
 
     def getAllConcepts(self, active=1, order='asc', page=0, maxtoreturn=100, after=0, changeset=None, moduleids=[], **kwargs):

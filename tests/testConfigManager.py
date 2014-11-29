@@ -66,7 +66,8 @@ class ConfigManagerTestCase(unittest.TestCase):
         self.assertEqual(str(cfg), """[dbparms]
 host = localhost
 db = rf2
-charset = utf8""")
+charset = utf8
+ss = True""")
 
 
     def test_load_multi_args(self):
@@ -76,7 +77,8 @@ charset = utf8""")
         self.assertEqual(str(cfg1), """[dbparms]
 host = localhost
 db = rf2
-charset = utf8""")
+charset = utf8
+ss = True""")
         self.assertEqual(str(cfg2), """[otherstuff]
 db = somewhere""")
 
@@ -87,7 +89,8 @@ db = somewhere""")
         self.assertEqual(str(cfg1), """[dbparms]
 host = localhost
 db = rf2
-charset = utf8""")
+charset = utf8
+ss = True""")
         self.assertEqual(str(cfg2), """[otherstuff]
 db = somewhere""")
 
@@ -113,6 +116,7 @@ db = somewhere""")
 host = localhost
 db = rf2test
 charset = utf8
+ss = True
 port = 8091
 user = root
 passwd = rootpw""")
@@ -123,6 +127,7 @@ passwd = rootpw""")
 host = localhost
 db = rf2test
 charset = utf8
+ss = True
 port = 8091
 user = root
 passwd = rootpw""")

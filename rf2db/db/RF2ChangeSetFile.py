@@ -87,7 +87,7 @@ class ChangeSetDB(RF2RefsetWrapper):
     def __init__(self, *args, **kwargs):
         RF2RefsetWrapper.__init__(self, *args, **kwargs)
 
-    def get_changeset(self, changeset=None, **kwargs):
+    def get_changeset(self, changeset, **kwargs):
         """ Read the supplied changeset record
         @param changeset: UUID of the changeset
         @param kwargs: Contextual arguments
@@ -97,7 +97,7 @@ class ChangeSetDB(RF2RefsetWrapper):
             return None
         filter_ = "refsetId=%s AND referencedComponentId='%s' " % (changeSetRefSet, changeset)
         db = self.connect()
-        rlist = [RF2ChangeSetReferenceEntry(c) for c in db.query_p(self._fname, filter=filter_, **kwargs)]
+        rlist = [RF2ChangeSetReferenceEntry(c) for c in db.query(self._fname, filter_=filter_, changeset=changeset, **kwargs)]
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
@@ -109,24 +109,25 @@ class ChangeSetDB(RF2RefsetWrapper):
         """
         fname = self._fname
         db = self.connect()
-        guid = uuid.uuid4()
+        guid = str(uuid.uuid4())
         effectivetime = strftime("%Y%m%d", gmtime())
         moduleid = ep_values.moduleid
         refsetid = changeSetRefSet
-        csid = uuid.uuid4()
+        csid = str(uuid.uuid4())
 
         query = "INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, " \
                 "refsetId, referencedComponentId, changeset, locked"
         query += ", creator" if creator is not None else ""
         query += ", description" if description is not None else ""
-        query += ") values ('%(guid)s', %(effectiveTime)s, 1, %(moduleId)s, %(refsetId)s, '%(csid)s', '%(csid)s', 1"
+        query += ") values ('%(guid)s', %(effectivetime)s, 1, %(moduleid)s, %(refsetid)s, '%(csid)s', '%(csid)s', 1"
         query += ", '%(creator)s'" if creator is not None else ""
         query += ", '%(description)s'" if description is not None else ""
         query += ")"
         db = self.connect()
         db.execute(query % vars())
         db.commit()
-        return self.get_changeset(changeset=csid, **kwargs)
+        kwargs['changeset'] = csid
+        return self.get_changeset(**kwargs)
 
     def isValid(self, changeset=None, **kwargs):
         """ Determine whether the supplied changeset is valid in the given context
@@ -134,7 +135,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         @param kwargs: contextual args
         @return: True if valid
         """
-        return self.get_changeset(changeset, **kwargs) is not None
+        return self.get_changeset(changeset=changeset, **kwargs) is not None
 
 
     def rollback(self, changeset=None, **kwargs):

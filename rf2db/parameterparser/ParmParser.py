@@ -44,7 +44,7 @@ class ParameterDefinitionList(object):
             """
             self._casesensitive = casesensitive
             self._defaulted = []
-            self.remainingargs = {}
+            self._remainingargs = {}
 
         def __getattr__(self, key):
             if key.startswith('_') or self._casesensitive:
@@ -73,6 +73,10 @@ class ParameterDefinitionList(object):
             @return: C{True} if key has a default value, C{False} if the value was supplied
             """
             return key in self._defaulted
+
+        @property
+        def dict(self):
+            return {k:self.__dict__[k] for k in self._orderedKeys()}
 
 
     def __init__(self, base=None, caseSensitive=False):
@@ -176,7 +180,7 @@ class ParameterDefinitionList(object):
             if parser._computed:
                 parmdefs.__dict__[name] = parser._computeValue(parmdefs)
 
-        parmdefs.remainingargs = remainingargs
+        parmdefs._remainingargs = remainingargs
         return parmdefs
 
 

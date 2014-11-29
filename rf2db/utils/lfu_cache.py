@@ -63,28 +63,20 @@ def lfu_cache(maxsize=100):
     def decorating_function(user_function):
         cache = {}                      # mapping of args to results
         use_count = Counter()           # times each key has been accessed
-        kwarg_mark = object()             # separate positional and keyword args
+        kwd_mark = object()           # separate positional and keyword args
 
         @functools.wraps(user_function)
         def wrapper(*args, **kwargs):
             if booleanparam.v(db_values.nocache, False):
                 return user_function(*args, **kwargs)
-            key = ''.join(str(e) for e in args[1:])
+            key = args[1:]
             if kwargs:
-                #
-                key += (kwarg_mark,) + tuple(
-                    #
-                    map(lambda e: (e[0], e[1] if isinstance(e[1], collections.Hashable) else str(e[1])),
-                        sorted(
-                            # Parameters with a leading '_' do not determine the outcome
-                            filter(lambda k:not k[0].startswith('_'), kwargs.items())
-                        )
-                    )
-                )
-
+                key += (kwd_mark,)
+                key += tuple(sorted( (k,v if isinstance(v, collections.Hashable) else str(v)) for k,v in kwargs.items()))
             # Refresh the cache if needed
             if kwargs.pop('_nocache', False):
                 cache.pop(key, None)
+                wrapper.nocaches += 1
             # get cache entry or compute if not found
             try:
                 result = cache[key]
@@ -108,7 +100,7 @@ def lfu_cache(maxsize=100):
             use_count.clear()
             wrapper.hits = wrapper.misses = 0
 
-        wrapper.hits = wrapper.misses = 0
+        wrapper.hits = wrapper.misses = wrapper.nocaches = 0
         wrapper.clear = clear
         wrapper.cache = cache
         return wrapper

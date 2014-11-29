@@ -49,7 +49,7 @@ config_parms = ConfigArgs('dbparms',
                            ConfigArg('charset', help='MySQL Character Set', default='utf8'),
                            ConfigArg('dodecode', help='If true, convert data to UTF8 for return.  '
                                                       'Needed for some implementations.'),
-                           ConfigArg('ss', help="Snapshot(True) or Full(False) tables", default=True)
+                           ConfigArg('ss', help="Snapshot(True) or Full(False) tables", default='True')
                           ])
 cp_values = ConfigManager(config_parms)
 
@@ -246,8 +246,7 @@ class RF2DBConnection(object):
             query += " LIMIT %d, %d " % (start, maxtoreturn + 1)
         return query
 
-    def query(self, table, filter_="", sort=None, active=True, start=0,
-              maxtoreturn=100, refdate=None, moduleids=None, order="asc", changeset=None, **kwargs):
+    def query(self, table, **kwargs):
         """ Query an RF2 table taking the historical information into account.
 
         @param table: table to query

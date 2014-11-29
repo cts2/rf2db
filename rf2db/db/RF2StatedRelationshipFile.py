@@ -100,11 +100,11 @@ class StatedRelationshipDB(RF2FileWrapper):
         db = self.connect()
         if maxtoreturn == 0:    # we're getting counts
             return int(list(self.connect().query(self._fname,
-                                                 filter=canon_filtr(filtr, **kwargs),
+                                                 filter_=canon_filtr(filtr, **kwargs),
                                                  maxtoreturn=maxtoreturn,
                                                  **kwargs))[0])
         return map(lambda r:RF2Relationship(r), db.query(self._fname,
-                                                         filter=canon_filtr(filtr, **kwargs),
+                                                         filter_=canon_filtr(filtr, **kwargs),
                                                          maxtoreturn=maxtoreturn,
                                                          **kwargs))
         
@@ -125,13 +125,13 @@ class StatedRelationshipDB(RF2FileWrapper):
         """ Return a list of sourceId's connected with the given targetId.  Inferred is ignored"""
         db = self.connect()
         return set(map(lambda r: RF2Relationship(r).sourceId, db.query_p(self._fname,
-                                                                        filter=canon_filtr("destinationId = '%s' " % targetId, **kwargs),
+                                                                        filter_=canon_filtr("destinationId = '%s' " % targetId, **kwargs),
                                                                         **kwargs)))
 
     def getRelationship(self, relId, **kwargs):
         """ Return the relationship record identified by relId"""
         db = self.connect()
-        rlist = [RF2Relationship(r) for r in db.query(self._fname, filter="id = '%s'" % relId, **kwargs)]
+        rlist = [RF2Relationship(r) for r in db.query(self._fname, filter_="id = '%s'" % relId, **kwargs)]
         return rlist[0] if len(rlist) else None
 
 

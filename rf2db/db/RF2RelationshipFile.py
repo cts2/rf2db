@@ -202,7 +202,7 @@ class RelationshipDB(RF2FileWrapper):
         """
         if maxtoreturn == 0:    # we're getting counts
             infcount = int(list(self.connect().query(self._fname,
-                                                     filter=build_filtr(filtr, **kwargs),
+                                                     filter_=build_filtr(filtr, **kwargs),
                                                      inferred=inferred,
                                                      stated=stated,
                                                      maxtoreturn=maxtoreturn,
@@ -216,7 +216,7 @@ class RelationshipDB(RF2FileWrapper):
         rval = {k:v for k,v in map(lambda r:(rel_id(r), r),
                                    map(lambda r: RF2Relationship(r),
                                        self.connect().query(self._fname,
-                                                              filter=build_filtr(filtr, **kwargs),
+                                                              filter_=build_filtr(filtr, **kwargs),
                                                               maxtoreturn=maxtoreturn,
                                                               stated=stated,
                                                               inferred=inferred,
@@ -265,7 +265,7 @@ class RelationshipDB(RF2FileWrapper):
         db = self.connect()
         kwargs['maxtoreturn'] = 1
         rlist = [RF2Relationship(r) for r in db.query(self._fname,
-                                                      filter="id = '%s'" % relId,
+                                                      filter_="id = '%s'" % relId,
                                                       **kwargs)]
         return rlist[0] if len(rlist) else None
 

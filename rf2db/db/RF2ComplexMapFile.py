@@ -95,9 +95,9 @@ class ComplexMapDB(RF2RefsetWrapper):
         db = self.connect()
         if not sort:
             sort=['refsetId', 'referencedComponentId', 'mapGroup', 'mapPriority']
-        return [RF2ComplexMapReferenceSetEntry(e) for e in db.query_p(self._fname,
+        return [RF2ComplexMapReferenceSetEntry(e) for e in db.query(self._fname,
                                                                       sort=sort,
-                                                                      filter=filtr,
+                                                                      filter_=filtr,
                                                                       **kwargs)]
 
     @classmethod

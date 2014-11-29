@@ -68,7 +68,7 @@ class SimpleMapDB(RF2RefsetWrapper):
         if not sort:
             sort=['refsetId', 'referencedComponentId']
         return [RF2SimpleMapReferenceSetEntry(e) for e in db.query(self._fname,
-                                                                   filter=filtr,
+                                                                   filter_=filtr,
                                                                    sort=sort,
                                                                    **kwargs)]
 

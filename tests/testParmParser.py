@@ -52,7 +52,7 @@ class ParmParserTestCase(unittest.TestCase):
         args = arglist.parse(isactive="no", unk="abc", numentries=0, multvals=[1, 2, 3])
         self.assertFalse(args.isActive)
         self.assertEqual(args.numEntries, 0)
-        self.assertEqual(sorted(args.remainingargs), sorted({'unk': 'abc', 'multvals': [1, 2, 3]}))
+        self.assertEqual(sorted(args._remainingargs), sorted({'unk': 'abc', 'multvals': [1, 2, 3]}))
 
     def test_baddefault(self):
         arglist = ParmParser.ParameterDefinitionList()

@@ -47,7 +47,7 @@ config_parms = ConfigArgs('rf2',
                            [ConfigArg('fileloc', abbrev='f', help='Location of primary RF2 Distribution'),
                             ConfigArg('addloc', abbrev='a', help='Add the location of a secondary RF2 Distribution'),
                             ConfigArg('release', abbrev='r', help='Current RF2 Revision (yyyymmdd)'),
-                            ConfigArg('defaultblocksize', help="Default return block size", default=100)
+                            ConfigArg('defaultblocksize', help="Default return block size", default='100')
                            ])
 rf2_values = ConfigManager(config_parms)
 

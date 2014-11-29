@@ -63,7 +63,7 @@ class SimpleReferencesetDB(RF2RefsetWrapper):
         db = self.connect()
         # TODO: Sort
         return [RF2SimpleReferenceSetEntry(e) for e in db.query(self._fname,
-                                                                filter=filtr,
+                                                                filter_=filtr,
                                                                 sort=sort,
                                                                 **kwargs)]
 
