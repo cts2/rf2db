@@ -45,17 +45,15 @@ class ModuleVersionsDB(RF2FileWrapper):
     
     table = 'moduleversions'
     
-    createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
-      moduleId      bigint(20) NOT NULL,
-      effectiveTime int(11) NOT NULL,
-       PRIMARY KEY (moduleId,effectiveTime),
-       KEY id (moduleId)
-    ); """
+    createSTMT = "CREATE TABLE IF NOT EXISTS %(table)s (moduleId bigint(20) NOT NULL, " \
+                 "effectiveTime int(11) NOT NULL, PRIMARY KEY (moduleId,effectiveTime), KEY id (moduleId)); "
 
-    createModulesSTMT = """CREATE OR REPLACE VIEW moduleids AS
-        SELECT DISTINCT m.moduleid, d.term, d.languagecode FROM %(mvtable)s m, %(desctable)s d, %(langtable)s l
-        WHERE d.conceptid = m.moduleid AND l.referencedcomponentid=d.id AND
-              l.acceptabilityid in (%(acceptable)s, %(preferred)s) AND d.typeid=%(synonym)s;"""
+    # NOTE: the current US extension doesn't have a preferred name for their module id's.  This needs to be
+    # fixed if you want them to show up
+    createModulesSTMT = "CREATE OR REPLACE VIEW moduleids AS SELECT DISTINCT m.moduleid, d.term, " \
+                        "d.languagecode FROM %(mvtable)s m, %(desctable)s d, " \
+                        "%(langtable)s l WHERE d.conceptid = m.moduleid AND l.referencedcomponentid=d.id AND" \
+                        " l.acceptabilityid = %(preferred)s AND d.typeid=%(synonym)s;"
     
     # A list of tables that carry significant version identifiers.  Used to determine possible module changes
     _versionTables = [ConceptDB(),

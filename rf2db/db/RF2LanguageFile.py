@@ -137,17 +137,19 @@ class LanguageDB(RF2RefsetWrapper):
         """
         db = self.connect()
         conceptIds = listify(conceptIds)
-        stmt = "SELECT l.conceptId, d.id, d.term FROM %s l, %s d WHERE l.conceptId IN(%s) AND l.referencedComponentId = d.id " \
+        stmt = "SELECT l.conceptId, d.id, d.term FROM %s l, %s d " \
+               "WHERE l.conceptId IN (%s) AND l.referencedComponentId = d.id " \
                "AND l.acceptabilityId = %s AND d.typeid = %s" % \
                (self._fname,
                 self.descdb.fname(),
                 ', '.join(str(c) for c in conceptIds),
                 preferred,
                 synonym)
-        stmt += ' AND l.active=1 AND d.active=1' if active else 'True '
+        if active:
+            stmt += ' AND l.active=1 AND d.active=1 '
         if moduleid:
-            stmt += "AND moduleId in (" + ', '.join(str(m) for m in moduleid)
-        stmt += self._langfltr('', language=language **kwargs)
+            stmt += " AND d.moduleId in (" + ', '.join(str(m) for m in listify(moduleid)) + ") "
+        stmt += self._langfltr('', language=language, **kwargs)
         db.execute(stmt)
         return {e[0]: (e[2], e[1]) for e in map(lambda r: r.split('\t', 2), db.ResultsGenerator(db))}
 

@@ -101,13 +101,14 @@ class DescriptionTextDB(RF2FileWrapper):
 
     @lfu_cache(100)
     def getDescriptions(self,
-                        matchvalue,
+                        matchvalue='',
                         matchalgorithm='wordstart',
                         maxtoreturn=None,
                         active=True,
                         moduleid=[],
                         order='asc',
                         start=0,
+                        sort=[],
                         **kwargs):
         """
         Return all descriptions that match the matchvalues(s) using the supplied match algorithm.
@@ -160,7 +161,11 @@ class DescriptionTextDB(RF2FileWrapper):
             query += " AND active = 1 AND conceptActive = 1"
         if moduleid:
             query += ' AND ' + ' AND '.join(['moduleid = %s' % m for m in listify(moduleid)])
-        query += " ORDER BY length(term) %s, term %s" % (order, order)
+        query += " ORDER BY "
+        # TODO: the order parameter isn't included in the custom sort below
+        if sort:
+            query += ', '.join(listify(sort)) + ', '
+        query += " length(term) %s, term %s" % (order, order)
 
         if maxtoreturn > 0:
             query += " LIMIT %s, %s" % (start, maxtoreturn + 1)

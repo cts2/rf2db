@@ -36,13 +36,14 @@ from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, rf2_values
 from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB, rel_id
 from rf2db.db.RF1CanonicalCore import CanonicalCoreDB
 from rf2db.parsers.RF2Iterator import RF2RelationshipList
-from rf2db.parameterparser.ParmParser import ParameterDefinitionList, booleanparam
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, booleanparam, sctidparam
 from rf2db.utils.lfu_cache import lfu_cache
 from rf2db.utils.sctid_generator import *
 from rf2db.constants.RF2ValueSets import additionalRelationship, some, inferredRelationship
 
 # Parameters for relationship file query
 rel_parms = ParameterDefinitionList(global_rf2_parms)
+rel_parms.rel = sctidparam()
 
 # Stated relationships are included in queries
 rel_parms.stated = booleanparam(default=True)
@@ -60,14 +61,27 @@ rel_parms.canonical = booleanparam(default=False)
 rellist_parms = ParameterDefinitionList(rel_parms)
 rellist_parms.add(iter_parms)
 
+# Relationships for source concept
+rel_source_parms=ParameterDefinitionList(rellist_parms)
+rel_source_parms.source=sctidparam()
 
-def build_filtr(filtr, parmlist):
-    assert parmlist.inferred or parmlist.addl, "Shouldn't be building a filter if you are returning nothing"
-    if parmlist.canonical: filtr += ' AND isCanonical=1 '
-    if parmlist.inferred and parmlist.additional:
+# Relationships for predicate concept
+rel_predicate_parms=ParameterDefinitionList(rellist_parms)
+rel_predicate_parms.predicate=sctidparam()
+
+# Relationships for predicate concept
+rel_target_parms=ParameterDefinitionList(rellist_parms)
+rel_target_parms.target=sctidparam()
+
+
+def build_filtr(filtr, inferred=False, addl=False, canonical=False, additional=False, **kwargs):
+    assert inferred or addl, "Shouldn't be building a filter if you are returning nothing"
+    if canonical:
+        filtr += ' AND isCanonical=1 '
+    if inferred and additional:
         return filtr
     return (
-    filtr + ' AND characteristicTypeId=%s' % (additionalRelationship if parmlist.additional else inferredRelationship))
+    filtr + ' AND characteristicTypeId=%s' % (additionalRelationship if additional else inferredRelationship))
 
 
 class RelationshipDB(RF2FileWrapper):
@@ -202,13 +216,20 @@ class RelationshipDB(RF2FileWrapper):
         """
         if maxtoreturn == 0:    # we're getting counts
             infcount = int(list(self.connect().query(self._fname,
-                                                     filter_=build_filtr(filtr, **kwargs),
+                                                     filter_=build_filtr(filtr,
+                                                                         inferred=inferred,
+                                                                         stated=stated,
+                                                                         **kwargs),
                                                      inferred=inferred,
                                                      stated=stated,
                                                      maxtoreturn=maxtoreturn,
                                                      **kwargs))[0]) \
                 if inferred else 0
-            statedcount = self._srdb._getRecs(filtr, maxtoreturn=maxtoreturn, stated=stated, inferred=inferred, **kwargs) if stated else 0
+            statedcount = self._srdb._getRecs(filtr,
+                                              maxtoreturn=maxtoreturn,
+                                              stated=stated,
+                                              inferred=inferred,
+                                              **kwargs) if stated else 0
             # TODO: the count is not accurate unless we subtract out both inferred and stated...
             return [infcount + statedcount]
 
@@ -216,7 +237,10 @@ class RelationshipDB(RF2FileWrapper):
         rval = {k:v for k,v in map(lambda r:(rel_id(r), r),
                                    map(lambda r: RF2Relationship(r),
                                        self.connect().query(self._fname,
-                                                              filter_=build_filtr(filtr, **kwargs),
+                                                              filter_=build_filtr(filtr,
+                                                                                  inferred=inferred,
+                                                                                  stated=stated,
+                                                                                  **kwargs),
                                                               maxtoreturn=maxtoreturn,
                                                               stated=stated,
                                                               inferred=inferred,
@@ -257,22 +281,28 @@ class RelationshipDB(RF2FileWrapper):
                          **kwargs)))
 
     @lfu_cache(maxsize=100)
-    def getRelationship(self, relId, **kwargs):
-        """ Return the relationship record identified by relId"""
-        rel = self._srdb.getRelationship(relId, **kwargs)
-        if rel:
-            return rel
+    def getRelationship(self, rel=None, **kwargs):
+        """ Return the relationship identified by the identifier
+        @param rel: inferred or stated relationship identifier
+        @param kwargs: context
+        @return: stated or inferred record
+        """
+        rrec = self._srdb.getRelationship(**kwargs)
+        if rrec:
+            return rrec
         db = self.connect()
-        kwargs['maxtoreturn'] = 1
         rlist = [RF2Relationship(r) for r in db.query(self._fname,
-                                                      filter_="id = '%s'" % relId,
+                                                      filter_="id = '%s'" % rel,
+                                                      maxtoreturn=1,
                                                       **kwargs)]
         return rlist[0] if len(rlist) else None
 
-    def asRelationshipList(self, rels, maxtoreturn=None, **kwargs):
-        """ Format rels as a Relationship List """
-        thelist = RF2RelationshipList(**kwargs)
-        if maxtoreturn == 0:
+    @staticmethod
+    def asRelationshipList(rels, parmlist):
+        if parmlist.maxtoreturn is None:
+            parmlist.maxtoreturn=rf2_values.defaultblockslize
+        thelist = RF2RelationshipList(parmlist)
+        if parmlist.maxtoreturn == 0:
             return thelist.finish(True, total=list(rels)[0])
         for d in rels:
             if thelist.at_end:

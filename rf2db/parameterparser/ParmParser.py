@@ -61,6 +61,9 @@ class ParameterDefinitionList(object):
         def __repr__(self):
             return ','.join(k + ':' + repr(self.__dict__[k]) for k in self._orderedKeys())
 
+        def nondefaulteditems(self):
+            return {k:self.__dict__[k] for k in self._orderedKeys() if not self.defaulted(k)}
+
         def _orderedKeys(self):
             """
             :return: An ordered list of non-underscored keys
@@ -201,7 +204,7 @@ class ParameterDefinition(object):
 
 
     def _splitmaybe(self, val):
-        return val.split() if self._splittable and isinstance(val, str) and ' ' in val else val
+        return val.split() if self._splittable and isinstance(val, basestring) and ' ' in val else val
 
     def isValid(self, val):
         if self._computed:

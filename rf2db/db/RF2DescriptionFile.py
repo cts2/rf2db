@@ -34,12 +34,21 @@ from rf2db.parsers.RF2BaseParser import RF2Description
 from rf2db.parsers.RF2Iterator import RF2DescriptionList, iter_parms
 from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, rf2_values
 from rf2db.utils.lfu_cache import lfu_cache
-from rf2db.parameterparser.ParmParser import ParameterDefinitionList
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, sctidparam
 
 # Parameters for description access
-description_parms = global_rf2_parms
+description_parms = ParameterDefinitionList(global_rf2_parms)
+description_parms.desc = sctidparam()
+
 description_list_parms = ParameterDefinitionList(global_rf2_parms)
 description_list_parms.add(iter_parms)
+
+pref_description_parms = ParameterDefinitionList(global_rf2_parms)
+pref_description_parms.concept = sctidparam()
+
+description_for_concept_parms = ParameterDefinitionList(global_rf2_parms)
+description_for_concept_parms.add(iter_parms)
+description_for_concept_parms.concept = sctidparam()
 
     
 class DescriptionDB(RF2FileWrapper):
@@ -78,16 +87,16 @@ class DescriptionDB(RF2FileWrapper):
     @lfu_cache(maxsize=20)
     def getDescriptionById(self, descId, **kwargs):
         db = self.connect()
-        rlist = [RF2Description(d) for d in db.query_p(self._fname, filter_="id = %s" % descId, **kwargs)]
+        rlist = [RF2Description(d) for d in db.query(self._fname, filter_="id = %s" % descId, **kwargs)]
         return rlist[0] if len(rlist) else None
 
 
     @staticmethod
-    def asDescriptionList(dlist, maxtoreturn=None, **kwargs):
-        if maxtoreturn is None:
-            maxtoreturn=rf2_values.defaultblocksize
-        thelist = RF2DescriptionList(maxtoreturn=maxtoreturn, **kwargs)
-        if maxtoreturn == 0:
+    def asDescriptionList(dlist, parmlist):
+        if parmlist.maxtoreturn is None:
+            parmlist.maxtoreturn=rf2_values.defaultblocksize
+        thelist = RF2DescriptionList(parmlist)
+        if parmlist.maxtoreturn == 0:
             return thelist.finish(True, total=list(dlist)[0])
         for d in dlist:
             if thelist.at_end:

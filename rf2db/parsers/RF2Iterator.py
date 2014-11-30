@@ -42,7 +42,7 @@ iter_parms.order = enumparam(['asc', 'desc'], default='asc')
 iter_parms.page = intparam(default=0)
 iter_parms.maxtoreturn = intparam(default=100)
 iter_parms.start = computedparam(lambda p: p.page * p.maxtoreturn)
-iter_parms.sort = strparam()
+iter_parms.sort = strparam(splittable=True)
 
 
 class RF2Iterator(rf2.Iterator, object):
@@ -89,18 +89,20 @@ class RF2Iterator(rf2.Iterator, object):
         """ Finalize an appending process, setting COMPLETE, next and prev
             Returns the resource for convenience
         """
-        if not (self._parmlist.maxtoreturn):
+        if not self._parmlist.maxtoreturn:
             self.numEntries = total
             self.complete = rf2.CompleteDirectory.COMPLETE
         else:
             if self.numEntries >= self._parmlist.maxtoreturn and moreToCome:
                 self.next = urlutil.forxml(urlutil.append_params(urlutil.strip_control_params(urlutil.relative_uri()),
-                                                                 {'page': str(self._parmlist.page + 1),
-                                                                  'maxtoreturn': str(self._parmlist.maxtoreturn)}))
+                                                                 dict(self._parmlist.nondefaulteditems(),
+                                                                      **{'page': str(self._parmlist.page + 1),
+                                                                      'maxtoreturn': str(self._parmlist.maxtoreturn)})))
             if self._parmlist.page > 0:
                 self.prev = urlutil.forxml(urlutil.append_params(urlutil.strip_control_params(urlutil.relative_uri()),
-                                                                 {'page': str(self._parmlist.page - 1),
-                                                                  'maxtoreturn': str(self._parmlist.maxtoreturn)}))
+                                                                 dict(self._parmlist.nondefaulteditems(),
+                                                                      **{'page': str(self._parmlist.page - 1),
+                                                                      'maxtoreturn': str(self._parmlist.maxtoreturn)})))
 
             self.complete = rf2.CompleteDirectory.COMPLETE if not (
                 self.next or self.prev) else rf2.CompleteDirectory.PARTIAL

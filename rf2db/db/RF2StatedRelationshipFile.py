@@ -128,10 +128,10 @@ class StatedRelationshipDB(RF2FileWrapper):
                                                                         filter_=canon_filtr("destinationId = '%s' " % targetId, **kwargs),
                                                                         **kwargs)))
 
-    def getRelationship(self, relId, **kwargs):
+    def getRelationship(self, rel=None, **kwargs):
         """ Return the relationship record identified by relId"""
         db = self.connect()
-        rlist = [RF2Relationship(r) for r in db.query(self._fname, filter_="id = '%s'" % relId, **kwargs)]
+        rlist = [RF2Relationship(r) for r in db.query(self._fname, filter_="id = '%s'" % rel, maxtoreturn=1, **kwargs)]
         return rlist[0] if len(rlist) else None
 
 

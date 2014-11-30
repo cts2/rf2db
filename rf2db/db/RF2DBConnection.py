@@ -180,7 +180,7 @@ class RF2DBConnection(object):
 
     @staticmethod
     def build_query(table, filter_="", sort=[], active=True, start=0, maxtoreturn=100, refdate=None,
-                    moduleids=None, order='asc', changeset=None, **_):
+                    moduleid=[], order='asc', changeset=None, **_):
         """ Query an RF2 table taking the historical information into account.
         
         @param table: table to query
@@ -204,8 +204,8 @@ class RF2DBConnection(object):
         @param refdate: reference date - only retrieve records older than or equal to this date
         @type refdate: C{datetime.datetime}
 
-        @param moduleids: list of module ids to constrain the query
-        @type moduleids: C{sctid} or C{list{sctid}}
+        @param moduleid: list of module ids to constrain the query
+        @type moduleid: C{sctid} or C{list{sctid}}
 
         @param changeset: changeset to include in the query
         @type changeset: C{uuid}
@@ -234,8 +234,8 @@ class RF2DBConnection(object):
             query = """ SELECT %(sel)s FROM %(table)s tbl WHERE %(filter_)s """ % locals()
         if active:
             query += " AND active = 1 "
-        if moduleids:
-            query += " AND (" + ' OR '.join(['moduleid = %s' % m for m in listify(moduleids)]) + ') '
+        if moduleid:
+            query += " AND (" + ' OR '.join(['moduleid = %s' % m for m in listify(moduleid)]) + ') '
         if changeset:
             query += " AND (changeset = '%s' OR locked = 0)" % changeset
         else:
