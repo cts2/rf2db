@@ -30,7 +30,6 @@
 """ RF2 Concept File access routines
 """
 from time import gmtime, strftime
-from cherrypy import HTTPError
 
 from rf2db.parsers.RF2BaseParser import RF2Concept
 from rf2db.parsers.RF2Iterator import RF2ConceptList, iter_parms
@@ -43,7 +42,9 @@ from rf2db.constants.RF2ValueSets import primitive, defined
 
 
 # Parameters for concept access
-concept_parms = global_rf2_parms
+concept_parms = ParameterDefinitionList(global_rf2_parms)
+concept_parms.concept = sctidparam()
+
 concept_list_parms = ParameterDefinitionList(global_rf2_parms)
 concept_list_parms.add(iter_parms)
 concept_list_parms.after = intparam()
@@ -73,14 +74,16 @@ class ConceptDB(RF2FileWrapper):
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
     @lfu_cache(maxsize=100)
-    def read(self, cid, **kwargs):
+    def read(self, cid, active=1, changeset=None, **kwargs):
         """
         Read the concept record
         @param cid: concept sctid
         @return: Updated RF2Concept record if valid else None
         """
         db = self.connect()
-        rlist = [RF2Concept(c) for c in db.query(self._fname, filter_="id=%s" % cid, **kwargs)]
+        #  We don't pass all of the parameters on because the relationship paging control may
+        #  be in the parameter list, which means we end up looking for the nth match
+        rlist = [RF2Concept(c) for c in db.query(self._fname, filter_="id=%s" % cid, active=active, changeset=changeset)]
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
@@ -215,7 +218,7 @@ class ConceptDB(RF2FileWrapper):
         return self.read(cid, changeset=changeset, **kwargs)
 
 
-    def getAllConcepts(self, active=1, order='asc', page=0, maxtoreturn=100, after=0, changeset=None, moduleids=[], **kwargs):
+    def getAllConcepts(self, active=1, order='asc', page=0, maxtoreturn=100, after=0, changeset=None, moduleid=[], **kwargs):
         """
         Read a number of concept records
         @param parmlist: parsed parameter list
@@ -234,8 +237,8 @@ class ConceptDB(RF2FileWrapper):
             query += ' AND locked = 0'
         if after:
             query += ' AND id > %s' % after
-        if moduleids:
-            query += ' AND ' + ' AND '.join(['moduleid = %s' % m for m in listify(moduleids)])
+        if moduleid:
+            query += ' AND ' + ' AND '.join(['moduleid = %s' % m for m in listify(moduleid)])
         if order:
             query += ' ORDER BY id %s' % order
         if maxtoreturn > 0:
@@ -247,11 +250,11 @@ class ConceptDB(RF2FileWrapper):
 
 
     @staticmethod
-    def asConceptList(clist, maxtoreturn=None, **kwargs):
-        if maxtoreturn is None:
-            maxtoreturn=rf2_values.defaultblocksize
-        thelist = RF2ConceptList(maxtoreturn=maxtoreturn, **kwargs)
-        if maxtoreturn==0:
+    def asConceptList(clist, parmlist):
+        if parmlist.maxtoreturn is None:
+            parmlist.maxtoreturn=rf2_values.defaultblocksize
+        thelist = RF2ConceptList(parmlist)
+        if parmlist.maxtoreturn==0:
             return thelist.finish(True, total=list(clist)[0])
         for c in clist:
             if thelist.at_end:
