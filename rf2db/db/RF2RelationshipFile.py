@@ -297,18 +297,8 @@ class RelationshipDB(RF2FileWrapper):
                                                       **kwargs)]
         return rlist[0] if len(rlist) else None
 
-    @staticmethod
-    def asRelationshipList(rels, parmlist):
-        if parmlist.maxtoreturn is None:
-            parmlist.maxtoreturn=rf2_values.defaultblockslize
-        thelist = RF2RelationshipList(parmlist)
-        if parmlist.maxtoreturn == 0:
-            return thelist.finish(True, total=list(rels)[0])
-        for d in rels:
-            if thelist.at_end:
-                return thelist.finish(True)
-            thelist.add_entry(d)
-        return thelist.finish(False)
-
+    @classmethod
+    def refsettype(cls, parms):
+        return RF2RelationshipList(parms)
 
 

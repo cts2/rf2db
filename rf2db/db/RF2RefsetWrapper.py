@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from rf2db.db.RF2FileCommon import RF2FileWrapper
+from rf2db.db.RF2FileCommon import RF2FileWrapper, rf2_values
 from rf2db.db.RF2DBConnection import RF2DBConnection
 
 class RF2RefsetWrapper(RF2FileWrapper):

@@ -32,12 +32,12 @@
 
 from rf2db.parsers.RF2RefsetParser import RF2LanguageRefsetEntry
 from rf2db.parsers.RF2Iterator import RF2LanguageReferenceSet, iter_parms
-from rf2db.db.RF2FileCommon import global_rf2_parms
+from rf2db.db.RF2FileCommon import global_rf2_parms, rf2_values
 from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
 from rf2db.db.RF2DescriptionFile import DescriptionDB
 from rf2db.utils.lfu_cache import lfu_cache
 from rf2db.utils.listutils import listify
-from rf2db.parameterparser.ParmParser import ParameterDefinitionList, enumparam
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, enumparam, sctidparam
 from rf2db.constants.RF2ValueSets import us_english, gb_english, spanish, preferred, synonym
 
 # Note: the following gyrations are needed because the language file is used to build other refset names, so
@@ -50,6 +50,12 @@ language_parms = global_rf2_parms
 language_list_parms = ParameterDefinitionList(global_rf2_parms)
 language_list_parms.add(iter_parms)
 language_list_parms.language = enumparam(['en'])
+
+language_concept_parms = ParameterDefinitionList(language_list_parms)
+language_concept_parms.concept = sctidparam()
+
+language_desc_parms = ParameterDefinitionList(language_list_parms)
+language_desc_parms.desc = sctidparam()
 
 """ Map from short form of language to refset id """
 language_map = {'en': us_english,
@@ -111,23 +117,25 @@ class LanguageDB(RF2RefsetWrapper):
         return (fltr + " AND refsetId=%s " % language_map[language]) if (language and language in language_map) else fltr
 
     @lfu_cache(maxsize=100)
-    def get_entries_for_description(self, descId, **kwargs):
+    def get_entries_for_description(self, desc=None, **kwargs):
         db = self.connect()
         return [RF2LanguageRefsetEntry(d) for d in db.query(self._fname,
-                                                            self._langfltr(
-                                                                  "referencedComponentId = %s" % descId, **kwargs),
-                                                              **kwargs)]
+                                                            filter_=self._langfltr(
+                                                                "referencedComponentId = %s" % desc, **kwargs),
+                                                            **kwargs)]
 
 
     @lfu_cache(maxsize=20)
-    def get_entries_for_concept(self, conceptId, **kwargs):
+    def get_entries_for_concept(self, concept=None, maxtoreturn=None, **kwargs):
         db = self.connect()
-        return [RF2LanguageRefsetEntry(d) for d in db.query(self._fname,
-                                                            self._langfltr("conceptId = %s" % conceptId, **kwargs),
-                                                            **kwargs)]
+        db.execute(db.build_query(self._fname,
+                                  filter_=self._langfltr("conceptId = %s" % concept, **kwargs),
+                                  maxtoreturn=maxtoreturn, **kwargs))
+        return [RF2LanguageRefsetEntry(d) for d in db.ResultsGenerator(db)] if maxtoreturn \
+            else list(db.ResultsGenerator(db))
 
     # This can't be cached because it returns a list...
-    def preferred_term_for_concepts(self, conceptIds, language='en', active=True, moduleid=[], **kwargs):
+    def preferred_term_for_concepts(self, conceptIds, language='en', active=True, moduleid=None, **kwargs):
         """ Return a list of concept id to prefname/desc id.  Note: If you just want the PN or FSN, use RF2PnAndFSN instead
 
         @param conceptIds: concept id(s) too lookup
@@ -153,16 +161,7 @@ class LanguageDB(RF2RefsetWrapper):
         db.execute(stmt)
         return {e[0]: (e[2], e[1]) for e in map(lambda r: r.split('\t', 2), db.ResultsGenerator(db))}
 
-
-    @staticmethod
-    def as_reference_set(llist, maxtoreturn=None, **kwargs):
-        thelist = RF2LanguageReferenceSet(maxtoreturn=maxtoreturn, **kwargs)
-        if maxtoreturn == 0:
-            return thelist.finish(True, total=list(llist)[0])
-        for l in llist:
-            if thelist.at_end:
-                return thelist.finish(True)
-            thelist.add_entry(l)
-        return thelist.finish(False)
-
+    @classmethod
+    def refsettype(cls, parms):
+        return RF2LanguageReferenceSet(parms)
 

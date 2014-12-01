@@ -38,50 +38,38 @@ from rf2db.parsers.RF2Iterator import RF2SimpleReferenceSet, iter_parms
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, sctidparam
 
 
+simplerefset_list_parms = ParameterDefinitionList(global_rf2_parms)
+simplerefset_list_parms.add(iter_parms)
+simplerefset_list_parms.component = sctidparam()
+simplerefset_list_parms.refset = sctidparam()
+
+
 class SimpleReferencesetDB(RF2RefsetWrapper):
    
-    directory   = 'Refset/Content'
-    prefixes    = ['der2_Refset_Simple']
-    table       = 'simplerefset'
+    directory = 'Refset/Content'
+    prefixes = ['der2_Refset_Simple']
+    table = 'simplerefset'
     
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
       %(base)s,
        %(keys)s ); """
 
-
-    _simplerefset_list_parms = ParameterDefinitionList(global_rf2_parms)
-    _simplerefset_list_parms.add(iter_parms)
-    _simplerefset_list_parms.component = sctidparam()
-    _simplerefset_list_parms.refset = sctidparam()
-    
     def __init__(self, *args, **kwargs):
         RF2RefsetWrapper.__init__(self, *args, **kwargs)
 
-    def get_simple_refset(self,  refset=None, component=None, sort=None, **kwargs):
+    def get_simple_refset(self, refset=None, component=None, sort=None, maxtoreturn=None, **kwargs):
         filtr = 'refsetId=%s' % refset if refset else 'True'
         filtr += (' AND referencedComponentId = %s ' % component) if component else ' '
         db = self.connect()
         # TODO: Sort
-        return [RF2SimpleReferenceSetEntry(e) for e in db.query(self._fname,
-                                                                filter_=filtr,
-                                                                sort=sort,
-                                                                **kwargs)]
+        db.execute(db.build_query(self._fname,
+                                  filter_=filtr,
+                                  sort=sort,
+                                  **kwargs))
+        return [RF2SimpleReferenceSetEntry(e) for e in db.ResultsGenerator(db)] if maxtoreturn \
+            else list(db.ResultsGenerator(db))
 
     @classmethod
-    def simplerefset_list_parms(cls):
-        return cls._simplerefset_list_parms
-
-
-    @staticmethod
-    def as_reference_set(mlist, maxtoreturn=None, **kwargs):
-        if maxtoreturn is None:
-            maxtoreturn=rf2_values.defaultblocksize
-        thelist=RF2SimpleReferenceSet(maxtoreturn=maxtoreturn, **kwargs)
-        if maxtoreturn == 0:
-            return thelist.finish(True, total=list(mlist)[0])
-        for m in mlist:
-            if thelist.at_end:
-                return thelist.finish(True)
-            thelist.add_entry(m)
-        return thelist.finish(False)
+    def refsettype(cls, parms):
+        return RF2SimpleReferenceSet(parms)
 

@@ -179,8 +179,8 @@ class RF2DBConnection(object):
             raise StopIteration
 
     @staticmethod
-    def build_query(table, filter_="", sort=[], active=True, start=0, maxtoreturn=100, refdate=None,
-                    moduleid=[], order='asc', changeset=None, **_):
+    def build_query(table, filter_="", sort=None, active=True, start=0, maxtoreturn=None, refdate=None,
+                    moduleid=None, order='asc', changeset=None, **_):
         """ Query an RF2 table taking the historical information into account.
         
         @param table: table to query
@@ -214,7 +214,11 @@ class RF2DBConnection(object):
         @rtype: C{String}
         """
         start = int(start) if start is not None else 0
-        maxtoreturn = int(maxtoreturn) if maxtoreturn is not None else 100
+        if maxtoreturn is None:
+            from rf2db.db.RF2FileCommon import rf2_values
+            maxtoreturn = int(rf2_values.defaultblocksize)
+        else:
+            maxtoreturn = int(maxtoreturn)
         if not filter_:
             filter_ = "1"
         if cp_values.ss and refdate:
@@ -225,6 +229,7 @@ class RF2DBConnection(object):
                 key_query += " AND effectiveTime <= '%s'" % refdate.strftime("%Y%m%d%H%M")
             key_query += " GROUP BY id) as tbl_keys"
 
+        # TODO: Count doesn't work in non ss mode
         if not cp_values.ss:
             tf = RF2DBConnection.tweakFilter(filter_)
             query = """ SELECT tbl.* FROM %(table)s tbl, %(key_query)s 
@@ -242,8 +247,10 @@ class RF2DBConnection(object):
             query += " AND locked = 0"
         if sort:
             query += " ORDER BY " + ', '.join([('tbl.%s' % e) for e in listify(sort)]) + ' %s ' % order
-        if maxtoreturn:
-            query += " LIMIT %d, %d " % (start, maxtoreturn + 1)
+        if maxtoreturn > 0:
+            query += " LIMIT %d" % (maxtoreturn+1)
+        if start:
+            query += " OFFSET %d" % start
         return query
 
     def query(self, table, **kwargs):

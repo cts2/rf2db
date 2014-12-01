@@ -81,9 +81,7 @@ class ConceptDB(RF2FileWrapper):
         @return: Updated RF2Concept record if valid else None
         """
         db = self.connect()
-        #  We don't pass all of the parameters on because the relationship paging control may
-        #  be in the parameter list, which means we end up looking for the nth match
-        rlist = [RF2Concept(c) for c in db.query(self._fname, filter_="id=%s" % cid, active=active, changeset=changeset)]
+        rlist = [RF2Concept(c) for c in db.query(self._fname, filter_="id=%s" % cid, **self.srArgs(**kwargs))]
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
@@ -218,18 +216,21 @@ class ConceptDB(RF2FileWrapper):
         return self.read(cid, changeset=changeset, **kwargs)
 
 
-    def getAllConcepts(self, active=1, order='asc', page=0, maxtoreturn=100, after=0, changeset=None, moduleid=[], **kwargs):
+    def getAllConcepts(self, active=1, order='asc', sort=None, page=0, maxtoreturn=None, after=0, changeset=None, moduleid=None, **kwargs):
         """
         Read a number of concept records
         @param parmlist: parsed parameter list
         """
+
+        if maxtoreturn is None:
+            maxtoreturn = rf2_values.defaultblocksize
 
         if not cp_values.ss:
             raise Exception('FULL table not supported for complete concept list')
 
         start = (page * maxtoreturn) if maxtoreturn > 0 else 0
 
-        query = 'SELECT %s FROM %s' % ('*' if maxtoreturn else 'count(*)', self._fname)
+        query = 'SELECT %s FROM %s' % ('*' if maxtoreturn != 0 else 'count(*)', self._fname)
         query += ' WHERE %s ' % ('active=1' if active else 'TRUE')
         if changeset:
             query += " AND (changeset = '%s' OR locked = 0)" % changeset
@@ -239,26 +240,21 @@ class ConceptDB(RF2FileWrapper):
             query += ' AND id > %s' % after
         if moduleid:
             query += ' AND ' + ' AND '.join(['moduleid = %s' % m for m in listify(moduleid)])
-        if order:
-            query += ' ORDER BY id %s' % order
+        query += ' ORDER BY '
+        if sort:
+            query += ", ".join(("%s " % s + order) for s in listify(sort)) + ", "
+        query += ' id %s' % order
         if maxtoreturn > 0:
-            query += ' LIMIT %s, %s' % (start, maxtoreturn + 1)
+            query += ' LIMIT %s' % (maxtoreturn + 1)
+        if start > 0:
+            query += ' OFFSET %s' % start
         db = self.connect()
         db.execute(query)
         return [RF2Concept(c) for c in db.ResultsGenerator(db)] if maxtoreturn else list(
             db.ResultsGenerator(db))
 
+    @classmethod
+    def refsettype(cls, parms):
+        return RF2ConceptList(parms)
 
-    @staticmethod
-    def asConceptList(clist, parmlist):
-        if parmlist.maxtoreturn is None:
-            parmlist.maxtoreturn=rf2_values.defaultblocksize
-        thelist = RF2ConceptList(parmlist)
-        if parmlist.maxtoreturn==0:
-            return thelist.finish(True, total=list(clist)[0])
-        for c in clist:
-            if thelist.at_end:
-                return thelist.finish(True)
-            thelist.add_entry(c)
-        return thelist.finish(False)
 

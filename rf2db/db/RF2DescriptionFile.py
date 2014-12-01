@@ -87,20 +87,11 @@ class DescriptionDB(RF2FileWrapper):
     @lfu_cache(maxsize=20)
     def getDescriptionById(self, descId, **kwargs):
         db = self.connect()
-        rlist = [RF2Description(d) for d in db.query(self._fname, filter_="id = %s" % descId, **kwargs)]
+        rlist = [RF2Description(d) for d in db.query(self._fname, filter_="id = %s" % descId, **self.srArgs(**kwargs))]
         return rlist[0] if len(rlist) else None
 
 
-    @staticmethod
-    def asDescriptionList(dlist, parmlist):
-        if parmlist.maxtoreturn is None:
-            parmlist.maxtoreturn=rf2_values.defaultblocksize
-        thelist = RF2DescriptionList(parmlist)
-        if parmlist.maxtoreturn == 0:
-            return thelist.finish(True, total=list(dlist)[0])
-        for d in dlist:
-            if thelist.at_end:
-                return thelist.finish(True)
-            thelist.add_entry(d)
-        return thelist.finish(False)
+    @classmethod
+    def refsettype(cls, parms):
+        return RF2DescriptionList(parms)
 

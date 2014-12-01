@@ -249,6 +249,21 @@ moduleId bigint(20) NOT NULL '''
         return []
 
     @classmethod
+    def srArgs(cls, **kwargs):
+        """ Filter out the parameters in kwargs that are for lists.  This is used to allow calls
+        for designations, validation, etc. within othe calls to not get executed as a list query.
+        @param kwargs: complete set of args
+        @return: filtered set
+        """
+        rval = kwargs.copy()
+        rval['maxtoreturn'] = 1
+        rval.pop('start', None)
+        rval.pop('page', None)
+        print("X:", rval)
+        return rval
+
+
+    @classmethod
     def idGenerator(cls):
         """ Return an id generator instance.  This isn't invoked until needed as it can entail some expense
         :return: ID generator for the default namespace
@@ -305,6 +320,30 @@ moduleId bigint(20) NOT NULL '''
         @return: The name of the wrappered file
         """
         return (cls.table + '_ss') if cp_values.ss else (cls.table + '_full')
+
+    @classmethod
+    def refsettype(cls, parms):
+        pass
+
+    @classmethod
+    def as_list(cls, mlist, parms):
+        """ Return a list within a reference set wrapper
+        @param mlist: List of elements to return
+        @param parms: Parameters
+        @return: _refsettype
+        """
+        if parms.maxtoreturn is None:
+            parms.maxtoreturn=rf2_values.defaultblocksize
+        from rf2db.parsers.RF2Iterator import RF2LanguageReferenceSet
+        thelist = RF2LanguageReferenceSet(parms)
+        thelist = cls.refsettype(parms)
+        if parms.maxtoreturn == 0:
+            return thelist.finish(True, total=list(mlist)[0])
+        for m in mlist:
+            if thelist.at_end:
+                return thelist.finish(True)
+            thelist.add_entry(m)
+        return thelist.finish(False)
 
     def _filestoload(self):
         """ Return a list of paths to files that need to be loaded

@@ -38,6 +38,11 @@ from rf2db.parsers.RF2RefsetParser import RF2ComplexMapReferenceSetEntry
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, sctidparam, strparam
 from warnings import filterwarnings
 
+complexmap_list_parms = ParameterDefinitionList(global_rf2_parms)
+complexmap_list_parms.add(iter_parms)
+complexmap_list_parms.component = sctidparam()
+complexmap_list_parms.target = strparam()
+complexmap_list_parms.refset = sctidparam()
 
 class ComplexMapDB(RF2RefsetWrapper):
       
@@ -58,13 +63,6 @@ class ComplexMapDB(RF2RefsetWrapper):
       key targ (mapTarget(16)),
       %(keys)s );"""
 
-    _complexmap_list_parms = ParameterDefinitionList(global_rf2_parms)
-    _complexmap_list_parms.add(iter_parms)
-    _complexmap_list_parms.component = sctidparam()
-    _complexmap_list_parms.target = strparam()
-    _complexmap_list_parms.refset = sctidparam()
-
-    
     def __init__(self, *args, **kwargs):
         RF2RefsetWrapper.__init__(self, *args, **kwargs)
 
@@ -88,34 +86,25 @@ class ComplexMapDB(RF2RefsetWrapper):
                    (self._fname, smdb._fname))
         db.commit()
 
-    def get_complex_map(self, component=None, target=None, sort=None, **kwargs):
-        filtr = 'refsetId=%s' % kwargs.get('refset', 'True')
+    def get_complex_map(self, refset=None, component=None, target=None, sort=None, maxtoreturn=None, **kwargs):
+        filtr = 'refsetId=%s' % refset if refset else 'TRUE'
         filtr += (' AND referencedComponentId = %s ' % component) if component else ' '
         filtr += (" AND mapTarget = '%s' " % target) if target else ' '
-        db = self.connect()
         if not sort:
             sort=['refsetId', 'referencedComponentId', 'mapGroup', 'mapPriority']
-        return [RF2ComplexMapReferenceSetEntry(e) for e in db.query(self._fname,
-                                                                      sort=sort,
-                                                                      filter_=filtr,
-                                                                      **kwargs)]
+        db = self.connect()
+        db.execute((db.build_query(self._fname,
+                                    sort=sort,
+                                    filter_=filtr,
+                                    maxtoreturn=maxtoreturn,
+                                    **kwargs)))
+        return [RF2ComplexMapReferenceSetEntry(e) for e in db.ResultsGenerator(db)] if maxtoreturn \
+            else list(db.ResultsGenerator(db))
 
     @classmethod
-    def complexmap_list_parms(cls):
-        return cls._complexmap_list_parms
+    def refsettype(cls, parms):
+        return RF2ComplexMapReferenceSet(parms)
 
-    @staticmethod
-    def as_reference_set(mlist, maxtoreturn=None, **kwargs):
-        if maxtoreturn is None:
-            maxtoreturn=rf2_values.defaultblocksize
-        thelist=RF2ComplexMapReferenceSet(maxtoreturn=maxtoreturn, **kwargs)
-        if maxtoreturn == 0:
-            return thelist.finish(True, total=list(mlist)[0])
-        for m in mlist:
-            if thelist.at_end:
-                return thelist.finish(True)
-            thelist.add_entry(m)
-        return thelist.finish(False)
 
 
 

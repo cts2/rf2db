@@ -40,7 +40,7 @@ from rf2db.utils import urlutil
 iter_parms = ParameterDefinitionList()
 iter_parms.order = enumparam(['asc', 'desc'], default='asc')
 iter_parms.page = intparam(default=0)
-iter_parms.maxtoreturn = intparam(default=100)
+iter_parms.maxtoreturn = intparam(default=20)
 iter_parms.start = computedparam(lambda p: p.page * p.maxtoreturn)
 iter_parms.sort = strparam(splittable=True)
 
@@ -79,10 +79,10 @@ class RF2Iterator(rf2.Iterator, object):
         if self._skip > 0:
             self._skip -= 1
             return True
-        if self.numEntries < self._parmlist.maxtoreturn:
+        if self._parmlist.maxtoreturn < 0 or self.numEntries < self._parmlist.maxtoreturn:
             self.entry.append(entry)
             self.numEntries += 1
-        self.at_end = self.numEntries >= self._parmlist.maxtoreturn
+        self.at_end = self._parmlist.maxtoreturn > 0 and self.numEntries >= self._parmlist.maxtoreturn
         return not self.at_end
 
     def finish(self, moreToCome=False, total=0):
@@ -93,12 +93,12 @@ class RF2Iterator(rf2.Iterator, object):
             self.numEntries = total
             self.complete = rf2.CompleteDirectory.COMPLETE
         else:
-            if self.numEntries >= self._parmlist.maxtoreturn and moreToCome:
+            if self._parmlist.maxtoreturn > 0 and self.numEntries >= self._parmlist.maxtoreturn and moreToCome:
                 self.next = urlutil.forxml(urlutil.append_params(urlutil.strip_control_params(urlutil.relative_uri()),
                                                                  dict(self._parmlist.nondefaulteditems(),
                                                                       **{'page': str(self._parmlist.page + 1),
                                                                       'maxtoreturn': str(self._parmlist.maxtoreturn)})))
-            if self._parmlist.page > 0:
+            if self._parmlist.maxtoreturn > 0 and self._parmlist.page > 0:
                 self.prev = urlutil.forxml(urlutil.append_params(urlutil.strip_control_params(urlutil.relative_uri()),
                                                                  dict(self._parmlist.nondefaulteditems(),
                                                                       **{'page': str(self._parmlist.page - 1),
