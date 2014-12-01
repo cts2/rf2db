@@ -126,7 +126,6 @@ moduleId bigint(20) NOT NULL '''
 
     _existsQuery = """SHOW TABLES LIKE '%s';"""
     _csdb = None
-    _idGenerator = None
 
 
     def __init__(self, load=False, noaction=False):
@@ -261,28 +260,22 @@ moduleId bigint(20) NOT NULL '''
         rval.pop('page', None)
         return rval
 
+    @staticmethod
+    def _generator():
+        from rf2db.db.RF2Namespaces import IDGenerator
+        return IDGenerator(ep_values.namespace)
 
-    @classmethod
-    def idGenerator(cls):
-        """ Return an id generator instance.  This isn't invoked until needed as it can entail some expense
-        :return: ID generator for the default namespace
-        """
-        if not cls._idGenerator:
-            from rf2db.db.RF2Namespaces import IDGenerator
-            cls._idGenerator = IDGenerator(ep_values.namespace)
-        return cls._idGenerator
+    @staticmethod
+    def newconceptid():
+        return RF2FileWrapper._generator().next(sctid_generator.CONCEPT)
 
-    @classmethod
-    def newconceptid(cls):
-        return cls.idGenerator().next(sctid_generator.CONCEPT)
+    @staticmethod
+    def newdescriptionid():
+        return RF2FileWrapper._generator().next(sctid_generator.DESCRIPTION)
 
-    @classmethod
-    def newdescriptionid(cls):
-        return cls.idGenerator().next(sctid_generator.DESCRIPTION)
-
-    @classmethod
-    def newrelationshipid(cls):
-        return cls.idGenerator().next(sctid_generator.RELATIONSHIP)
+    @staticmethod
+    def newrelationshipid():
+        return RF2FileWrapper._generator().next(sctid_generator.RELATIONSHIP)
 
     @classmethod
     def _rollback(cls, db, changeset, **_):

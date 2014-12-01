@@ -27,7 +27,8 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 from rf2db.schema import rf2
-from rf2db.parameterparser.ParmParser import ParameterDefinitionList, enumparam, intparam, computedparam, strparam
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, enumparam, intparam, computedparam, \
+    strparam, booleanparam
 from rf2db.utils import urlutil
 
 # Iteration Parameters
@@ -36,13 +37,16 @@ from rf2db.utils import urlutil
 #            accessed.  Possible values are I{asc} for ascending and I{desc} for descending.  Default: "asc"
 #    maxtoreturn - maximum values to return in a list. 0 we're just doing a count. Default: 100
 #    page - starting page number.  Return begins at entry C{page * maxtoreturn}.  Default: 0
-
+#    locked - if True, only return locked records. (Must be accompanied by a changeset id)
+#    sort - list of columns to sort by
+# TODO: the default on maxtoreturn needs to be pulled from the rf2 parameter set
 iter_parms = ParameterDefinitionList()
 iter_parms.order = enumparam(['asc', 'desc'], default='asc')
 iter_parms.page = intparam(default=0)
 iter_parms.maxtoreturn = intparam(default=20)
 iter_parms.start = computedparam(lambda p: p.page * p.maxtoreturn)
 iter_parms.sort = strparam(splittable=True)
+iter_parms.locked = booleanparam(default=False)
 
 
 class RF2Iterator(rf2.Iterator, object):

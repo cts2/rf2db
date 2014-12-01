@@ -29,12 +29,16 @@
 
 """ RF2 Description File Access Routines
 """
+from time import gmtime, strftime
 
 from rf2db.parsers.RF2BaseParser import RF2Description
 from rf2db.parsers.RF2Iterator import RF2DescriptionList, iter_parms
-from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, rf2_values
+from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, ep_values
 from rf2db.utils.lfu_cache import lfu_cache
-from rf2db.parameterparser.ParmParser import ParameterDefinitionList, sctidparam
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, sctidparam, intparam, enumparam, strparam
+from rf2db.constants.RF2ValueSets import definition, fsn, synonym, initialChar
+from rf2db.db.RF2ConceptFile import ConceptDB
+from rf2db.db.RF2DBConnection import cp_values
 
 # Parameters for description access
 description_parms = ParameterDefinitionList(global_rf2_parms)
@@ -49,6 +53,21 @@ pref_description_parms.concept = sctidparam()
 description_for_concept_parms = ParameterDefinitionList(global_rf2_parms)
 description_for_concept_parms.add(iter_parms)
 description_for_concept_parms.concept = sctidparam()
+
+new_description_parms = ParameterDefinitionList(global_rf2_parms)
+new_description_parms.concept = sctidparam()
+new_description_parms.descid = sctidparam()
+new_description_parms.effectiveTime = intparam()
+new_description_parms.language = enumparam(['en', 'es', 'de'], default='en')
+new_description_parms.type = enumparam(['d', 'f', 's'], default='s')
+new_description_parms.term = strparam(splittable=False)
+
+update_description_parms = ParameterDefinitionList(global_rf2_parms)
+update_description_parms.language = enumparam(['en', 'es', 'de'])
+update_description_parms.type = enumparam(['d', 'f', 's'])
+update_description_parms.term = strparam(splittable=False)
+
+delete_description_parms = ParameterDefinitionList(global_rf2_parms)
 
     
 class DescriptionDB(RF2FileWrapper):
@@ -72,6 +91,7 @@ class DescriptionDB(RF2FileWrapper):
     def __init__(self, *args, **kwargs): 
         RF2FileWrapper.__init__(self, *args, **kwargs)
         self._descTextDB = None
+        self._concDB = None
     
     @lfu_cache(maxsize=100)
     def getConceptDescription(self, conceptId, maxtoreturn=None, **kwargs):
@@ -85,11 +105,150 @@ class DescriptionDB(RF2FileWrapper):
 
 
     @lfu_cache(maxsize=20)
-    def getDescriptionById(self, descId, **kwargs):
+    def read(self, descId, **kwargs):
         db = self.connect()
         rlist = [RF2Description(d) for d in db.query(self._fname, filter_="id = %s" % descId, **self.srArgs(**kwargs))]
         return rlist[0] if len(rlist) else None
 
+    def _isValidConcept(self, conceptid, changeset, **kwargs):
+        if not conceptid:
+            return False
+        if not self._concDB:
+            self._concDB = ConceptDB()
+        kwargs['active'] = False
+        return bool(self._concDB.read(conceptid, changeset=changeset, **kwargs))
+
+
+    def _doupdate(self, descid, changeset, languagecode, typeid, term, effectivetime=None, **kwargs):
+        """ Helper function to update a concept record
+        @param cid: concept id to update
+        @param changeset: changeset
+        @param effectivetime: new effective time
+        @param definitionstatusid: new definition status is not empty
+        @param kwargs: context
+        """
+        fname = self._fname
+        if not effectivetime:
+            effectivetime = strftime("%Y%m%d", gmtime())
+        query = "UPDATE %(fname)s SET effectiveTime=%(effectivetime)s, "
+        query += "languageCode='%(languagecode)s', typeId=%(typeid)s, term='%(term)s' "
+        query += "WHERE id=%(descid)s AND changeset='%(changeset)s' AND locked=1"
+        db = self.connect()
+        db.execute_query(query % vars(), **kwargs)
+        db.commit()
+
+
+    def add(self, changeset, concept=None, descid=None, effectivetime=None,
+            moduleid=None, language='en', type='s', term='', **kwargs):
+        """
+        @param changeset: Changeset identifier.
+        @type changeset: UUID
+        @param concept: concept identifier for description
+        @param descid: description identifier.  Default: next description id in server namespace
+        @param effectivetime: Timestamp for record.  Default: today's date
+        @param moduleid: owning module.  Default: service module (ep_values.moduleId)
+        @param language: language.  Default: 'en'
+        @param type: 'd', 'f', 's' (definition, fsn, synonym). Default: Synonym
+        @param term: actual description
+        @return: Description record or none if error.
+        """
+        if not self.changesetisvalid(changeset):
+            return self.changeseterror(changeset)
+        if not  self._isValidConcept(concept, changeset, **kwargs):
+            return "Unrecognized concept identifier: %s" % concept
+        term = term.strip()
+        if not term:
+            return "Nonblank term must be supplied"
+
+        db = self.connect()
+        if not descid:
+            descid = self.newdescriptionid()
+        if not effectivetime:
+            effectivetime = strftime("%Y%m%d", gmtime())
+        if not moduleid:
+            moduleid = ep_values.moduleid
+        typeid = definition if type == 'd' else fsn if type == 'f' else synonym
+
+        fname = self._fname
+        csig = initialChar
+        db.execute("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, "
+                   "conceptId, languageCode, typeId, term, caseSignificanceId, changeset, locked) "
+                   "VALUES (%(descid)s, %(effectivetime)s, 1, %(moduleid)s, "
+                   "%(concept)s, '%(language)s', %(typeid)s, '%(term)s', %(csig)s, '%(changeset)s', 1 )" % vars())
+        db.commit()
+        return self.read(descid, changeset=changeset, **kwargs)
+
+    # TODO: allow case significance add and update
+    def update(self, desc, changeset=None, language=None, type=None, term=None, **kwargs):
+        """ Update an existing concept record
+        @param desc: description identifier.
+        @param changeset: containing changeset
+        @param language: language.  Default: 'en'
+        @param type: 'd', 'f', 's' (definition, fsn, synonym). Default: Synonym
+        @param term: actual description
+        @param kwargs: context
+        @return: new record if update successful, otherwise an error message.
+        """
+        if not self.changesetisvalid(changeset):
+            return self.changeseterror(changeset)
+        current_value = self.read(desc, changeset=changeset, **kwargs)
+        if not current_value:
+            return "UnknownEntity - concept not found"
+        if term is not None:
+            term = term.strip() if term is not None else current_value.term
+        typeid = current_value.typeId if type is None else definition if type == 'd' else fsn if type == 'f' else synonym
+        language = current_value.languageCode if language is None else language
+        changed = current_value.typeId != typeid or current_value.term != term or current_value.languageCode != language
+
+        if not current_value.locked:
+            if current_value.changeset != changeset or \
+                changed:
+                if cp_values.ss:
+                    return "Description: Cannot update an existing snapshot record"
+                else:
+                    return "Description: Full record update is not implemented"
+            else:
+                return current_value
+        else:
+            if current_value.changeset == changeset:
+                if cp_values.ss:
+                    self._doupdate(desc, changeset, language, typeid, term, **kwargs)
+                    return self.read(desc, _nocache=True, **kwargs)
+                else:
+                    return "Description: Full record update is not implemented"
+            else:
+                return "Description: Record is locked under a different changeset"
+
+
+    def delete(self, desc, changeset=None, **kwargs):
+        """ Delete or deactivate a description
+        @param desc: description identifier
+        @param changeset: containing changeset
+        @param kwargs: context
+        @return: None if success otherwise an error message
+        """
+        if not self.changesetisvalid(changeset):
+            return self.changeseterror(changeset)
+
+        # delete is idempotent, so if we can't find it or it is already gone claim success
+        kwargs['active'] = 0        # read even if inactive
+        current_value = self.read(desc, **kwargs)
+        if not current_value or not current_value.isActive():
+            return None
+
+        if not current_value.locked:
+            if cp_values.ss:
+                return "Cannot delete committed descriptions in a snapshot database"
+            else:
+                return "Description: Full record delete is not implemented"
+        else:
+            if current_value.changeset == changeset:
+                db = self.connect()
+                db.execute_query("DELETE FROM %(fname)s WHERE id=%(desc)s AND changeset='%(changeset)s' AND locked=1" % vars())
+                db.commit()
+                return None
+            else:
+                return "Description: Record is locked under a different changeset"
 
     @classmethod
     def refsettype(cls, parms):

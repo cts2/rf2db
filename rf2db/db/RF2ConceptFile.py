@@ -98,7 +98,7 @@ class ConceptDB(RF2FileWrapper):
             effectivetime = strftime("%Y%m%d", gmtime())
         query = "UPDATE %(fname)s SET effectiveTime=%(effectivetime)s, "
         query += "definitionStatusId=%(definitionstatusid)s, " if definitionstatusid else ""
-        query += "WHERE id=%(cid)s AND changeset='%changeset)s AND locked=1"
+        query += "WHERE id=%(cid)s AND changeset='%(changeset)s' AND locked=1"
         db = self.connect()
         db.execute_query(query % vars(), **kwargs)
         db.commit()
@@ -113,7 +113,7 @@ class ConceptDB(RF2FileWrapper):
         """
         if not self.changesetisvalid(changeset):
             return self.changeseterror(changeset)
-        current_value = self.read(cid, **kwargs)
+        current_value = self.read(cid, changeset=changeset, **kwargs)
         if not current_value:
             return "UnknownEntity - concept not found"
         # Various situations:
@@ -216,7 +216,8 @@ class ConceptDB(RF2FileWrapper):
         return self.read(cid, changeset=changeset, **kwargs)
 
 
-    def getAllConcepts(self, active=1, order='asc', sort=None, page=0, maxtoreturn=None, after=0, changeset=None, moduleid=None, **kwargs):
+    def getAllConcepts(self, active=1, order='asc', sort=None, page=0, maxtoreturn=None, after=0,
+                       changeset=None, moduleid=None, locked=False, **kwargs):
         """
         Read a number of concept records
         @param parmlist: parsed parameter list
@@ -230,10 +231,14 @@ class ConceptDB(RF2FileWrapper):
 
         start = (page * maxtoreturn) if maxtoreturn > 0 else 0
 
+
         query = 'SELECT %s FROM %s' % ('*' if maxtoreturn != 0 else 'count(*)', self._fname)
         query += ' WHERE %s ' % ('active=1' if active else 'TRUE')
         if changeset:
-            query += " AND (changeset = '%s' OR locked = 0)" % changeset
+            if locked:
+                query += " AND (changeset = '%s' AND locked = 1)" % changeset
+            else:
+                query += " AND (changeset = '%s' OR locked = 0)" % changeset
         else:
             query += ' AND locked = 0'
         if after:
