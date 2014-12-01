@@ -259,7 +259,6 @@ moduleId bigint(20) NOT NULL '''
         rval['maxtoreturn'] = 1
         rval.pop('start', None)
         rval.pop('page', None)
-        print("X:", rval)
         return rval
 
 

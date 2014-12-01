@@ -81,7 +81,7 @@ class ConceptDB(RF2FileWrapper):
         @return: Updated RF2Concept record if valid else None
         """
         db = self.connect()
-        rlist = [RF2Concept(c) for c in db.query(self._fname, filter_="id=%s" % cid, **self.srArgs(**kwargs))]
+        rlist = [RF2Concept(c) for c in db.query(self._fname, filter_="id=%s" % cid, changeset=changeset, **self.srArgs(**kwargs))]
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
