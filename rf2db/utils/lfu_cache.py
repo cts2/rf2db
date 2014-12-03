@@ -43,10 +43,49 @@ from rf2db.db.RF2DBConnection import db_values
 from rf2db.parameterparser.ParmParser import booleanparam
 
 class Counter(dict):
-    """Mapping where default values are zero"""
+    """Dictionary where default values are zero"""
     def __missing__(self, key):
         return 0
 
+
+class Cache():
+    kwd_mark = object()     # separate positional and keyword args
+
+    def __init__(self, maxsize=100):
+        self.maxsize = maxsize
+        self.cache = {}
+        self.use_count = Counter()
+        self.hits = self.misses = self.bypasses = self.resets = 0
+
+    def clear(self, clear_counts=False):
+        """ Clear all caches
+        @param clear_counts: Reset counts.  Primarily testing.
+        """
+        self.cache.clear()
+        self.use_count.clear()
+        self.resets += 1
+        if clear_counts:
+            self.hits = self.misses = self.bypasses = 0
+
+    def stats(self):
+        return self.hits, self.misses, self.bypasses
+
+all_caches = []
+
+
+def clear_caches(clear_counts=False):
+    list(c.clear(clear_counts) for c in all_caches)
+
+
+def sum_tuples(t):
+    if not t:
+        return 0,
+    return reduce(lambda a, b: map(lambda e: e[0] + e[1], zip(a, b)), t, [0] * len(t[0]))
+
+
+def cache_stats():
+    l = list(c.stats() for c in all_caches)
+    return sum_tuples(l)
 
 def lfu_cache(maxsize=100):
     """Least-frequenty-used cache decorator.
@@ -60,48 +99,43 @@ def lfu_cache(maxsize=100):
     @type maxsize: C{int}
 
     """
+
     def decorating_function(user_function):
-        cache = {}                      # mapping of args to results
-        use_count = Counter()           # times each key has been accessed
-        kwd_mark = object()           # separate positional and keyword args
+        cache = Cache(maxsize)
 
         @functools.wraps(user_function)
         def wrapper(*args, **kwargs):
             if booleanparam.v(db_values.nocache, False):
                 return user_function(*args, **kwargs)
             key = args[1:]
-            if kwargs:
-                key += (kwd_mark,)
-                key += tuple(sorted( (k,v if isinstance(v, collections.Hashable) else str(v)) for k,v in kwargs.items()))
+            kwkey = tuple(sorted((k, v if isinstance(v, collections.Hashable) else str(v))
+                                 for k, v in kwargs.items()  if not k.startswith('_')))
+            if kwkey:
+                key += (Cache.kwd_mark,) + kwkey
             # Refresh the cache if needed
             if kwargs.pop('_nocache', False):
-                cache.pop(key, None)
-                wrapper.nocaches += 1
+                cache.cache.pop(key, None)
+                cache.bypasses += 1
             # get cache entry or compute if not found
             try:
-                result = cache[key]
-                use_count[key] += 1
-                wrapper.hits += 1
+                result = cache.cache[key]
+                cache.use_count[key] += 1
+                cache.hits += 1
             except KeyError:
                 # need to add something to the cache, make room if necessary
-                if len(cache) == maxsize:
-                    for k, _ in nsmallest(maxsize // 10 or 1,
-                                            use_count.iteritems(),
+                if len(cache.cache) == cache.maxsize:
+                    for k, _ in nsmallest(cache.maxsize // 10 or 1,
+                                            cache.use_count.iteritems(),
                                             key=itemgetter(1)):
-                        del cache[k], use_count[k]
-                cache[key] = user_function(*args, **kwargs)
-                result = cache[key]
-                use_count[key] += 1
-                wrapper.misses += 1
+                        del cache.cache[k], cache.use_count[k]
+                cache.cache[key] = user_function(*args, **kwargs)
+                result = cache.cache[key]
+                cache.use_count[key] += 1
+                cache.misses += 1
             return result
 
-        def clear():
-            cache.clear()
-            use_count.clear()
-            wrapper.hits = wrapper.misses = 0
-
-        wrapper.hits = wrapper.misses = wrapper.nocaches = 0
-        wrapper.clear = clear
         wrapper.cache = cache
+        all_caches.append(cache)
         return wrapper
+
     return decorating_function
