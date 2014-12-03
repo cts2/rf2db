@@ -41,6 +41,8 @@ from rf2db.db.RF2DescriptionFile import DescriptionDB
 from rf2db.db.RF2DescriptionTextFile import DescriptionTextDB
 from rf2db.db.RF2RelationshipFile import RelationshipDB
 from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB
+from rf2db.db.RF2LanguageFile import LanguageDB
+from rf2db.db.RF2SimpleReferencesetFile import SimpleReferencesetDB
 
 changeset_parms = ParameterDefinitionList(global_rf2_parms)
 changeset_parms.open = booleanparam(default=True)
@@ -91,7 +93,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         """ Read the supplied changeset record
         @param changeset: UUID of the changeset
         @param kwargs: Contextual arguments
-        @return: RF2ChangeSetReferenceEntry or None if refset doesn't exist
+        @return: RF2ChangeSetReferenceEntry or None if changeset doesn't exist
         """
         if not changeset:
             return None
@@ -101,7 +103,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
-    def new_changeset(self, creator=None, description=None, **kwargs):
+    def new_changeset(self, changeset=None, creator=None, description=None, **kwargs):
         """ Create a new locked changeset record
         @param creator: Changeset creator
         @param description: Changeset description
@@ -113,7 +115,8 @@ class ChangeSetDB(RF2RefsetWrapper):
         effectivetime = strftime("%Y%m%d", gmtime())
         moduleid = ep_values.moduleid
         refsetid = changeSetRefSet
-        csid = str(uuid.uuid4())
+        csid = str(uuid.uuid4()) if not changeset else changeset
+
 
         query = "INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, " \
                 "refsetId, referencedComponentId, changeset, locked"
@@ -124,9 +127,10 @@ class ChangeSetDB(RF2RefsetWrapper):
         query += ", '%(description)s'" if description is not None else ""
         query += ")"
         db = self.connect()
-        db.execute(query % vars())
-        db.commit()
-        kwargs['changeset'] = csid
+        results = db.execute_query(query % vars())['affected_rows']
+        if results:
+            db.commit()
+            kwargs['changeset'] = csid
         return self.get_changeset(**kwargs)
 
     def isValid(self, changeset=None, **kwargs):
@@ -150,6 +154,12 @@ class ChangeSetDB(RF2RefsetWrapper):
         if changeset:
             db = self.connect()
             rval.nConcepts = ConceptDB._rollback(db, changeset, **kwargs)['affected_rows']
+            rval.nDescriptions = DescriptionDB._rollback(db, changeset, **kwargs)['affected_rows']
+            rval.nDescTexts = DescriptionTextDB._rollback(db, changeset, **kwargs)['affected_rows']
+            rval.nLanguages = LanguageDB._rollback(db, changeset, **kwargs)['affected_rows']
+            rval.nRelationships = RelationshipDB._rollback(db, changeset, **kwargs)['affected_rows']
+            rval.nStatedRelationships = StatedRelationshipDB._rollback(db, changeset, **kwargs)['affected_rows']
+            rval.nSimpleRefsets = SimpleReferencesetDB._rollback(db, changeset, **kwargs)['affected_rows']
             rval.nChangesets = self._rollback(db, changeset, **kwargs)['affected_rows']
             db.commit()
         return rval
@@ -163,9 +173,16 @@ class ChangeSetDB(RF2RefsetWrapper):
         @return: Count of things that are rolled back.
         """
         rval = CountList()
+        # TODO: The entries below should be table driven
         if changeset:
             db = self.connect()
             rval.nConcepts = ConceptDB._commit(db, changeset, **kwargs)['affected_rows']
+            rval.nDescriptions = DescriptionDB._commit(db, changeset, **kwargs)['affected_rows']
+            rval.nDescTexts = DescriptionTextDB._commit(db, changeset, **kwargs)['affected_rows']
+            rval.nLanguages = LanguageDB._commit(db, changeset, **kwargs)['affected_rows']
+            rval.nRelationships = RelationshipDB._commit(db, changeset, **kwargs)['affected_rows']
+            rval.nStatedRelationships = StatedRelationshipDB._commit(db, changeset, **kwargs)['affected_rows']
+            rval.nSimpleRefsets = SimpleReferencesetDB._commit(db, changeset, **kwargs)['affected_rows']
             rval.nChangesets = self._commit(db, changeset, **kwargs)['affected_rows']
             db.commit()
         return rval

@@ -108,8 +108,8 @@ class RelationshipDB(RF2FileWrapper):
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
     @lfu_cache(maxsize=100)
-    def _existsRecs(self, filtr, stated=False, **kwargs):
-        if stated and self._srdb._existsrecs(filtr, **kwargs):
+    def recsexist(self, filtr, stated=False, **kwargs):
+        if stated and self._srdb.recsexist(filtr, **kwargs):
             return True
         db = self.connect()
         return bool([r for r in db.query(self._fname, build_filtr(filtr, **kwargs))])
@@ -195,13 +195,13 @@ class RelationshipDB(RF2FileWrapper):
         bw.flush()
 
     def existsSourceRecs(self, sourceId, **kwargs):
-        return self._existsRecs('sourceId = %s ' % sourceId, **kwargs)
+        return self.recsexist('sourceId = %s ' % sourceId, **kwargs)
 
     def existsPredicateRecs(self, predicateId, **kwargs):
-        return self._existsRecs('typeId = %s ' % predicateId, **kwargs)
+        return self.recsexist('typeId = %s ' % predicateId, **kwargs)
 
     def existsTargetRecs(self, targetId, **kwargs):
-        return self._existsRecs('destinationId = %s ' % targetId, **kwargs)
+        return self.recsexist('destinationId = %s ' % targetId, **kwargs)
 
 
     @lfu_cache(maxsize=100)

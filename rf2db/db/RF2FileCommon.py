@@ -326,8 +326,6 @@ moduleId bigint(20) NOT NULL '''
         """
         if parms.maxtoreturn is None:
             parms.maxtoreturn=rf2_values.defaultblocksize
-        from rf2db.parsers.RF2Iterator import RF2LanguageReferenceSet
-        thelist = RF2LanguageReferenceSet(parms)
         thelist = cls.refsettype(parms)
         if parms.maxtoreturn == 0:
             return thelist.finish(True, total=list(mlist)[0])

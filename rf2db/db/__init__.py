@@ -26,6 +26,10 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-__all__ = ['RF1CanonicalCore', 'RF2ConceptFile', 'RF2DBConnection', 'RF2DescriptionFile', 'RF2DescriptionTextFile',
-           'RF2FileCommon', 'RF2LanguageFile', 'RF2ModuleVersionsFile', 'RF2RelationshipFile', 'RF2SimpleMapFile',
-           'RF2SimpleReferencesetFile', 'RF2StatedRelationshipFile', 'RF2TransitiveClosure']
+__all__ = ['AllFiles', 'CTS2Entity', 'RF1CanonicalCore', 'RF2ChangesetFile', 'RF2ComplexMapFile', 'RF2ConceptFile',
+           'RF2DBConnection', 'RF2DescriptionFile', 'RF2DescriptionTextFile',
+           'RF2FileCommon', 'RF2LanguageFile', 'RF2ModuleDependencyFile', 'RF2ModuleVersionsFile',
+           'RF2Namespaces', 'RF2PnAndFSN', 'RF2RefsetWrapper', 'RF2RelationshipFile', 'RF2SimpleMapFile',
+           'RF2SimpleReferencesetFile', 'RF2StatedRelationshipFile', 'RF2TransitiveClosure',
+           'RF2TransitiveChildren', 'RF2TransitiveChildrenCanonical', 'RF2TransitiveClosureCanonical']
+

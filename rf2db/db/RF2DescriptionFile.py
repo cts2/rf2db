@@ -34,11 +34,14 @@ from time import gmtime, strftime
 from rf2db.parsers.RF2BaseParser import RF2Description
 from rf2db.parsers.RF2Iterator import RF2DescriptionList, iter_parms
 from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, ep_values
-from rf2db.utils.lfu_cache import lfu_cache
+from rf2db.utils.lfu_cache import lfu_cache, clear_caches
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, sctidparam, intparam, enumparam, strparam
-from rf2db.constants.RF2ValueSets import definition, fsn, synonym, initialChar
+from rf2db.constants.RF2ValueSets import definition, fsn, synonym, initialChar, preferred, acceptable, us_english, \
+    gb_english, spanish
 from rf2db.db.RF2ConceptFile import ConceptDB
 from rf2db.db.RF2DBConnection import cp_values
+from rf2db.db.RF2LanguageFile import LanguageDB
+import rf2db.utils.lfu_cache
 
 # Parameters for description access
 description_parms = ParameterDefinitionList(global_rf2_parms)
@@ -59,7 +62,7 @@ new_description_parms.concept = sctidparam()
 new_description_parms.descid = sctidparam()
 new_description_parms.effectiveTime = intparam()
 new_description_parms.language = enumparam(['en', 'es', 'de'], default='en')
-new_description_parms.type = enumparam(['d', 'f', 's'], default='s')
+new_description_parms.type = enumparam(['d', 'f', 'p', 's'], default='p')
 new_description_parms.term = strparam(splittable=False)
 
 update_description_parms = ParameterDefinitionList(global_rf2_parms)
@@ -106,6 +109,7 @@ class DescriptionDB(RF2FileWrapper):
 
     @lfu_cache(maxsize=20)
     def read(self, descId, **kwargs):
+        rf2db.utils.lfu_cache.clear_caches()
         db = self.connect()
         rlist = [RF2Description(d) for d in db.query(self._fname, filter_="id = %s" % descId, **self.srArgs(**kwargs))]
         return rlist[0] if len(rlist) else None
@@ -136,19 +140,20 @@ class DescriptionDB(RF2FileWrapper):
         db = self.connect()
         db.execute_query(query % vars(), **kwargs)
         db.commit()
+        clear_caches()
 
 
     def add(self, changeset, concept=None, descid=None, effectivetime=None,
-            moduleid=None, language='en', type='s', term='', **kwargs):
-        """
+            moduleid=None, language='en', type='p', term='', **kwargs):
+        """ Add a new description / language refset entry
         @param changeset: Changeset identifier.
         @type changeset: UUID
         @param concept: concept identifier for description
         @param descid: description identifier.  Default: next description id in server namespace
         @param effectivetime: Timestamp for record.  Default: today's date
         @param moduleid: owning module.  Default: service module (ep_values.moduleId)
-        @param language: language.  Default: 'en'
-        @param type: 'd', 'f', 's' (definition, fsn, synonym). Default: Synonym
+        @param language: list of languages.  default: ['en']
+        @param type: 'd', 'f', 's', 'p' (definition, fsn, synonym, preferred). Default: Preferred
         @param term: actual description
         @return: Description record or none if error.
         """
@@ -159,7 +164,7 @@ class DescriptionDB(RF2FileWrapper):
         term = term.strip()
         if not term:
             return "Nonblank term must be supplied"
-
+        from rf2db.db.RF2DescriptionTextFile import DescriptionTextDB
         db = self.connect()
         if not descid:
             descid = self.newdescriptionid()
@@ -167,15 +172,37 @@ class DescriptionDB(RF2FileWrapper):
             effectivetime = strftime("%Y%m%d", gmtime())
         if not moduleid:
             moduleid = ep_values.moduleid
+        language = language.lower()
         typeid = definition if type == 'd' else fsn if type == 'f' else synonym
 
         fname = self._fname
         csig = initialChar
-        db.execute("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, "
+        db.execute_query("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, "
                    "conceptId, languageCode, typeId, term, caseSignificanceId, changeset, locked) "
                    "VALUES (%(descid)s, %(effectivetime)s, 1, %(moduleid)s, "
                    "%(concept)s, '%(language)s', %(typeid)s, '%(term)s', %(csig)s, '%(changeset)s', 1 )" % vars())
+        fname = DescriptionTextDB.fname()
+        db.execute_query("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, "
+                   "conceptId, languageCode, typeId, term, caseSignificanceId, changeset, locked) "
+                   "VALUES (%(descid)s, %(effectivetime)s, 1, %(moduleid)s, "
+                   "%(concept)s, '%(language)s', %(typeid)s, '%(term)s', %(csig)s, '%(changeset)s', 1 )" % vars())
+        if (type == 'p' or type == 's') and language in ('en'):
+            acc = preferred if type == 'p' else acceptable
+            # TODO: There is already a language map on the language side.  This code id redundant
+            if language == 'en':
+                # 'en' means the same in both languages
+                LanguageDB().add(db, effectivetime, moduleid, us_english, descid, acc, concept,  changeset, **kwargs)
+                LanguageDB().add(db, effectivetime, moduleid, gb_english, descid, acc, concept,  changeset, **kwargs)
+            elif language == 'en-gb':
+                LanguageDB().add(db, effectivetime, moduleid, gb_english, descid, acc, concept,  changeset, **kwargs)
+            elif language == 'en-us':
+                LanguageDB().add(db, effectivetime, moduleid, gb_english, descid, acc, concept,  changeset, **kwargs)
+            elif language == 'es':
+                LanguageDB().add(db, effectivetime, moduleid, spanish, descid, acc, concept,  changeset, **kwargs)
+            else:
+                return "Unknown language code: %s" % language
         db.commit()
+        clear_caches()
         return self.read(descid, changeset=changeset, **kwargs)
 
     # TODO: allow case significance add and update
@@ -193,7 +220,7 @@ class DescriptionDB(RF2FileWrapper):
             return self.changeseterror(changeset)
         current_value = self.read(desc, changeset=changeset, **kwargs)
         if not current_value:
-            return "UnknownEntity - concept not found"
+            return "UnknownEntity - description not found"
         if term is not None:
             term = term.strip() if term is not None else current_value.term
         typeid = current_value.typeId if type is None else definition if type == 'd' else fsn if type == 'f' else synonym
@@ -213,7 +240,8 @@ class DescriptionDB(RF2FileWrapper):
             if current_value.changeset == changeset:
                 if cp_values.ss:
                     self._doupdate(desc, changeset, language, typeid, term, **kwargs)
-                    return self.read(desc, _nocache=True, **kwargs)
+                    clear_caches()
+                    return self.read(desc, _nocache=True, changeset=changeset, **kwargs)
                 else:
                     return "Description: Full record update is not implemented"
             else:
@@ -246,6 +274,7 @@ class DescriptionDB(RF2FileWrapper):
                 db = self.connect()
                 db.execute_query("DELETE FROM %(fname)s WHERE id=%(desc)s AND changeset='%(changeset)s' AND locked=1" % vars())
                 db.commit()
+                clear_caches()
                 return None
             else:
                 return "Description: Record is locked under a different changeset"

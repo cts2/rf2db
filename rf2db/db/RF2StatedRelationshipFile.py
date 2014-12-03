@@ -63,7 +63,7 @@ class StatedRelationshipDB(RF2FileWrapper):
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
-    def _existsrecs(self, filtr, **kwargs):
+    def recsexist(self, filtr, **kwargs):
         db = self.connect()
         kwargs['maxtoreturn'] = 1
         return bool([r for r in db.query(self._fname,
@@ -85,13 +85,13 @@ class StatedRelationshipDB(RF2FileWrapper):
 
 
     def existsSourceRecs(self, sourceId, **kwargs):
-        return self._existsrecs('sourceId = %s ' % sourceId, **kwargs)
+        return self.recsexist('sourceId = %s ' % sourceId, **kwargs)
      
     def existsTargetRecs(self, targetId, **kwargs):
-        return self._existsrecs('destinationId = %s ' % targetId, **kwargs)
+        return self.recsexist('destinationId = %s ' % targetId, **kwargs)
     
     def existsPredicateRecs(self, predicateId, **kwargs):
-        return self._existsrecs('typeId = %s ' % predicateId, **kwargs)
+        return self.recsexist('typeId = %s ' % predicateId, **kwargs)
 
 
     def _getRecs(self, filtr, maxtoreturn=None, **kwargs):

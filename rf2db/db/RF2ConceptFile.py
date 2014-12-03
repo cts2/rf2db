@@ -35,7 +35,7 @@ from rf2db.parsers.RF2BaseParser import RF2Concept
 from rf2db.parsers.RF2Iterator import RF2ConceptList, iter_parms
 from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, ep_values, rf2_values
 from rf2db.db.RF2DBConnection import cp_values
-from rf2db.utils.lfu_cache import lfu_cache
+from rf2db.utils.lfu_cache import lfu_cache, clear_caches
 from rf2db.utils.listutils import listify
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, intparam, enumparam, sctidparam
 from rf2db.constants.RF2ValueSets import primitive, defined
@@ -145,8 +145,10 @@ class ConceptDB(RF2FileWrapper):
         else:
             if current_value.changeset == changeset:
                 if cp_values.ss:
-                    definitionstatusid = primitive if (definitionstatus=='p' and current_value.isFullyDefined) else defined if (definitionstatus=='f' and current_value.isPrimitive) else None
+                    definitionstatusid = primitive if (definitionstatus == 'p' and current_value.isFullyDefined) \
+                        else defined if (definitionstatus=='f' and current_value.isPrimitive) else None
                     self._doUpdate(cid, changeset, definitionstatusid=definitionstatusid, **kwargs)
+                    clear_caches()
                     return self.read(cid, _nocache=True, **kwargs)
                 else:
                     return "Concept: Full record update is not implemented"
@@ -180,6 +182,7 @@ class ConceptDB(RF2FileWrapper):
                 db = self.connect()
                 db.execute_query("DELETE FROM %(fname)s WHERE id=%(cid)s AND changeset=%(changeset)s AND locked=1" % vars())
                 db.commit()
+                clear_caches()
                 return None
             else:
                 return "Concept: Record is locked under a different changeset"
@@ -213,6 +216,7 @@ class ConceptDB(RF2FileWrapper):
                    "VALUES (%(cid)s, %(effectivetime)s, 1, %(moduleid)s, "
                    "%(definitionstatusid)s, '%(changeset)s', 1 )" % vars())
         db.commit()
+        clear_caches()
         return self.read(cid, changeset=changeset, **kwargs)
 
 

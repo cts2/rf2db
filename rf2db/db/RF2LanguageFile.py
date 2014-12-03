@@ -29,12 +29,12 @@
 
 """ RF2 Language Refset access routines
 """
+import uuid
 
 from rf2db.parsers.RF2RefsetParser import RF2LanguageRefsetEntry
 from rf2db.parsers.RF2Iterator import RF2LanguageReferenceSet, iter_parms
 from rf2db.db.RF2FileCommon import global_rf2_parms, rf2_values
 from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
-from rf2db.db.RF2DescriptionFile import DescriptionDB
 from rf2db.utils.lfu_cache import lfu_cache
 from rf2db.utils.listutils import listify
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, enumparam, sctidparam
@@ -81,7 +81,6 @@ class LanguageDB(RF2RefsetWrapper):
         ON d.id = l.referencedcomponentid
         SET l.conceptid = d.conceptid"""
 
-    descdb = DescriptionDB()
 
     def __init__(self, *args, **kwargs):
         RF2RefsetWrapper.__init__(self, *args, **kwargs)
@@ -98,7 +97,6 @@ class LanguageDB(RF2RefsetWrapper):
 
     def loadTable(self, rf2file):
         from rf2db.db.RF2DescriptionFile import DescriptionDB
-
         if not DescriptionDB().hascontent():
             print("Description database must be loaded before loading %s" % self._fname)
             return
@@ -117,12 +115,14 @@ class LanguageDB(RF2RefsetWrapper):
         return (fltr + " AND refsetId=%s " % language_map[language]) if (language and language in language_map) else fltr
 
     @lfu_cache(maxsize=100)
-    def get_entries_for_description(self, desc=None, **kwargs):
+    def get_entries_for_description(self, desc=None, maxtoreturn=None, **kwargs):
         db = self.connect()
-        return [RF2LanguageRefsetEntry(d) for d in db.query(self._fname,
-                                                            filter_=self._langfltr(
-                                                                "referencedComponentId = %s" % desc, **kwargs),
-                                                            **kwargs)]
+        db.execute(db.build_query(self._fname,
+                                  filter_=self._langfltr(
+                                        "referencedComponentId = %s" % desc, **kwargs),
+                                  maxtoreturn=maxtoreturn, **kwargs))
+        return [RF2LanguageRefsetEntry(d) for d in db.ResultsGenerator(db)] if maxtoreturn \
+            else list(db.ResultsGenerator(db))
 
 
     @lfu_cache(maxsize=20)
@@ -143,13 +143,14 @@ class LanguageDB(RF2RefsetWrapper):
         @param parmlist: parameters.  We use active, moduleid, language.
         @return: dictionary - key is concept id, value is (prefname/description id) tuple
         """
+        from rf2db.db.RF2DescriptionFile import DescriptionDB
         db = self.connect()
         conceptIds = listify(conceptIds)
         stmt = "SELECT l.conceptId, d.id, d.term FROM %s l, %s d " \
                "WHERE l.conceptId IN (%s) AND l.referencedComponentId = d.id " \
                "AND l.acceptabilityId = %s AND d.typeid = %s" % \
                (self._fname,
-                self.descdb.fname(),
+                DescriptionDB.fname(),
                 ', '.join(str(c) for c in conceptIds),
                 preferred,
                 synonym)
@@ -161,7 +162,29 @@ class LanguageDB(RF2RefsetWrapper):
         db.execute(stmt)
         return {e[0]: (e[2], e[1]) for e in map(lambda r: r.split('\t', 2), db.ResultsGenerator(db))}
 
+
+
+    def add(self, db, effectivetime, moduleid, refsetid, descid, acceptabilityid, concept,  changeset, **kwargs):
+        """ Add a new language entry.  It is assumed that this function is invoked from the DescriptionDB
+             and the parameters have all been validated.
+        @param db: database to insert the entry into
+        @param effectivetime: timestamp
+        @param moduleid: module identifier
+        @param refsetid: the language refset (us english, gb english, etc)
+        @param descid: description identifier
+        @param acceptibilityid: accetibility id
+        @param concept: reference concept (not an RF2 parameter)
+        @param changeset: change set identifier
+        """
+        id = str(uuid.uuid4())
+        fname = self._fname
+        db.execute_query("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, "
+                         "refsetId, referencedComponentId, acceptabilityId, conceptId, changeset, locked) "
+                         "VALUES ('%(id)s', %(effectivetime)s, 1, %(moduleid)s, "
+                         "%(refsetid)s, %(descid)s, %(acceptabilityid)s, %(concept)s, '%(changeset)s', 1)" % vars())
+
+
+
     @classmethod
     def refsettype(cls, parms):
         return RF2LanguageReferenceSet(parms)
-
