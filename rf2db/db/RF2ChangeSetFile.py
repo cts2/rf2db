@@ -29,7 +29,6 @@
 """ Change Set Table access
 """
 import uuid
-from time import gmtime, strftime
 
 from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
 from rf2db.db.RF2FileCommon import global_rf2_parms, ep_values
@@ -112,8 +111,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         fname = self._fname
         db = self.connect()
         guid = str(uuid.uuid4())
-        effectivetime = strftime("%Y%m%d", gmtime())
-        moduleid = ep_values.moduleid
+        effectivetime, moduleid = self.effectivetime_and_moduleid(None, None)
         refsetid = changeSetRefSet
         csid = str(uuid.uuid4()) if not changeset else changeset
 
