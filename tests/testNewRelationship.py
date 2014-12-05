@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2013, Mayo Clinic
+# Copyright (c) 2014, Mayo Clinic
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
 #
-#     Redistributions of source code must retain the above copyright notice, this
-#     list of conditions and the following disclaimer.
+# Redistributions of source code must retain the above copyright notice, this
+# list of conditions and the following disclaimer.
 #
 #     Redistributions in binary form must reproduce the above copyright notice,
 #     this list of conditions and the following disclaimer in the documentation
@@ -27,15 +27,37 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-""" Strip C{remitems} out of a (json) dictionary.  This is used by test code to remove dynamic elements
-such as dates and access URLs
-"""
-def cleanJson(json, remitems=None):
-    if not remitems:
-        remitems = []
-    if remitems and isinstance(json, dict):
-        json.pop('accessDate', None)
-        for (k,v) in json.items():
-            if isinstance(v, dict):
-                cleanJson(v)
-    return json
+import unittest
+import uuid
+
+from tests.SetConfig import setConfig
+
+from rf2db.db.RF2RelationshipFile import RelationshipDB, new_rel_parms
+
+from rf2db.db.RF2ChangeSetFile import ChangeSetDB, add_changeset_parms, changeset_parms
+from rf2db.constants.RF2ValueSets import cimiModule
+
+test_source = 74400008   # Appendicitis
+test_target = 85315007   # Yorkshire pig
+
+
+class NewDescriptionTestCase(unittest.TestCase):
+    def setUp(self):
+        setConfig()
+        self.reldb = RelationshipDB()
+        self.csdb = ChangeSetDB()
+
+    def testadd(self):
+        testchangeset = str(self.csdb.new_changeset(**add_changeset_parms.parse().dict).referencedComponentId.uuid)
+        parms = new_rel_parms.parse(effectiveTime='20141131',
+                                    moduleId=str(cimiModule),
+                                    changeset=testchangeset,
+                                    source=test_source,
+                                    target=test_target)
+        dbrec = self.reldb.add(**parms.dict)
+        print(dbrec)
+
+
+
+if __name__ == '__main__':
+    unittest.main()
