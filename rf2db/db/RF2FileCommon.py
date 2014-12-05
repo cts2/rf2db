@@ -33,11 +33,13 @@ from __future__ import print_function
 
 import os
 import sys
+from time import gmtime, strftime
 
 from rf2db.db.RF2DBConnection import RF2DBConnection, cp_values
 from rf2db.parameterparser.ParmParser import booleanparam, sctidparam, strparam
 from rf2db.utils.sctid_generator import sctid_generator
 from rf2db.db.RF2Namespaces import DecodedNamespace
+from rf2db.utils.lfu_cache import lfu_cache
 
 from ConfigManager.ConfigArgs import ConfigArg, ConfigArgs
 from ConfigManager.ConfigManager import ConfigManager
@@ -126,6 +128,7 @@ moduleId bigint(20) NOT NULL '''
 
     _existsQuery = """SHOW TABLES LIKE '%s';"""
     _csdb = None
+    _concdb = None
 
 
     def __init__(self, load=False, noaction=False):
@@ -299,7 +302,7 @@ moduleId bigint(20) NOT NULL '''
             from rf2db.db.RF2ChangeSetFile import ChangeSetDB
             cls._csdb = ChangeSetDB()
         if not cls._csdb.isValid(changeset):
-            return "Change set is not valid or has been committed"
+            return "Change set (%s) is not valid or has been committed" % changeset
         return None
 
     @property
@@ -351,5 +354,31 @@ moduleId bigint(20) NOT NULL '''
                 print("Directory %s does not exist!" % base, file=sys.stderr)
                 raise StopIteration
 
+    lfu_cache()
+    def validconcept(self, conceptid, changeset, **kwargs):
+        """ Determine whether the supplied concept is valid (active or inactive)
+        @param conceptid: concept
+        @param changeset: context
+        @param kwargs: context
+        @return: True if valid false otherwise
+        """
+        if not conceptid:
+            return False
+        if not self._concdb:
+            from rf2db.db.RF2ConceptFile import ConceptDB
+            self._concdb = ConceptDB()
+        kwargs['active'] = False
+        return bool(self._concdb.read(conceptid, changeset=changeset, **kwargs))
 
-
+    @staticmethod
+    def effectivetime_and_moduleid(effectivetime, moduleid):
+        """
+        @param effectivetime:
+        @param moduleid:
+        @return:
+        """
+        if not effectivetime:
+            effectivetime = strftime("%Y%m%d", gmtime())
+        if not moduleid:
+            moduleid = ep_values.moduleid
+        return effectivetime, moduleid

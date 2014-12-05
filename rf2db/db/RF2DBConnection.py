@@ -135,14 +135,14 @@ class RF2DBConnection(object):
                 print >> sys.stderr, ("**********", stmt)
                 raise e
 
-    def execute(self, stmt, retryCount=0):
+    def execute(self, stmt, retrycount=0):
         """ Execute stmt.  
         
         @param stmt:  The sql statement to execute
         @type stmt: C{str}
         
-        @param retryCount: The number of times the execution has been tried
-        @type retryCount: C{int}
+        @param retrycount: The number of times the execution has been tried
+        @type retrycount: C{int}
         
         @return: Result of cursor.execute(stmt)
         """
@@ -155,10 +155,10 @@ class RF2DBConnection(object):
             return self._cursor
         except db.Error as e:
             self._disconnect()
-            if retryCount == 0 and e.args[0] == 2006:
+            if retrycount == 0 and e.args[0] == 2006:
                 print >> sys.stderr, ("Database timeout error - reconnecting")
                 self._connect()
-                return self.execute(stmt, retryCount + 1)
+                return self.execute(stmt, retrycount + 1)
             else:
                 print >> sys.stderr, ("**********", stmt)
                 raise e

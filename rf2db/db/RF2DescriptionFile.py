@@ -29,16 +29,14 @@
 
 """ RF2 Description File Access Routines
 """
-from time import gmtime, strftime
 
 from rf2db.parsers.RF2BaseParser import RF2Description
 from rf2db.parsers.RF2Iterator import RF2DescriptionList, iter_parms
-from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, ep_values
+from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms
 from rf2db.utils.lfu_cache import lfu_cache, clear_caches
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, sctidparam, intparam, enumparam, strparam
 from rf2db.constants.RF2ValueSets import definition, fsn, synonym, initialChar, preferred, acceptable, us_english, \
     gb_english, spanish
-from rf2db.db.RF2ConceptFile import ConceptDB
 from rf2db.db.RF2DBConnection import cp_values
 from rf2db.db.RF2LanguageFile import LanguageDB
 import rf2db.utils.lfu_cache
@@ -114,13 +112,6 @@ class DescriptionDB(RF2FileWrapper):
         rlist = [RF2Description(d) for d in db.query(self._fname, filter_="id = %s" % descId, **self.srArgs(**kwargs))]
         return rlist[0] if len(rlist) else None
 
-    def _isValidConcept(self, conceptid, changeset, **kwargs):
-        if not conceptid:
-            return False
-        if not self._concDB:
-            self._concDB = ConceptDB()
-        kwargs['active'] = False
-        return bool(self._concDB.read(conceptid, changeset=changeset, **kwargs))
 
 
     def _doupdate(self, descid, changeset, languagecode, typeid, term, effectivetime=None, **kwargs):
@@ -132,8 +123,7 @@ class DescriptionDB(RF2FileWrapper):
         @param kwargs: context
         """
         fname = self._fname
-        if not effectivetime:
-            effectivetime = strftime("%Y%m%d", gmtime())
+        effectivetime, _ = self.effectivetime_and_moduleid(effectivetime, None)
         query = "UPDATE %(fname)s SET effectiveTime=%(effectivetime)s, "
         query += "languageCode='%(languagecode)s', typeId=%(typeid)s, term='%(term)s' "
         query += "WHERE id=%(descid)s AND changeset='%(changeset)s' AND locked=1"
@@ -159,7 +149,7 @@ class DescriptionDB(RF2FileWrapper):
         """
         if not self.changesetisvalid(changeset):
             return self.changeseterror(changeset)
-        if not  self._isValidConcept(concept, changeset, **kwargs):
+        if not self.validconcept(concept, changeset, **kwargs):
             return "Unrecognized concept identifier: %s" % concept
         term = term.strip()
         if not term:
@@ -168,10 +158,6 @@ class DescriptionDB(RF2FileWrapper):
         db = self.connect()
         if not descid:
             descid = self.newdescriptionid()
-        if not effectivetime:
-            effectivetime = strftime("%Y%m%d", gmtime())
-        if not moduleid:
-            moduleid = ep_values.moduleid
         language = language.lower()
         typeid = definition if type == 'd' else fsn if type == 'f' else synonym
 

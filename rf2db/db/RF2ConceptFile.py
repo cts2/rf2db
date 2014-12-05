@@ -29,7 +29,6 @@
 
 """ RF2 Concept File access routines
 """
-from time import gmtime, strftime
 
 from rf2db.parsers.RF2BaseParser import RF2Concept
 from rf2db.parsers.RF2Iterator import RF2ConceptList, iter_parms
@@ -85,6 +84,7 @@ class ConceptDB(RF2FileWrapper):
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
+
     def _doupdate(self, cid, changeset, effectivetime=None, definitionstatusid=None, **kwargs):
         """ Helper function to update a concept record
         @param cid: concept id to update
@@ -94,8 +94,7 @@ class ConceptDB(RF2FileWrapper):
         @param kwargs: context
         """
         fname = self._fname
-        if not effectivetime:
-            effectivetime = strftime("%Y%m%d", gmtime())
+        effectivetime, _ = self.effectivetime_and_moduleid(effectivetime, None)
         query = "UPDATE %(fname)s SET effectiveTime=%(effectivetime)s, "
         query += "definitionStatusId=%(definitionstatusid)s, " if definitionstatusid else ""
         query += "WHERE id=%(cid)s AND changeset='%(changeset)s' AND locked=1"
@@ -204,10 +203,7 @@ class ConceptDB(RF2FileWrapper):
         db = self.connect()
         if not cid:
             cid = self.newconceptid()
-        if not effectivetime:
-            effectivetime = strftime("%Y%m%d", gmtime())
-        if not moduleid:
-            moduleid = ep_values.moduleid
+        effectivetime, moduleid = self.effectivetime_and_moduleid(effectivetime, moduleid)
 
         definitionstatusid = defined if definitionstatus == 'f' else primitive
         fname = self._fname

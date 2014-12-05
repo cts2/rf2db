@@ -36,14 +36,30 @@ from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, rf2_values
 from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB, rel_id
 from rf2db.db.RF1CanonicalCore import CanonicalCoreDB
 from rf2db.parsers.RF2Iterator import RF2RelationshipList
-from rf2db.parameterparser.ParmParser import ParameterDefinitionList, booleanparam, sctidparam
-from rf2db.utils.lfu_cache import lfu_cache
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, booleanparam, sctidparam, intparam
+from rf2db.utils.lfu_cache import lfu_cache, clear_caches
 from rf2db.utils.sctid_generator import *
-from rf2db.constants.RF2ValueSets import additionalRelationship, some, inferredRelationship
+from rf2db.constants.RF2ValueSets import additionalRelationship, some, inferredRelationship, is_a, statedRelationship
 
 # Parameters for relationship file query
 rel_parms = ParameterDefinitionList(global_rf2_parms)
 rel_parms.rel = sctidparam()
+
+# Insert relationship
+new_rel_parms = ParameterDefinitionList(global_rf2_parms)
+new_rel_parms.effectivetime = intparam()
+new_rel_parms.source = sctidparam()
+new_rel_parms.type = sctidparam(default=is_a)
+new_rel_parms.target = sctidparam()
+new_rel_parms.group = intparam(default=0)
+
+# There is nothing that can be updated in a relationship at this point
+
+# Delete relationship
+del_rel_parms = ParameterDefinitionList(global_rf2_parms)
+del_rel_parms.effectivetime = intparam()
+del_rel_parms.relid = sctidparam()
+
 
 # Stated relationships are included in queries
 rel_parms.stated = booleanparam(default=True)
@@ -57,21 +73,21 @@ rel_parms.additional = booleanparam(default=True)
 # C{True} means canonical relationships only, C{False} means any
 rel_parms.canonical = booleanparam(default=False)
 
-""" Parameters for relationship list query """
+# Parameters for relationship list query
 rellist_parms = ParameterDefinitionList(rel_parms)
 rellist_parms.add(iter_parms)
 
 # Relationships for source concept
-rel_source_parms=ParameterDefinitionList(rellist_parms)
-rel_source_parms.source=sctidparam()
+rel_source_parms = ParameterDefinitionList(rellist_parms)
+rel_source_parms.source = sctidparam()
 
 # Relationships for predicate concept
-rel_predicate_parms=ParameterDefinitionList(rellist_parms)
-rel_predicate_parms.predicate=sctidparam()
+rel_predicate_parms = ParameterDefinitionList(rellist_parms)
+rel_predicate_parms.predicate = sctidparam()
 
 # Relationships for predicate concept
-rel_target_parms=ParameterDefinitionList(rellist_parms)
-rel_target_parms.target=sctidparam()
+rel_target_parms = ParameterDefinitionList(rellist_parms)
+rel_target_parms.target = sctidparam()
 
 
 def build_filtr(filtr, inferred=False, addl=False, canonical=False, additional=False, **kwargs):
@@ -131,23 +147,28 @@ class RelationshipDB(RF2FileWrapper):
                   r1.characteristicTypeId=r2.characteristicTypeId AND r1.modifierId = r2.modifierId AND
                   r1.active=0 AND r2.active=1""" % {'tname':self._fname}
         db = self.connect()
-        db.execute(q)
+        db.execute_query(q)
         db.commit()
         print "done"
 
+    insert_stmt = "INSERT INTO %s (id, effectiveTime, active, moduleId, sourceId, " \
+                  "destinationId, relationshipGroup, typeId, characteristicTypeId, modifierId, isCanonical, " \
+                  "changeset, locked) VALUES "
+    insert_stmt_short = "INSERT INTO %s VALUES "
+    addrow = "(%(id)s, %(effectiveTime)s, %(active)s, %(moduleId)s, %(sourceId)s, \
+                 %(destinationId)s, %(relationshipGroup)s, %(typeId)s, %(characteristicTypeId)s, \
+                 %(modifierId)s, %(isCanonical)s , '%(changeset)s', %(locked)s)"
+
 
     class _BlockWriter(object):
-        addrow = "(%(id)s, %(effectiveTime)s, %(active)s, %(moduleId)s, %(sourceId)s, \
-                             %(destinationId)s, %(relationshipGroup)s, %(typeId)s, %(characteristicTypeId)s, \
-                             %(modifierId)s, %(isCanonical)s)"
         blocksize = 1000
-        insert_stmt = "INSERT INTO %s VALUES "
+
 
         def __init__(self, tname, release):
             self.idGenerator = sctid_generator(MAYO_Namespace, sctid_generator.RELATIONSHIP, 0)
             self.moduleId = self.idGenerator.next()
             self.effectiveTime = release
-            self._stmt = self.insert_stmt % tname
+            self._stmt = self.insert_stmt_short % tname
             self.active = 1
             self.characteristicTypeId = additionalRelationship
             self.modifierId = some
@@ -164,7 +185,7 @@ class RelationshipDB(RF2FileWrapper):
         def flush(self):
             if len(self.rowstoadd):
                 db = self.rdb.connect()
-                db.execute(self._stmt + ','.join(self.rowstoadd))
+                db.execute_query(self._stmt + ','.join(self.rowstoadd))
                 db.commit()
             self.rowstoadd = []
 
@@ -178,7 +199,7 @@ class RelationshipDB(RF2FileWrapper):
 
         # Step 1: Add the canonical tag to everything that exists.  Note that the canonical table can re-activate an
         #         inactive entry, so we need to select it out...
-        db.execute("""UPDATE %s s, %s c SET isCanonical=1
+        db.execute_query("""UPDATE %s s, %s c SET isCanonical=1
             WHERE conceptid1 = sourceId AND conceptid2 = destinationId AND relationshiptype = typeId
             AND s.relationshipgroup=c.relationshipgroup AND active=1""" % (
             self._fname, ccdb._fname))
@@ -281,7 +302,7 @@ class RelationshipDB(RF2FileWrapper):
                          **kwargs)))
 
     @lfu_cache(maxsize=100)
-    def getRelationship(self, rel=None, **kwargs):
+    def read(self, rel=None, **kwargs):
         """ Return the relationship identified by the identifier
         @param rel: inferred or stated relationship identifier
         @param kwargs: context
@@ -296,6 +317,39 @@ class RelationshipDB(RF2FileWrapper):
                                                       maxtoreturn=1,
                                                       **kwargs)]
         return rlist[0] if len(rlist) else None
+
+    def _doadd(self, db, id, effectiveTime, active, moduleId, sourceId, destinationId,
+               relationshipGroup, typeId, characteristicTypeId, modifierId, isCanonical, changeset='', locked=1):
+        db.execute_query(self.insert_stmt % self._fname + self.addrow % vars())
+        clear_caches()
+        db.commit()
+
+
+    def add(self, source=None, target=None, type=is_a, effectivetime=None, group=0, changeset=None, active=True,
+            moduleid=None,  **kwargs):
+        """
+        @param source: source or child sctid
+        @param target: target or parent sctid
+        @param type: relationship.  Default=is_a
+        @param effectivetime: Timestamp for record.  Default: today's date
+        @param moduleid: owning module.  Default: service module (ep_values.moduleId)
+        @param group: role group number. Default: 0
+        @param changeset: changeset
+        @return: new relationship record or error string
+        """
+        if not self.validconcept(source, changeset, **kwargs):
+            return "Source (parent) concept (%s) is not valid" % source
+        if not self.validconcept(target, changeset, **kwargs):
+            return "Destination (target) concept (%s) is not valid" % target
+        if type != is_a and not self._validconcept(type, changeset, **kwargs):
+            return "Type (property) concept (%s) is not valid" % type
+        effectivetime, moduleid = self.effectivetime_and_moduleid(effectivetime, moduleid)
+        if not self.changesetisvalid(changeset):
+            return self.changeseterror(changeset)
+        rid = self.newrelationshipid()
+        self._doadd(StatedRelationshipDB().connect(), self.newrelationshipid(), effectivetime, active, moduleid, source, target, group, type,
+                    statedRelationship, some, 0, changeset)
+        return self.read(rid, changeset=changeset, **kwargs)
 
     @classmethod
     def refsettype(cls, parms):
