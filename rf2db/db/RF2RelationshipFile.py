@@ -49,7 +49,7 @@ rel_parms.rel = sctidparam()
 new_rel_parms = ParameterDefinitionList(global_rf2_parms)
 new_rel_parms.effectivetime = intparam()
 new_rel_parms.source = sctidparam()
-new_rel_parms.type = sctidparam(default=is_a)
+new_rel_parms.predicate = sctidparam(default=is_a)
 new_rel_parms.target = sctidparam()
 new_rel_parms.group = intparam(default=0)
 
@@ -325,12 +325,12 @@ class RelationshipDB(RF2FileWrapper):
         db.commit()
 
 
-    def add(self, source=None, target=None, type=is_a, effectivetime=None, group=0, changeset=None, active=True,
+    def add(self, source=None, target=None, predicate=is_a, effectivetime=None, group=0, changeset=None, active=True,
             moduleid=None,  **kwargs):
         """
         @param source: source or child sctid
         @param target: target or parent sctid
-        @param type: relationship.  Default=is_a
+        @param predicate: relationship.  Default=is_a
         @param effectivetime: Timestamp for record.  Default: today's date
         @param moduleid: owning module.  Default: service module (ep_values.moduleId)
         @param group: role group number. Default: 0
@@ -341,14 +341,14 @@ class RelationshipDB(RF2FileWrapper):
             return "Source (parent) concept (%s) is not valid" % source
         if not self.validconcept(target, changeset, **kwargs):
             return "Destination (target) concept (%s) is not valid" % target
-        if type != is_a and not self._validconcept(type, changeset, **kwargs):
-            return "Type (property) concept (%s) is not valid" % type
+        if predicate != is_a and not self._validconcept(predicate, changeset, **kwargs):
+            return "Type (property) concept (%s) is not valid" % predicate
         effectivetime, moduleid = self.effectivetime_and_moduleid(effectivetime, moduleid)
         if not self.changesetisvalid(changeset):
             return self.changeseterror(changeset)
         rid = self.newrelationshipid()
-        self._doadd(StatedRelationshipDB().connect(), self.newrelationshipid(), effectivetime, active, moduleid, source, target, group, type,
-                    statedRelationship, some, 0, changeset)
+        self._doadd(StatedRelationshipDB().connect(), self.newrelationshipid(), effectivetime, 1, moduleid, source,
+                    target, group, predicate, statedRelationship, some, 0, changeset)
         return self.read(rid, changeset=changeset, **kwargs)
 
     @classmethod

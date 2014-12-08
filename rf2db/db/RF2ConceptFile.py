@@ -155,9 +155,9 @@ class ConceptDB(RF2FileWrapper):
                 return "Concept: Record is locked under a different changeset"
 
 
-    def delete(self, cid, changeset=None, **kwargs):
+    def delete(self, rid, changeset=None, **kwargs):
         """ Delete or deactivate a concept
-        @param cid: concept identifier
+        @param rid: concept identifier
         @param changeset: containing changeset
         @param kwargs: context
         @return: None if success otherwise an error message
@@ -167,7 +167,7 @@ class ConceptDB(RF2FileWrapper):
 
         # delete is idempotent, so if we can't find it or it is already gone claim success
         kwargs['active'] = 0        # read even if inactive
-        current_value = self.read(cid, **kwargs)
+        current_value = self.read(rid, **kwargs)
         if not current_value or not current_value.isActive():
             return None
 
@@ -179,7 +179,7 @@ class ConceptDB(RF2FileWrapper):
         else:
             if current_value.changeset == changeset:
                 db = self.connect()
-                db.execute_query("DELETE FROM %(fname)s WHERE id=%(cid)s AND changeset=%(changeset)s AND locked=1" % vars())
+                db.execute_query("DELETE FROM %(fname)s WHERE id=%(rid)s AND changeset=%(changeset)s AND locked=1" % vars())
                 db.commit()
                 clear_caches()
                 return None

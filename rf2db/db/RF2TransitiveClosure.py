@@ -67,7 +67,8 @@ def transitive_closure(g):
         whose key is the source concept
         and the data is a set of destinations """
     gdict = {}
-    for dest, src in g: gdict.setdefault(src, set()).add(dest)
+    for dest, src in g:
+        gdict.setdefault(src, set()).add(dest)
 
     closure = set()
     for src in gdict.iterkeys():
@@ -102,7 +103,7 @@ class TransitiveClosureDB(RF2FileWrapper):
                    (rdb._fname, self.fltr, is_a))
 
         print("Computing transitive closure")
-        tbl = {'tname':self._fname}
+        tbl = {'tname': self._fname}
         tc = list(transitive_closure(db))
         print("Dropping indices")
         TransitiveClosureDB._dropIndexes(tbl)
