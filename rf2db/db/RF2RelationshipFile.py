@@ -119,6 +119,8 @@ class RelationshipDB(RF2FileWrapper):
       KEY predicate (typeId),
       %(keys)s );"""
 
+    _tcdbf = None
+
     def __init__(self, *args, **kwargs):
         self._srdb = StatedRelationshipDB()
         RF2FileWrapper.__init__(self, *args, **kwargs)
@@ -322,7 +324,13 @@ class RelationshipDB(RF2FileWrapper):
                relationshipGroup, typeId, characteristicTypeId, modifierId, isCanonical, changeset='', locked=1):
         db.execute_query(self.insert_stmt % self._fname + self.addrow % vars())
         clear_caches()
-        db.commit()
+
+    @classmethod
+    def _tcdb(cls):
+        from rf2db.db.RF2TransitiveClosure import TransitiveClosureDB
+        if not cls._tcdbf:
+            cls._tcdbf = TransitiveClosureDB()
+        return cls._tcdbf
 
     def invalid_add_reason(self, source=None, target=None, predicate=is_a, changeset=None, **kwargs):
         """ Return the reason that the relationship can't be added, if any
@@ -346,7 +354,7 @@ class RelationshipDB(RF2FileWrapper):
 
     def add(self, source=None, target=None, predicate=is_a, effectivetime=None, group=0,
             changeset=None, moduleid=None, **kwargs):
-        """
+        """ Add a relationship.  This actually goes into the stated relationship file...
         @param source: source or child sctid
         @param target: target or parent sctid
         @param predicate: relationship.  Default=is_a
@@ -364,9 +372,31 @@ class RelationshipDB(RF2FileWrapper):
         if not self.changesetisvalid(changeset):
             return self.changeseterror(changeset)
         rid = self.newrelationshipid()
-        self._doadd(StatedRelationshipDB().connect(), self.newrelationshipid(), effectivetime, 1, moduleid, source,
+        db = StatedRelationshipDB().connect()
+        self._doadd(db, self.newrelationshipid(), effectivetime, 1, moduleid, source,
                     target, group, predicate, statedRelationship, some, 0, changeset)
+
+        self._tcdb().add(source, predicate, target, changeset)
+        db.commit()
         return self.read(rid, changeset=changeset, **kwargs)
+
+    @classmethod
+    def _subjs(cls, db, changeset):
+        fname = cls.fname()
+        db.execute("SELECT DISTINCT sourceId FROM %(fname)s WHERE changeset = '%(changeset)s'" % vars())
+        return db.ResultsGenerator(db)
+
+    @classmethod
+    def _commit(cls, db, changeset, **args):
+        for subj in cls._subjs(db, changeset):
+            cls._tcdb().unlock(db, subj)
+        return super(RelationshipDB, cls)._commit(db, changeset, **args)
+
+    @classmethod
+    def _rollback(cls, db, changeset, **args):
+        for subj in cls._subjs(db, changeset):
+            cls._tcdb().remove(db, subj)
+        return super(RelationshipDB, cls)._rollback(db, changeset, **args)
 
     @classmethod
     def refsettype(cls, parms):

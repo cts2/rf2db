@@ -251,7 +251,7 @@ moduleId bigint(20) NOT NULL '''
         return []
 
     @classmethod
-    def srArgs(cls, **kwargs):
+    def singleResultArgs(cls, **kwargs):
         """ Filter out the parameters in kwargs that are for lists.  This is used to allow calls
         for designations, validation, etc. within othe calls to not get executed as a list query.
         @param kwargs: complete set of args
@@ -367,7 +367,7 @@ moduleId bigint(20) NOT NULL '''
         if not self._concdb:
             from rf2db.db.RF2ConceptFile import ConceptDB
             self._concdb = ConceptDB()
-        localargs = self.srArgs(**kwargs)
+        localargs = self.singleResultArgs(**kwargs)
         localargs['active'] = False
         return bool(self._concdb.read(conceptid, changeset=changeset, **localargs))
 

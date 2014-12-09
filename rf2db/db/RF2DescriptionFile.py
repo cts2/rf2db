@@ -107,9 +107,8 @@ class DescriptionDB(RF2FileWrapper):
 
     @lfu_cache(maxsize=20)
     def read(self, descId, **kwargs):
-        rf2db.utils.lfu_cache.clear_caches()
         db = self.connect()
-        rlist = [RF2Description(d) for d in db.query(self._fname, filter_="id = %s" % descId, **self.srArgs(**kwargs))]
+        rlist = [RF2Description(d) for d in db.query(self._fname, filter_="id = %s" % descId, **self.singleResultArgs(**kwargs))]
         return rlist[0] if len(rlist) else None
 
 

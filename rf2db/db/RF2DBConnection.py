@@ -33,6 +33,7 @@ import sys
 import re
 from functools import reduce
 import mysql.connector as mysql
+from mysql.connector.errorcode import CR_SERVER_GONE_ERROR
 import sqlalchemy.pool as pool
 
 from ConfigManager.ConfigArgs import ConfigArg, ConfigArgs
@@ -109,14 +110,14 @@ class RF2DBConnection(object):
             self._connection = None
 
     # TODO: merge this with execute
-    def execute_query(self, stmt, retryCount=0):
+    def execute_query(self, stmt, retrycount=0):
         """ Execute a create/delete/update statement
 
         @param stmt:  The sql statement to execute
         @type stmt: C{str}
 
-        @param retryCount: The number of times the execution has been tried
-        @type retryCount: C{int}
+        @param retrycount: The number of times the execution has been tried
+        @type retrycount: C{int}
 
         @return: Result of cursor.execute(stmt)
         """
@@ -127,12 +128,11 @@ class RF2DBConnection(object):
             return self._connection.cmd_query(stmt)
         except db.Error as e:
             self._disconnect()
-            if retryCount == 0 and e.args[0] == 2006:
+            if retrycount == 0 and e.errno == CR_SERVER_GONE_ERROR:
                 print >> sys.stderr, ("Database timeout error - reconnecting")
                 self._connect()
-                return self.execute_query(stmt, retryCount + 1)
+                return self.execute_query(stmt, retrycount + 1)
             else:
-                print >> sys.stderr, ("**********", stmt)
                 raise e
 
     def execute(self, stmt, retrycount=0):

@@ -74,11 +74,13 @@ class NewDescriptionTestCase(unittest.TestCase):
                                     target=test_target)
         dbrec = self.reldb.add(**parms.dict)
         etn = effectivetimenow()
-        self.assertEqual('RF2Relationship(id:41000160129, effectiveTime:%s, active:1, moduleId:11000160102, '
+        relid = dbrec.id
+        self.assertEqual('RF2Relationship(id:%s, effectiveTime:%s, active:1, moduleId:11000160102, '
                          'sourceId:%s, destinationId:85315007, relationshipGroup:0, typeId:116680003, '
                          'characteristicTypeId:900000000000010007, modifierId:900000000000451002, isCanonical:0)'
-                         % (etn, self.concid),
+                         % (relid, etn, self.concid),
                          str(dbrec))
+
 
 if __name__ == '__main__':
     unittest.main()
