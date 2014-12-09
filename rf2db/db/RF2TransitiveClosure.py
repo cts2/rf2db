@@ -38,15 +38,21 @@ from rf2db.db.RF2RelationshipFile import RelationshipDB
 
 chunksize = 100000
 
+
 class Paths(object):
     def __init__(self, src, graph):
-        self._src  = src
+        self._src = src
         self._destmap = {}
         self._graph = graph
         self.dfs(src)
 
     def dfs(self, src, depth=1):
-        for dst in self._graph.get(src,[]):
+        """ Depth first search
+        @param src: parent concept
+        @param depth: search depth
+        @return:
+        """
+        for dst in self._graph.get(src, []):
             self.addchild(dst, depth, dst not in self._graph)
             self.dfs(dst, depth+1)
 
@@ -58,9 +64,10 @@ class Paths(object):
             assert False, "Serious logic error in leaf detection"
 
     def entries(self):
-        for (k,v) in self._destmap.items():
+        for (k, v) in self._destmap.items():
             yield self._src, k, v[0], v[1]
         raise StopIteration()
+
 
 def transitive_closure(g):
     """ Convert a set of source/destination tuples into a dictionary
@@ -76,17 +83,21 @@ def transitive_closure(g):
         closure |= set(p for p in paths.entries())
     return closure
 
+
 class TransitiveClosureDB(RF2FileWrapper):
     table = 'transitive'
     fltr = ' active = 1 '
+    fe = RF2FileWrapper._file_extension
 
-    createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
-            `sourceId` bigint(20) NOT NULL,
-            `destinationId` bigint(20) NOT NULL,
-            `depth` int NOT NULL,
-            `isLeaf` tinyint NOT NULL,
-            `isRoot` tinyint NOT NULL DEFAULT 0);"""
-
+    # The transitive table reflects the contents of the relationship table.
+    createSTMT = ("CREATE TABLE IF NOT EXISTS %(table)s ("
+                  "parent bigint(20) NOT NULL, "
+                  "child bigint(20) NOT NULL, "
+                  "depth int NOT NULL, "
+                  "isLeaf tinyint NOT NULL, "
+                  "isRoot tinyint NOT NULL DEFAULT 0, "
+                  "locked tinyint(1) NOT NULL DEFAULT 0 "
+                  ");")
 
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
@@ -115,16 +126,16 @@ class TransitiveClosureDB(RF2FileWrapper):
         TransitiveClosureDB._createIndexes(tbl)
 
         print("Computing root entries")
-        db.execute("""UPDATE %s t1 LEFT JOIN %s t2 ON t1.sourceid=t2.destinationid
+        db.execute("""UPDATE %s t1 LEFT JOIN %s t2 ON t1.parent=t2.child
                       SET t1.isRoot=1
-                      WHERE t1.depth=1 AND t2.destinationid IS null""" % (self._fname, self._fname))
+                      WHERE t1.depth=1 AND t2.child IS null""" % (self._fname, self._fname))
         db.commit()
 
 
     @staticmethod
     def _writeblock(tc, db, tbl):
         insertList = ["(%s,%s,%s,%s)" % e for e in tc]
-        db.execute("INSERT INTO %(tname)s (sourceId, destinationId, depth, isLeaf) VALUES " % tbl + ','.join(insertList) )
+        db.execute("INSERT INTO %(tname)s (parent, child, depth, isLeaf) VALUES " % tbl + ','.join(insertList) )
         db.commit()
 
     @staticmethod
@@ -150,23 +161,51 @@ class TransitiveClosureDB(RF2FileWrapper):
     def _createIndexes(tbl):
         db = RF2DBConnection()
 
-        db.execute("""CREATE UNIQUE INDEX %(tname)s_idx1 ON %(tname)s(sourceId, destinationId)""" % tbl)
-        db.execute("""CREATE INDEX %(tname)s_idx2 ON %(tname)s(sourceId)""" % tbl)
-        db.execute("""CREATE INDEX %(tname)s_idx3 ON %(tname)s(destinationId)""" % tbl)
+        db.execute("CREATE UNIQUE INDEX %(tname)s_idx1 ON %(tname)s(parent, child, locked)" % tbl)
+        db.execute("CREATE INDEX %(tname)s_idx2 ON %(tname)s(parent, locked)" % tbl)
+        db.execute("CREATE INDEX %(tname)s_idx3 ON %(tname)s(child, locked)" % tbl)
         db.commit()
 
+    addstatement = "REPLACE %(tname)s (parent, child, depth, isLeaf, isRoot, changeset, locked) " +\
+                   "VALUES (%(parent)s, %(child)s, %(depth)d, %(isleaf)d, %(isroot)d, '%(changeset)s', %(locked)d"
 
-    def are_related(self, parent, child):
+    def addrow(self, db, parent, child, depth, isleaf, isroot, changeset):
+        tname = self._tname
+        locked = 1
+        isleaf = 1 if isleaf else 0
+        isroot = 1 if isroot else 0
+        db.execute_query(self.addstatement % vars())
+        for p in self.parents(parent):
+            self.addrow(db, p, child, depth+1, 0, self.hasParents(p, changeset), changeset)
+
+    def add(self, sourceid, typeid, destinationid, changeset):
+        if typeid != is_a:
+            return
+        tname = self._tname
+        parent = destinationid
+        child = sourceid
+        depth = 1
+        isleaf = self.hasChildren(child, changeset)
+        isroot = self.hasParents(parent, changeset)
+        locked = 1
+        db = self.connect()
+        db.execute_query(self.addstatement % vars())
+
+
+
+
+    def are_related(self, parent, child, changeset=None):
         if parent == child:
             return True
         db = self.connect()
-        tname = self._tname(True)
+        tname = self._tname()
         return bool(list(db.executeAndReturn(
-            "SELECT count(*) FROM %(tname)s WHERE sourceId = %(parent)s AND destinationId=%(child)s" % locals()))[0][0])
+            "SELECT count(*) FROM %(tname)s WHERE parent = %(parent)s AND child=%(child)s" % locals()))[0][0])
 
-    def doquery(self, query, start, maxtoreturn):
-        start, maxtoreturn = int(start), int(maxtoreturn)
+    def doquery(self, filtr, **kwargs):
+
         db = self.connect()
+        db.build_query()
         if maxtoreturn:
             query += " LIMIT %d, %d " % (start * maxtoreturn, maxtoreturn + 1)
         db.execute(query)
@@ -175,15 +214,18 @@ class TransitiveClosureDB(RF2FileWrapper):
 
 
     def hasChildren(self, sctid, **kwargs):
-        return bool(self.children(sctid, maxtoreturn=1, **kwargs))
+        return bool(self.children(sctid, maxtoreturn=1, **self.srArgs(**kwargs)))
 
-    def children(self, sctid, start=0, maxtoreturn=0, **_):
-        return self.doquery("SELECT destinationId FROM %s WHERE sourceId = %s AND depth=1 ORDER BY destinationId" %
-                            (self._tname(True), sctid), start, maxtoreturn)
+    def children(self, sctid, start=0, maxtoreturn=0, **kwargs):
+        return self.doquery("SELECT child FROM %s WHERE parent = %s AND depth=1 ORDER BY child" %
+                            (self._tname(True), sctid), **kwargs)
 
-    def parents(self, sctid, **_):
-        return self.doquery("SELECT sourceId FROM %s WHERE destinationId = %s AND depth=1 ORDER BY sourceId" %
-                            (self._tname(True), sctid), start=0, maxtoreturn=0)
+    def hasParents(self, sctid, **kwargs):
+        return bool(self.parents(sctid, maxtoreturn=1, **self.srArgs(**kwargs)))
+
+    def parents(self, sctid, **kwargs):
+        return self.doquery("SELECT parent FROM %s WHERE child = %s AND depth=1 ORDER BY parent" %
+                            (self._tname(), sctid), **kwargs)
 
 
 

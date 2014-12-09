@@ -367,8 +367,9 @@ moduleId bigint(20) NOT NULL '''
         if not self._concdb:
             from rf2db.db.RF2ConceptFile import ConceptDB
             self._concdb = ConceptDB()
-        kwargs['active'] = False
-        return bool(self._concdb.read(conceptid, changeset=changeset, **kwargs))
+        localargs = self.srArgs(**kwargs)
+        localargs['active'] = False
+        return bool(self._concdb.read(conceptid, changeset=changeset, **localargs))
 
     @staticmethod
     def effectivetime_and_moduleid(effectivetime, moduleid):

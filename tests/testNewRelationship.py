@@ -33,9 +33,11 @@ import uuid
 from tests.SetConfig import setConfig
 
 from rf2db.db.RF2RelationshipFile import RelationshipDB, new_rel_parms
+from rf2db.db.RF2ConceptFile import ConceptDB, new_concept_parms
 
 from rf2db.db.RF2ChangeSetFile import ChangeSetDB, add_changeset_parms, changeset_parms
 from rf2db.constants.RF2ValueSets import cimiModule
+from rf2db.utils.effectivetime import effectivetimenow
 
 test_source = 74400008   # Appendicitis
 test_target = 85315007   # Yorkshire pig
@@ -46,18 +48,37 @@ class NewDescriptionTestCase(unittest.TestCase):
         setConfig()
         self.reldb = RelationshipDB()
         self.csdb = ChangeSetDB()
+        self.concdb = ConceptDB()
+        self.testchangeset = str(self.csdb.new_changeset(**add_changeset_parms.parse().dict).referencedComponentId.uuid)
+        self.concrec = self.concdb.add(self.testchangeset, moduleid=str(cimiModule))
+        self.concid = self.concrec.id
 
-    def testadd(self):
-        testchangeset = str(self.csdb.new_changeset(**add_changeset_parms.parse().dict).referencedComponentId.uuid)
+    def tearDown(self):
+        self.csdb.rollback(self.testchangeset)
+
+    def testaddexisting(self):
         parms = new_rel_parms.parse(effectiveTime='20141131',
                                     moduleId=str(cimiModule),
-                                    changeset=testchangeset,
+                                    changeset=self.testchangeset,
                                     source=test_source,
                                     target=test_target)
         dbrec = self.reldb.add(**parms.dict)
-        print(dbrec)
+        self.assertIsNone(dbrec)
+        self.assertEqual("Cannot change the definition of an existing concept (74400008)",
+                         self.reldb.invalid_add_reason(**parms.dict))
 
-
+    def testaddnew(self):
+        parms = new_rel_parms.parse(moduleId=str(cimiModule),
+                                    changeset=self.testchangeset,
+                                    source=self.concid,
+                                    target=test_target)
+        dbrec = self.reldb.add(**parms.dict)
+        etn = effectivetimenow()
+        self.assertEqual('RF2Relationship(id:41000160129, effectiveTime:%s, active:1, moduleId:11000160102, '
+                         'sourceId:%s, destinationId:85315007, relationshipGroup:0, typeId:116680003, '
+                         'characteristicTypeId:900000000000010007, modifierId:900000000000451002, isCanonical:0)'
+                         % (etn, self.concid),
+                         str(dbrec))
 
 if __name__ == '__main__':
     unittest.main()

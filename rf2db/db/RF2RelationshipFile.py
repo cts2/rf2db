@@ -324,9 +324,28 @@ class RelationshipDB(RF2FileWrapper):
         clear_caches()
         db.commit()
 
+    def invalid_add_reason(self, source=None, target=None, predicate=is_a, changeset=None, **kwargs):
+        """ Return the reason that the relationship can't be added, if any
+        @param source: source sctid
+        @param target: destination sctid
+        @param predicate: type sctid
+        @param changeset: scoping changeset
+        @param kwargs: context
+        @return: None if add is ok, otherwise text of reason
+        """
+        # The source concept must already exist and be defined in this changeset
+        if self.validconcept(source, None, **{}):
+            return "Cannot change the definition of an existing concept (%s)" % source
+        if not self.validconcept(source, changeset, **kwargs):
+            return "Source (parent) concept (%s) is not valid" % source
+        if not self.validconcept(target, changeset, **kwargs):
+            return "Destination (target) concept (%s) is not valid" % target
+        if predicate != is_a and not self._validconcept(predicate, changeset, **kwargs):
+            return "Type (property) concept (%s) is not valid" % predicate
+        return None
 
-    def add(self, source=None, target=None, predicate=is_a, effectivetime=None, group=0, changeset=None, active=True,
-            moduleid=None,  **kwargs):
+    def add(self, source=None, target=None, predicate=is_a, effectivetime=None, group=0,
+            changeset=None, moduleid=None, **kwargs):
         """
         @param source: source or child sctid
         @param target: target or parent sctid
@@ -334,15 +353,13 @@ class RelationshipDB(RF2FileWrapper):
         @param effectivetime: Timestamp for record.  Default: today's date
         @param moduleid: owning module.  Default: service module (ep_values.moduleId)
         @param group: role group number. Default: 0
-        @param changeset: changeset
+        @param changeset: scoping changeset
+        @param kwargs: context
         @return: new relationship record or error string
         """
-        if not self.validconcept(source, changeset, **kwargs):
-            return "Source (parent) concept (%s) is not valid" % source
-        if not self.validconcept(target, changeset, **kwargs):
-            return "Destination (target) concept (%s) is not valid" % target
-        if predicate != is_a and not self._validconcept(predicate, changeset, **kwargs):
-            return "Type (property) concept (%s) is not valid" % predicate
+        # The source concept must already exist and be defined in this changeset
+        if self.invalid_add_reason(source, target, predicate, changeset, **kwargs):
+            return None
         effectivetime, moduleid = self.effectivetime_and_moduleid(effectivetime, moduleid)
         if not self.changesetisvalid(changeset):
             return self.changeseterror(changeset)

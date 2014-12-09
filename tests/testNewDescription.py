@@ -33,12 +33,13 @@ from rf2db.db.RF2DescriptionFile import DescriptionDB, new_description_parms, up
     delete_description_parms
 from rf2db.db.RF2ChangeSetFile import ChangeSetDB, add_changeset_parms, changeset_parms
 from rf2db.constants.RF2ValueSets import cimiModule
+from rf2db.utils.effectivetime import effectivetimenow
 
 test_concept = 74400008   # Appendicitis
 test_changeset = 'a1e09280-db9b-4fd9-97f5-0abad6e2b622'
 test_description = 41000160117
 
-target_desc1 = 'RF2Description(id:%s, effectiveTime:20141203, active:1, moduleId:11000160102, conceptId:74400008, languageCode:en, typeId:900000000000013009, term:Appendixes for the masses, caseSignificanceId:900000000000020002)'
+target_desc1 = 'RF2Description(id:%s, effectiveTime:%d, active:1, moduleId:11000160102, conceptId:74400008, languageCode:en, typeId:900000000000013009, term:Appendixes for the masses, caseSignificanceId:900000000000020002)'
 
 
 
@@ -75,8 +76,8 @@ class NewDescriptionTestCase(unittest.TestCase):
                                             term="Appendicies for the masses")
         dbrec = self.descdb.add(**parms.dict)
         dbrec = self.descdb.update(desc=dbrec.id, changeset=testChangeSet, term="Appendixes for the masses")
-        print(str(dbrec))
-        self.assertEqual(target_desc1 % dbrec.id, str(dbrec))
+        # Note: The assertion below may occassionaly fail at midnight GMT.  Run it again
+        self.assertEqual(target_desc1 % (dbrec.id, effectivetimenow()), str(dbrec))
         self.assertRaises(self.descdb.read(dbrec.id))
         self.csdb.commit(**changeset_parms.parse(changeset=testChangeSet).dict)
 

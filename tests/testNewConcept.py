@@ -82,4 +82,5 @@ class NewConceptTestCase(unittest.TestCase):
         self.assertEqual('Changeset identifier must be supplied', self.concdb.add(**new_concept_parms.parse().dict))
 
     def testInvalidChangeset(self):
-        self.assertEqual('Change set is not valid or has been committed', self.concdb.add(**new_concept_parms.parse(changeset=str(uuid.uuid4())).dict))
+        changeset = str(uuid.uuid4())
+        self.assertEqual('Change set (%s) is not valid or has been committed' % changeset, self.concdb.add(**new_concept_parms.parse(changeset=changeset).dict))

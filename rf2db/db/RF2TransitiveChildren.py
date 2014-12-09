@@ -40,11 +40,12 @@ class TransitiveChildrenDB(RF2FileWrapper):
     table = 'transitive_children'
     closuredb = TransitiveClosureDB
 
-    createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
-            `sourceId` bigint(20) NOT NULL,
-            `depth` int NOT NULL,
-            `count` int NOT NULL DEFAULT 0,
-             PRIMARY KEY (sourceId, depth));"""
+    createSTMT = ("CREATE TABLE IF NOT EXISTS %(table)s (\n"
+                  "            `parent` bigint(20) NOT NULL,\n"
+                  "            `depth` int NOT NULL,\n"
+                  "            `count` int NOT NULL DEFAULT 0,\n"
+                  "             PRIMARY KEY (parent, depth));"
+    )
 
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
@@ -59,35 +60,24 @@ class TransitiveChildrenDB(RF2FileWrapper):
         tname = self._fname
         tcdbname = TransitiveClosureDB.fname()
         db.execute("""INSERT INTO %(tname)s
-                      SELECT DISTINCT sourceid, depth, 0 FROM %(tcdbname)s""" % locals())
+                      SELECT DISTINCT parent, depth, 0 FROM %(tcdbname)s""" % locals())
         db.commit()
 
         print("Computing number of children")
         db.execute("""UPDATE %(tname)s t,
-                       (SELECT c.sourceid, c.depth, count(t.sourceid) AS dc
+                       (SELECT c.parent, c.depth, count(t.parent) AS dc
                            FROM %(tcdbname)s t, %(tname)s c
-                           WHERE t.sourceid=c.sourceid AND t.depth<=c.depth
-                           GROUP BY c.sourceid, c.depth) tc
+                           WHERE t.parent=c.parent AND t.depth<=c.depth
+                           GROUP BY c.parent, c.depth) tc
                         SET t.count = tc.dc
-                        WHERE t.sourceid=tc.sourceid AND t.depth=tc.depth""" % locals())
+                        WHERE t.parent=tc.parent AND t.depth=tc.depth""" % locals())
         db.commit()
 
-
-    def numDescendants(self, sctid, maxDepth=0, ss=True, **_):
+    def numDescendants(self, sctid, maxDepth=0, **_):
         # The following assumes that count can't increase as depth increases
-        query = "SELECT max(count) FROM %s WHERE sourceId = %s " % (self._fname, sctid)
+        query = "SELECT max(count) FROM %s WHERE parent = %s " % (self._fname, sctid)
         if maxDepth:
             query += " AND depth <= %s " % maxDepth
         db = RF2DBConnection()
         db.execute(query)
         return db.next()
-
-
-
-
-
-
-            
-        
-
-
