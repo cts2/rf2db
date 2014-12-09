@@ -31,17 +31,18 @@
 import uuid
 
 from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
-from rf2db.db.RF2FileCommon import global_rf2_parms, ep_values
+from rf2db.db.RF2FileCommon import global_rf2_parms
 from rf2db.parsers.RF2RefsetParser import RF2ChangeSetReferenceEntry
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, booleanparam, strparam
 from rf2db.constants.RF2ValueSets import changeSetRefSet
 from rf2db.db.RF2ConceptFile import ConceptDB
 from rf2db.db.RF2DescriptionFile import DescriptionDB
 from rf2db.db.RF2DescriptionTextFile import DescriptionTextDB
-from rf2db.db.RF2RelationshipFile import RelationshipDB
 from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB
+from rf2db.db.RF2RelationshipFile import RelationshipDB
 from rf2db.db.RF2LanguageFile import LanguageDB
 from rf2db.db.RF2SimpleReferencesetFile import SimpleReferencesetDB
+from rf2db.db.RF2TransitiveClosure import TransitiveClosureDB
 
 changeset_parms = ParameterDefinitionList(global_rf2_parms)
 changeset_parms.open = booleanparam(default=True)
@@ -58,6 +59,9 @@ class CountList():
     """
     def __getattribute__(self, item):
         return self.__dict__.get(item, 0)
+
+    def setcount(self, name, count):
+        self.__dict__[name] = count
 
 
 class ChangeSetDB(RF2RefsetWrapper):
@@ -98,7 +102,8 @@ class ChangeSetDB(RF2RefsetWrapper):
             return None
         filter_ = "refsetId=%s AND referencedComponentId='%s' " % (changeSetRefSet, changeset)
         db = self.connect()
-        rlist = [RF2ChangeSetReferenceEntry(c) for c in db.query(self._fname, filter_=filter_, changeset=changeset, **kwargs)]
+        rlist = [RF2ChangeSetReferenceEntry(c) for c in db.query(self._fname, filter_=filter_,
+                                                                 changeset=changeset, **self.singleResultArgs(**kwargs))]
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
@@ -139,6 +144,13 @@ class ChangeSetDB(RF2RefsetWrapper):
         """
         return self.get_changeset(changeset=changeset, **kwargs) is not None
 
+    changesetFiles = [(ConceptDB, 'nConcepts'),
+                      (DescriptionDB, 'nDescriptions'),
+                      (DescriptionTextDB, 'nDescTexts'),
+                      (LanguageDB, 'nLanguages'),
+                      (StatedRelationshipDB, 'nStatedRelationships'),
+                      (RelationshipDB, 'nRelationships'),
+                      (SimpleReferencesetDB, 'nSimpleRefsets')]
 
     def rollback(self, changeset=None, **kwargs):
         """ Roll back all of the changes identified in the supplied changeset. If the changeset isn't supplied or
@@ -151,14 +163,9 @@ class ChangeSetDB(RF2RefsetWrapper):
         rval = CountList()
         if changeset:
             db = self.connect()
-            rval.nConcepts = ConceptDB._rollback(db, changeset, **kwargs)['affected_rows']
-            rval.nDescriptions = DescriptionDB._rollback(db, changeset, **kwargs)['affected_rows']
-            rval.nDescTexts = DescriptionTextDB._rollback(db, changeset, **kwargs)['affected_rows']
-            rval.nLanguages = LanguageDB._rollback(db, changeset, **kwargs)['affected_rows']
-            rval.nRelationships = RelationshipDB._rollback(db, changeset, **kwargs)['affected_rows']
-            rval.nStatedRelationships = StatedRelationshipDB._rollback(db, changeset, **kwargs)['affected_rows']
-            rval.nSimpleRefsets = SimpleReferencesetDB._rollback(db, changeset, **kwargs)['affected_rows']
-            rval.nChangesets = self._rollback(db, changeset, **kwargs)['affected_rows']
+            for f, a in ChangeSetDB.changesetFiles:
+                rval.setcount(a, f._rollback(db, changeset, **kwargs)['affected_rows'])
+            rval.setcount('nChangesets', self._rollback(db, changeset, **kwargs)['affected_rows'])
             db.commit()
         return rval
 
@@ -171,17 +178,11 @@ class ChangeSetDB(RF2RefsetWrapper):
         @return: Count of things that are rolled back.
         """
         rval = CountList()
-        # TODO: The entries below should be table driven
         if changeset:
             db = self.connect()
-            rval.nConcepts = ConceptDB._commit(db, changeset, **kwargs)['affected_rows']
-            rval.nDescriptions = DescriptionDB._commit(db, changeset, **kwargs)['affected_rows']
-            rval.nDescTexts = DescriptionTextDB._commit(db, changeset, **kwargs)['affected_rows']
-            rval.nLanguages = LanguageDB._commit(db, changeset, **kwargs)['affected_rows']
-            rval.nRelationships = RelationshipDB._commit(db, changeset, **kwargs)['affected_rows']
-            rval.nStatedRelationships = StatedRelationshipDB._commit(db, changeset, **kwargs)['affected_rows']
-            rval.nSimpleRefsets = SimpleReferencesetDB._commit(db, changeset, **kwargs)['affected_rows']
-            rval.nChangesets = self._commit(db, changeset, **kwargs)['affected_rows']
+            for f, a in ChangeSetDB.changesetFiles:
+                rval.setcount(a, f._commit(db, changeset, **kwargs)['affected_rows'])
+            rval.setcount('nChangesets', self._commit(db, changeset, **kwargs)['affected_rows'])
             db.commit()
         return rval
 
