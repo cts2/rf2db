@@ -28,7 +28,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import unittest
-from tests.SetConfig import setConfig
+from SetConfig import setConfig
 from rf2db.db.RF2DescriptionFile import DescriptionDB, new_description_parms, update_description_parms, \
     delete_description_parms
 from rf2db.db.RF2ChangeSetFile import ChangeSetDB, add_changeset_parms, changeset_parms
@@ -51,7 +51,7 @@ class NewDescriptionTestCase(unittest.TestCase):
 
 
     def testNew1(self):
-        testChangeSet = str(self.csdb.new_changeset(**add_changeset_parms.parse().dict).referencedComponentId.uuid)
+        testChangeSet = str(self.csdb.new(**add_changeset_parms.parse().dict).referencedComponentId.uuid)
         parms = new_description_parms.parse(effectiveTime='20141131',
                                             moduleId=str(cimiModule),
                                             changeset=testChangeSet,
@@ -68,7 +68,7 @@ class NewDescriptionTestCase(unittest.TestCase):
 
 
     def testUpdate(self):
-        testChangeSet = str(self.csdb.new_changeset(**add_changeset_parms.parse().dict).referencedComponentId.uuid)
+        testChangeSet = str(self.csdb.new(**add_changeset_parms.parse().dict).referencedComponentId.uuid)
         parms = new_description_parms.parse(effectiveTime='20141131',
                                             moduleId=str(cimiModule),
                                             changeset=testChangeSet,

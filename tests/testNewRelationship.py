@@ -28,9 +28,8 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import unittest
-import uuid
 
-from tests.SetConfig import setConfig
+from SetConfig import setConfig
 
 from rf2db.db.RF2RelationshipFile import RelationshipDB, new_rel_parms
 from rf2db.db.RF2ConceptFile import ConceptDB, new_concept_parms
@@ -49,7 +48,7 @@ class NewDescriptionTestCase(unittest.TestCase):
         self.reldb = RelationshipDB()
         self.csdb = ChangeSetDB()
         self.concdb = ConceptDB()
-        self.testchangeset = str(self.csdb.new_changeset(**add_changeset_parms.parse().dict).referencedComponentId.uuid)
+        self.testchangeset = str(self.csdb.new(**add_changeset_parms.parse().dict).referencedComponentId.uuid)
         self.concrec = self.concdb.add(self.testchangeset, moduleid=str(cimiModule))
         self.concid = self.concrec.id
 

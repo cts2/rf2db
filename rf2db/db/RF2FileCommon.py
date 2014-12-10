@@ -113,20 +113,21 @@ effectiveTime int(11) NOT NULL,
 active tinyint(1) NOT NULL,
 moduleId bigint(20) NOT NULL '''
 
-    _file_extension = '''changeset char(36), locked tinyint(1) NOT NULL DEFAULT 0,'''
+    _file_extension = 'changeset char(36), locked tinyint(1) NOT NULL DEFAULT 0,'
 
-    _keys_ss = '''KEY (changeset), PRIMARY KEY (id)'''
-    _keys_full = '''KEY (changeset), PRIMARY KEY (id, effectiveTime)'''
+    _keys_ss = 'KEY (changeset), PRIMARY KEY (id)'
+    _keys_full = 'KEY (changeset), PRIMARY KEY (id, effectiveTime)'
 
-    _loadSTMT = """LOAD DATA  local INFILE '%(tsvfile)s'
-              INTO TABLE %(table)s  
-              FIELDS TERMINATED BY '\\t' 
-              LINES TERMINATED BY '\\r\\n'  
-              IGNORE 1 LINES;"""
+    _loadSTMT = ("LOAD DATA  local INFILE '%(tsvfile)s'\n"
+                 " INTO TABLE %(table)s  \n"
+                 " FIELDS TERMINATED BY '\\t' \n"
+                 " LINES TERMINATED BY '\\r\\n'  \n"
+                 " IGNORE 1 LINES;"
+    )
 
-    _hasContentSTMT = """SELECT * FROM %s LIMIT 1;"""
+    _hasContentSTMT = "SELECT * FROM %s LIMIT 1;"
 
-    _existsQuery = """SHOW TABLES LIKE '%s';"""
+    _existsQuery = "SHOW TABLES LIKE '%s';"
     _csdb = None
     _concdb = None
 

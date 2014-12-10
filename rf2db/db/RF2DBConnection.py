@@ -98,6 +98,7 @@ class RF2DBConnection(object):
             parms.pop('dodecode', None)
             parms.pop('ss', None)
             self._connection = db.connect(**parms)
+            self._connection.autocommit = True
             # self._connection.set_character_set("utf8")
 
     def _disconnect(self):
@@ -283,6 +284,16 @@ class RF2DBConnection(object):
         @return: record generator
         """
         return self.ResultsGenerator(self) if self.execute(self.build_query(table, **kwargs)) else []
+
+    def singleton_query(self, table, cls, **kwargs):
+        """ Query that returns at most one element.
+        @param table: table name to be queried
+        @param kwargs: Same as query
+        @return: Singleton instance of cls else nothing
+        """
+        rlist = [cls(c) for c in self.query(table, **kwargs)]
+        assert (len(rlist) < 2)
+        return rlist[0] if len(rlist) else None
 
     def executeAndReturn(self, query):
         return self._cursor if self.execute(query) else []

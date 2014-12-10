@@ -79,7 +79,7 @@ class ParameterDefinitionList(object):
 
         @property
         def dict(self):
-            return {k:self.__dict__[k] for k in self._orderedKeys()}
+            return {k: self.__dict__[k] for k in self._orderedKeys()}
 
 
     def __init__(self, base=None, caseSensitive=False):

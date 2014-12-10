@@ -51,5 +51,7 @@ def delete(filter_):
     rval = {}
     for f in allfiles:
         rval[f.fname()] = db.execute_query(query % (f.fname(), filter_))['affected_rows']
+    fname = RF2TransitiveClosure.TransitiveClosureDB.fname()
+    rval[fname] = db.execute_query(query % (fname, "locked=1"))['affected_rows']
     db.commit()
     return rval

@@ -47,7 +47,7 @@ class NewConceptTestCase(unittest.TestCase):
         setConfig()
         self.concdb = ConceptDB()
         self.csdb = ChangeSetDB()
-        self.testChangeSet = self.csdb.new_changeset(**add_changeset_parms.parse().dict).referencedComponentId.uuid
+        self.testChangeSet = self.csdb.new(**add_changeset_parms.parse().dict).referencedComponentId.uuid
 
     def tearDown(self):
         self.csdb.rollback(**changeset_parms.parse(changeset=self.testChangeSet).dict)
@@ -77,6 +77,16 @@ class NewConceptTestCase(unittest.TestCase):
         dbrec = self.concdb.add(**new_concept_parms.parse(changeset=self.testChangeSet).dict)
         self.assertIsNotNone(re.match(r'RF2Concept\(id:[0-9]+100016010[0-9], effectiveTime:[0-9]{8}, active:1, moduleId:11000160102, definitionStatusId:900000000000074008\)', str(dbrec)))
 
+    def testProperRollback(self):
+        parms = new_concept_parms.parse(sctid=RF2Namespace(CIMI_Namespace).nextConceptId(),
+                                       effectivetime='20141131',
+                                       moduleid=str(cimiModule),
+                                       definitionstatus='p',
+                                       changeset=self.testChangeSet)
+        dbrec = self.concdb.add(**parms.dict)
+        self.tearDown()
+        self.assertIsNone(self.csdb.read(self.testChangeSet))
+        self.assertIsNone(self.concdb.read(dbrec.id, changeset=self.testChangeSet))
 
     def testNewNoChangeset(self):
         self.assertEqual('Changeset identifier must be supplied', self.concdb.add(**new_concept_parms.parse().dict))

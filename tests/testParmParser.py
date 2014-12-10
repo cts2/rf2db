@@ -28,13 +28,12 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import unittest
-import os
 
 from rf2db.parameterparser import ParmParser
 from rf2db.utils.sctid import sctid
 from rf2db.db.RF2FileCommon import moduleidparam
 
-from tests.SetConfig import setConfig
+from SetConfig import setConfig
 
 
 class ParmParserTestCase(unittest.TestCase):

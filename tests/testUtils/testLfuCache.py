@@ -28,8 +28,9 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import unittest
+
+from SetConfig import setConfig
 from rf2db.utils.lfu_cache import lfu_cache, clear_caches, cache_stats
-from tests.SetConfig import setConfig
 
 
 class Foo():

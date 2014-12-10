@@ -28,9 +28,8 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 import unittest
 
+from SetConfig import setConfig
 from rf2db.utils.check_digit import *
-
-from tests.SetConfig import setConfig
 
 
 class CheckDigitTestCase1(unittest.TestCase):
