@@ -33,7 +33,7 @@
 from rf2db.parsers.RF2BaseParser import RF2Concept
 from rf2db.parsers.RF2Iterator import RF2ConceptList, iter_parms
 from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, ep_values, rf2_values
-from rf2db.db.RF2DBConnection import cp_values
+from rf2db.db.RF2DBConnection import cp_values, singleresultargs
 from rf2db.utils.lfu_cache import lfu_cache, clear_caches
 from rf2db.utils.listutils import listify
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, intparam, enumparam, sctidparam
@@ -80,7 +80,10 @@ class ConceptDB(RF2FileWrapper):
         @return: Updated RF2Concept record if valid else None
         """
         db = self.connect()
-        rlist = [RF2Concept(c) for c in db.query(self._fname, filter_="id=%s" % cid, changeset=changeset, **self.singleResultArgs(**kwargs))]
+        rlist = [RF2Concept(c) for c in db.query(self._fname,
+                                                 filter_="id=%s" % cid,
+                                                 changeset=changeset,
+                                                 **singleresultargs(**kwargs))]
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 

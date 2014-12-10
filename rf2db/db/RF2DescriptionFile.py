@@ -106,12 +106,9 @@ class DescriptionDB(RF2FileWrapper):
 
 
     @lfu_cache(maxsize=20)
-    def read(self, descId, **kwargs):
+    def read(self, descid, **kwargs):
         db = self.connect()
-        rlist = [RF2Description(d) for d in db.query(self._fname, filter_="id = %s" % descId, **self.singleResultArgs(**kwargs))]
-        return rlist[0] if len(rlist) else None
-
-
+        return db.singleton_query(self._fname, RF2Description, filter_="id = %s" % descid, **kwargs)
 
     def _doupdate(self, descid, changeset, languagecode, typeid, term, effectivetime=None, **kwargs):
         """ Helper function to update a concept record

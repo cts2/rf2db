@@ -36,7 +36,7 @@ parent or child.  In the case of multiple paths, the shortest number of hops is 
 from mysql.connector import ProgrammingError
 from mysql.connector.errorcode import ER_CANT_DROP_FIELD_OR_KEY
 
-from rf2db.db.RF2DBConnection import RF2DBConnection, cp_values
+from rf2db.db.RF2DBConnection import RF2DBConnection, cp_values, singleresultargs
 from rf2db.db.RF2FileCommon import RF2FileWrapper
 from rf2db.constants.RF2ValueSets import is_a
 from rf2db.db.RF2RelationshipFile import RelationshipDB
@@ -258,7 +258,7 @@ class TransitiveClosureDB(RF2FileWrapper):
 
 
     def hasChildren(self, sctid, **kwargs):
-        return bool(self.children(sctid, **self.singleResultArgs(**kwargs)))
+        return bool(self.children(sctid, **singleresultargs(**kwargs)))
 
 
     def children(self, sctid, **kwargs):
@@ -266,7 +266,7 @@ class TransitiveClosureDB(RF2FileWrapper):
 
 
     def hasParents(self, sctid, **kwargs):
-        return bool(self.parents(sctid, **self.singleResultArgs(**kwargs)))
+        return bool(self.parents(sctid, **singleresultargs(**kwargs)))
 
 
     def parents(self, sctid, **kwargs):

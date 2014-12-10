@@ -68,6 +68,19 @@ sub_subs = [(re.compile(r'^(id|effectiveTime)( |=)', flags=sub_flags), r'tbl.\1\
             (re.compile(r'( |=)(id|effectiveTime)$', flags=sub_flags), r'\1tbl.\2')]
 
 
+def singleresultargs(**kwargs):
+    """ Filter out the parameters in kwargs that are for lists.  This is used to allow calls
+    for designations, validation, etc. within othe calls to not get executed as a list query.
+    @param kwargs: complete set of args
+    @return: filtered set
+    """
+    rval = kwargs.copy()
+    rval['maxtoreturn'] = 1
+    rval.pop('start', None)
+    rval.pop('page', None)
+    return rval
+
+
 class RF2DBConnection(object):
     def __init__(self):
         self._connection = None
@@ -291,7 +304,7 @@ class RF2DBConnection(object):
         @param kwargs: Same as query
         @return: Singleton instance of cls else nothing
         """
-        rlist = [cls(c) for c in self.query(table, **kwargs)]
+        rlist = [cls(c) for c in self.query(table, **singleresultargs(**kwargs))]
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 

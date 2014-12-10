@@ -103,7 +103,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         @return: RF2ChangeSetReferenceEntry or None if changeset doesn't exist
         """
         if not changeset:
-            return self.read_by_name(csname, **kwargs)
+            changeset = self._read_by_name(csname)
         filter_ = "refsetId=%s AND referencedComponentId='%s' " % (changeSetRefSet, changeset)
         if csname:
             filter_ += "AND name='%s' " % csname
@@ -113,22 +113,23 @@ class ChangeSetDB(RF2RefsetWrapper):
                                   filter_=filter_,
                                   changeset=changeset, **kwargs)
 
-    def read_by_name(self, csname, **kwargs):
+    def _read_by_name(self, csname):
         """ Read the supplied changeset record by csname
         @param csname: name of the changeset
         @param kwargs: Contextual arguments
-        @return: RF2ChangeSetReferenceEntry or None if changeset doesn't exist
+        @return: changeset id for name or None
         """
         fname = self._fname
-        query = "SELECT * FROM %(fname)s WHERE name='%(csname)s'" % vars()
+        query = "SELECT referencedComponentId from %(fname)s WHERE name='%(csname)s'" % vars()
         db = self.connect()
         db.execute(query)
-        rlist = list(RF2ChangeSetReferenceEntry(c) for c in db.ResultsGenerator(db))
+        rlist = list(db.ResultsGenerator(db))
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
+
     def invalid_new_reason(self, changeset=None, creator=None, description=None, csname=None, **kwargs):
-        if csname and self.read_by_name(csname):
+        if csname and self._read_by_name(csname):
             return "Changeset name: '%s' already exists" % csname
         if changeset and self.read(changeset, **kwargs):
             return "Changeset %s already exists" % changeset
@@ -173,9 +174,10 @@ class ChangeSetDB(RF2RefsetWrapper):
             if not csrec:
                 return "Changeset %s does not exist" % changeset
         elif csname:
-            csrec = self.read_by_name(csname, **kwargs)
-            if not csrec:
+            changeset = self._read_by_name(csname)
+            if not changeset:
                 return "Changeset name: '%'s does not exist" % csname
+            csrec = self.read(changeset)
         else:
             return "Either a changeset name or a changeset id must be supplied"
         if csrec.isFinal:
@@ -246,7 +248,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         if self.invalid_update_reason(changeset=changeset, csname=csname, **kwargs):
             return None
         if csname and not changeset:
-            changeset = self.read_by_name(csname, **kwargs).referencedComponentId.uuid
+            changeset = self._read_by_name(csname)
         if changeset:
             db = self.connect()
             for f, a in ChangeSetDB.changesetFiles:
@@ -266,6 +268,10 @@ class ChangeSetDB(RF2RefsetWrapper):
         @return: Count of things that are rolled back.
         """
         rval = CountList()
+        if self.invalid_update_reason(changeset=changeset, csname=csname, **kwargs):
+            return None
+        if csname and not changeset:
+            changeset = self._read_by_name(csname)
         if changeset:
             db = self.connect()
             for f, a in ChangeSetDB.changesetFiles:
