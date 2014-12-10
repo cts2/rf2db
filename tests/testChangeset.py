@@ -48,7 +48,7 @@ class NewChangeSetTestCase(unittest.TestCase):
 
         matchptn_ =  (r'RF2ChangeSetReferenceEntry\(id:%(uuidre)s, '
                 r'effectiveTime:%(tsre)s, active:1, moduleId:%(moduleid)s, '
-                r'refsetId:%(rsid)s, referencedComponentId:%(uuidre)s, ') % vars()
+                r'refsetId:%(rsid)s, referencedComponentId:%(uuidre)s, name:%(uuidre)s, ') % vars()
         self.matchptn1 = re.compile(matchptn_ + r'creator:None, changeDescription:None, isFinal:0, inRelease:None\)')
         self.matchptn2 = re.compile(matchptn_ + r'creator:Joel Stevens, changeDescription:my really happy changeset, isFinal:0, inRelease:None\)')
         self.csdb = ChangeSetDB()
@@ -57,8 +57,9 @@ class NewChangeSetTestCase(unittest.TestCase):
 
     def tearDown(self):
         for e in self.addedSets:
-            parms = validate_changeset_parms.parse(changeset=e.referencedComponentId.uuid).dict
-            self.csdb.rollback(**parms)
+            if e:
+                parms = validate_changeset_parms.parse(changeset=e.referencedComponentId.uuid).dict
+                self.csdb.rollback(**parms)
         clearConfig()
 
     @staticmethod
@@ -66,22 +67,22 @@ class NewChangeSetTestCase(unittest.TestCase):
         return vars()['kwargs']
 
     def testNew(self):
-        self.addedSets.append(self.csdb.new_changeset(**add_changeset_parms.parse().dict))
+        self.addedSets.append(self.csdb.new(**add_changeset_parms.parse().dict))
         self.assertIsNotNone(self.matchptn1.match(str(self.addedSets[-1])))
         parms = add_changeset_parms.parse(creator='Joel Stevens', description='my really happy changeset')
-        self.addedSets.append(self.csdb.new_changeset(**parms.dict))
+        self.addedSets.append(self.csdb.new(**parms.dict))
         self.assertIsNotNone(self.matchptn2.match(str(self.addedSets[-1])))
 
     def testValid(self):
         parms = validate_changeset_parms.parse(changeset=str(uuid.uuid4()))
         self.assertFalse(self.csdb.isValid(**parms.dict), "Random UUID should not be valid")
-        csrec = self.csdb.new_changeset(**add_changeset_parms.parse().dict)
+        csrec = self.csdb.new(**add_changeset_parms.parse().dict)
         parms = validate_changeset_parms.parse(changeset=csrec.referencedComponentId.uuid)
         self.assertTrue(self.csdb.isValid(**parms.dict))
         self.assertEqual(self.csdb.rollback(**parms.dict).nChangesets, 1)
 
     def testHidden(self):
-        csrec = self.csdb.new_changeset(**add_changeset_parms.parse().dict)
+        csrec = self.csdb.new(**add_changeset_parms.parse().dict)
         parms = validate_changeset_parms.parse(changeset = csrec.referencedComponentId.uuid)
         concRef = self.concdb.add(**parms.dict)
         self.assertEqual(self.concdb.read(concRef.id, **parms.dict).id, concRef.id)
@@ -94,8 +95,8 @@ class NewChangeSetTestCase(unittest.TestCase):
         self.addedSets.append(csrec)
 
     def testRollback(self):
-        csrec = self.csdb.new_changeset(**add_changeset_parms.parse().dict)
-        parms = validate_changeset_parms.parse(changeset = csrec.referencedComponentId.uuid)
+        csrec = self.csdb.new(**add_changeset_parms.parse().dict)
+        parms = validate_changeset_parms.parse(changeset=csrec.referencedComponentId.uuid)
         self.concdb.add(**parms.dict)
         self.concdb.add(**parms.dict)
         rval = self.csdb.rollback(**parms.dict)
@@ -103,13 +104,20 @@ class NewChangeSetTestCase(unittest.TestCase):
         self.assertEqual(1, rval.nChangesets)
 
     def testCommit(self):
-        csrec = self.csdb.new_changeset(**add_changeset_parms.parse().dict)
-        parms = validate_changeset_parms.parse(changeset = csrec.referencedComponentId.uuid)
+        csrec = self.csdb.new(**add_changeset_parms.parse().dict)
+        parms = validate_changeset_parms.parse(changeset=csrec.referencedComponentId.uuid)
         self.concdb.add(**parms.dict)
         self.concdb.add(**parms.dict)
         rval = self.csdb.commit(**parms.dict)
         self.assertEqual(2, rval.nConcepts)
         self.assertEqual(1, rval.nChangesets)
 
-
+    def testName(self):
+        parms = add_changeset_parms.parse(csname='testing')
+        self.addedSets.append(self.csdb.new(**parms.dict))
+        self.assertIsNotNone(self.addedSets[-1])
+        self.assertTrue(self.csdb.isValid(**parms.dict))
+        self.assertIsNone(self.csdb.new(**parms.dict))
+        self.assertEqual("Changeset name: 'testing' already exists", self.csdb.invalid_new_reason(**parms.dict))
+        self.assertEqual(self.csdb.rollback(**parms.dict).nChangesets, 1)
 
