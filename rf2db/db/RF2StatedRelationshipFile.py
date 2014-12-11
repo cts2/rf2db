@@ -63,6 +63,11 @@ class StatedRelationshipDB(RF2FileWrapper):
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
+    hasrf2rec = True
+    @classmethod
+    def rf2rec(cls, *args, **kwargs):
+        return RF2Relationship(*args, **kwargs)
+
     def recsexist(self, filtr, **kwargs):
         db = self.connect()
         kwargs['maxtoreturn'] = 1
@@ -83,7 +88,6 @@ class StatedRelationshipDB(RF2FileWrapper):
             AND s.relationshipgroup=c.relationshipgroup""" % (self._fname, canon_fname))
         db.commit()
 
-
     def existsSourceRecs(self, sourceId, **kwargs):
         return self.recsexist('sourceId = %s ' % sourceId, **kwargs)
      
@@ -92,7 +96,6 @@ class StatedRelationshipDB(RF2FileWrapper):
     
     def existsPredicateRecs(self, predicateId, **kwargs):
         return self.recsexist('typeId = %s ' % predicateId, **kwargs)
-
 
     def _getRecs(self, filtr, maxtoreturn=None, **kwargs):
         """ Return all relationship records matching the given filter. Inferred is ignored in the stated relationship file
@@ -107,15 +110,13 @@ class StatedRelationshipDB(RF2FileWrapper):
                                                          filter_=canon_filtr(filtr, **kwargs),
                                                          maxtoreturn=maxtoreturn,
                                                          **kwargs))
-        
-        
+
     def getSourceRecs(self, sourceId, **kwargs):
         """ Return all relationship records with the given sourceId. """
         return self._getRecs("sourceId = '%s'" % sourceId, **kwargs)
     
     def getPredicateRecs(self, predicateId, **kwargs):
         return self._getRecs("typeId = '%s'" % predicateId, **kwargs)
-
 
     def getTargetRecs(self, targetId, **kwargs):
         """ Return all Relationship records associated with the given targetId """
@@ -125,8 +126,20 @@ class StatedRelationshipDB(RF2FileWrapper):
         """ Return a list of sourceId's connected with the given targetId.  Inferred is ignored"""
         db = self.connect()
         return set(map(lambda r: RF2Relationship(r).sourceId, db.query_p(self._fname,
-                                                                        filter_=canon_filtr("destinationId = '%s' " % targetId, **kwargs),
-                                                                        **kwargs)))
+                                                                         filter_=canon_filtr("destinationId = '%s' " % targetId, **kwargs),
+                                                                         **kwargs)))
+    @classmethod
+    def subjs(cls, db, changeset):
+        """ Return all the unique subjects
+        @param db:
+        @param changeset:
+        @return: list of subjects
+        """
+        fname = cls.fname()
+        db.execute("SELECT DISTINCT sourceId FROM %(fname)s WHERE changeset = '%(changeset)s'" % vars())
+        return db.ResultsGenerator(db)
+
+
 
     def getRelationship(self, rel=None, **kwargs):
         """ Return the relationship record identified by relId"""

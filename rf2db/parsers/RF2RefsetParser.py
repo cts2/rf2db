@@ -39,7 +39,6 @@ from rf2db.utils.link import rf2link
 #self.effectiveTimeISO = parse(flds[1]).isoformat()
 
 
-
 # ==================
 #  Reference Sets
 # ==================
@@ -176,4 +175,9 @@ class RF2DescriptionFormatReferenceSetEntry(rf2.DescriptionFormatReferenceSetEnt
 @rf2link(rf2.ChangeSetReferenceSetEntry, rf2.ChangeSetReferenceSetEntry_,
         ['name', 'owner', 'changeDescription', 'isFinal', 'inRelease'])
 class RF2ChangeSetReferenceEntry(rf2.ChangeSetReferenceSetEntry_, RF2RefsetBase):
+    pass
+
+@rf2link(rf2.ChangeSetDetails, rf2.ChangeSetDetails_,
+         ['name', 'owner', 'changeDescription', 'isFinal', 'inRelease'])
+class RF2ChangeSetDetails(rf2.ChangeSetDetails_, RF2RefsetBase):
     pass

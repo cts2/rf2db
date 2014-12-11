@@ -5,8 +5,8 @@
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
 #
-#     Redistributions of source code must retain the above copyright notice, this
-#     list of conditions and the following disclaimer.
+# Redistributions of source code must retain the above copyright notice, this
+# list of conditions and the following disclaimer.
 #
 #     Redistributions in binary form must reproduce the above copyright notice,
 #     this list of conditions and the following disclaimer in the documentation
@@ -58,10 +58,12 @@ update_concept_parms.definitionstatus = enumparam(['p', 'f'])
 
 delete_concept_parms = ParameterDefinitionList(global_rf2_parms)
 
+
 class ConceptDB(RF2FileWrapper):
     directory = 'Terminology'
     prefixes = ['sct2_Concept_']
     table = 'concept'
+
 
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
       %(base)s,
@@ -71,6 +73,11 @@ class ConceptDB(RF2FileWrapper):
 
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
+
+    hasrf2rec = True
+    @classmethod
+    def rf2rec(cls, *args, **kwargs):
+        return RF2Concept(*args, **kwargs)
 
     @lfu_cache(maxsize=100)
     def read(self, cid, active=1, changeset=None, **kwargs):
@@ -136,8 +143,8 @@ class ConceptDB(RF2FileWrapper):
         # Don't update effective time if nothing will change (PUT is idempotent)
         if not current_value.locked:
             if current_value.changeset != changeset or \
-                current_value.isPrimitive and definitionstatus == 'f' or \
-                current_value.isFullyDefined and definitionstatus == 'p':
+               current_value.isPrimitive and definitionstatus == 'f' or \
+               current_value.isFullyDefined and definitionstatus == 'p':
                 if cp_values.ss:
                     return "Concept: Cannot update an existing snapshot record"
                 else:
@@ -148,7 +155,7 @@ class ConceptDB(RF2FileWrapper):
             if current_value.changeset == changeset:
                 if cp_values.ss:
                     definitionstatusid = primitive if (definitionstatus == 'p' and current_value.isFullyDefined) \
-                        else defined if (definitionstatus=='f' and current_value.isPrimitive) else None
+                        else defined if (definitionstatus == 'f' and current_value.isPrimitive) else None
                     self._doUpdate(cid, changeset, definitionstatusid=definitionstatusid, **kwargs)
                     clear_caches()
                     return self.read(cid, _nocache=True, **kwargs)
@@ -158,9 +165,9 @@ class ConceptDB(RF2FileWrapper):
                 return "Concept: Record is locked under a different changeset"
 
 
-    def delete(self, rid, changeset=None, **kwargs):
+    def delete(self, cid, changeset=None, **kwargs):
         """ Delete or deactivate a concept
-        @param rid: concept identifier
+        @param cid: concept identifier
         @param changeset: containing changeset
         @param kwargs: context
         @return: None if success otherwise an error message
@@ -169,8 +176,8 @@ class ConceptDB(RF2FileWrapper):
             return self.changeseterror(changeset)
 
         # delete is idempotent, so if we can't find it or it is already gone claim success
-        kwargs['active'] = 0        # read even if inactive
-        current_value = self.read(rid, **kwargs)
+        kwargs['active'] = 0  # read even if inactive
+        current_value = self.read(cid, **kwargs)
         if not current_value or not current_value.isActive():
             return None
 
@@ -182,7 +189,8 @@ class ConceptDB(RF2FileWrapper):
         else:
             if current_value.changeset == changeset:
                 db = self.connect()
-                db.execute_query("DELETE FROM %(fname)s WHERE id=%(rid)s AND changeset=%(changeset)s AND locked=1" % vars())
+                db.execute_query(
+                    "DELETE FROM %(fname)s WHERE id=%(cid)s AND changeset=%(changeset)s AND locked=1" % vars())
                 db.commit()
                 clear_caches()
                 return None
@@ -218,7 +226,6 @@ class ConceptDB(RF2FileWrapper):
         clear_caches()
         return self.read(cid, changeset=changeset, **kwargs)
 
-
     def getAllConcepts(self, active=1, order='asc', sort=None, page=0, maxtoreturn=None, after=0,
                        changeset=None, moduleid=None, locked=False, **kwargs):
         """
@@ -233,7 +240,6 @@ class ConceptDB(RF2FileWrapper):
             raise Exception('FULL table not supported for complete concept list')
 
         start = (page * maxtoreturn) if maxtoreturn > 0 else 0
-
 
         query = 'SELECT %s FROM %s' % ('*' if maxtoreturn != 0 else 'count(*)', self._fname)
         query += ' WHERE %s ' % ('active=1' if active else 'TRUE')

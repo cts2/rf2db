@@ -125,6 +125,11 @@ class RelationshipDB(RF2FileWrapper):
         self._srdb = StatedRelationshipDB()
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
+    hasrf2rec = True
+    @classmethod
+    def rf2rec(cls, *args, **kwargs):
+        return RF2Relationship(*args, **kwargs)
+
     @lfu_cache(maxsize=100)
     def recsexist(self, filtr, stated=False, **kwargs):
         if stated and self._srdb.recsexist(filtr, **kwargs):
@@ -322,7 +327,7 @@ class RelationshipDB(RF2FileWrapper):
 
     def _doadd(self, db, id, effectiveTime, active, moduleId, sourceId, destinationId,
                relationshipGroup, typeId, characteristicTypeId, modifierId, isCanonical, changeset='', locked=1):
-        db.execute_query(self.insert_stmt % self._fname + self.addrow % vars())
+        db.execute_query(self.insert_stmt % self._srdb._fname + self.addrow % vars())
         clear_caches()
 
     @classmethod
@@ -365,6 +370,9 @@ class RelationshipDB(RF2FileWrapper):
         @param kwargs: context
         @return: new relationship record or error string
         """
+        from rf2db.db.RF2ChangeSetFile import csorname
+
+        changeset, csname = csorname(changeset, csname)
         # The source concept must already exist and be defined in this changeset
         if self.invalid_add_reason(source, target, predicate, changeset, **kwargs):
             return None
@@ -381,20 +389,14 @@ class RelationshipDB(RF2FileWrapper):
         return self.read(rid, changeset=changeset, **kwargs)
 
     @classmethod
-    def _subjs(cls, db, changeset):
-        fname = cls.fname()
-        db.execute("SELECT DISTINCT sourceId FROM %(fname)s WHERE changeset = '%(changeset)s'" % vars())
-        return db.ResultsGenerator(db)
-
-    @classmethod
     def _commit(cls, db, changeset, **args):
-        for subj in cls._subjs(db, changeset):
+        for subj in StatedRelationshipDB.subjs(db, changeset):
             cls._tcdb().unlock(db, subj)
         return super(RelationshipDB, cls)._commit(db, changeset, **args)
 
     @classmethod
     def _rollback(cls, db, changeset, **args):
-        for subj in cls._subjs(db, changeset):
+        for subj in StatedRelationshipDB.subjs(db, changeset):
             cls._tcdb().remove(db, subj)
         return super(RelationshipDB, cls)._rollback(db, changeset, **args)
 

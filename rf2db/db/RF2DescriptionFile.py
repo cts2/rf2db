@@ -29,6 +29,7 @@
 
 """ RF2 Description File Access Routines
 """
+import re
 
 from rf2db.parsers.RF2BaseParser import RF2Description
 from rf2db.parsers.RF2Iterator import RF2DescriptionList, iter_parms
@@ -39,11 +40,18 @@ from rf2db.constants.RF2ValueSets import definition, fsn, synonym, initialChar, 
     gb_english, spanish
 from rf2db.db.RF2DBConnection import cp_values
 from rf2db.db.RF2LanguageFile import LanguageDB
+from rf2db.constants.RF2ValueSets import fsn
 import rf2db.utils.lfu_cache
 
 # Parameters for description access
 description_parms = ParameterDefinitionList(global_rf2_parms)
 description_parms.desc = sctidparam()
+
+fsn_parms = ParameterDefinitionList(global_rf2_parms)
+fsn_parms.language = enumparam(['en', 'es', 'de'], default='en')
+fsn_parms.concept = sctidparam()
+
+base_parms = fsn_parms
 
 description_list_parms = ParameterDefinitionList(global_rf2_parms)
 description_list_parms.add(iter_parms)
@@ -93,6 +101,11 @@ class DescriptionDB(RF2FileWrapper):
         RF2FileWrapper.__init__(self, *args, **kwargs)
         self._descTextDB = None
         self._concDB = None
+
+    hasrf2rec = True
+    @classmethod
+    def rf2rec(cls, *args, **kwargs):
+        return RF2Description(*args, **kwargs)
     
     @lfu_cache(maxsize=100)
     def getConceptDescription(self, conceptId, maxtoreturn=None, **kwargs):
@@ -101,9 +114,8 @@ class DescriptionDB(RF2FileWrapper):
         return [RF2Description(d) for d in rval] if maxtoreturn != 0 else list(rval)
 
     def getConceptIdForDescription(self, descId, **kwargs):
-        rlist = self.getDescriptionById(descId, **kwargs)
+        rlist = self.read(descId, **kwargs)
         return str(rlist.conceptId) if rlist else None
-
 
     @lfu_cache(maxsize=20)
     def read(self, descid, **kwargs):
@@ -128,6 +140,24 @@ class DescriptionDB(RF2FileWrapper):
         db.commit()
         clear_caches()
 
+    def fsn(self, concept=None, language='en', changeset=None, **kwargs):
+        if not self.validconcept(concept, changeset, **kwargs):
+            return "Unrecognized concept identifier: %s" % concept
+        db = self.connect()
+        typ = fsn
+        filter_ = "conceptId=%(concept)s AND languageCode='%(language)s' AND typeId=%(typ)s" % vars()
+        return db.singleton_query(self._fname, RF2Description, filter_=filter_, **kwargs)
+
+    def base(self, **kwargs):
+        """ Return the bit for the concept that constructs the root FSN
+        @param concept: concept to look up
+        @param kwargs:
+        @return:
+        """
+        descrec = self.fsn(**kwargs)
+        if descrec:
+            return re.sub(r'.*(\(.*\))\s*$','\\1', descrec.term, flags=re.MULTILINE)
+        return None
 
     def add(self, changeset, concept=None, descid=None, effectivetime=None,
             moduleid=None, language='en', type='p', term='', **kwargs):
@@ -156,7 +186,7 @@ class DescriptionDB(RF2FileWrapper):
             descid = self.newdescriptionid()
         language = language.lower()
         typeid = definition if type == 'd' else fsn if type == 'f' else synonym
-
+        effectivetime, moduleid = self.effectivetime_and_moduleid(effectivetime, moduleid)
         fname = self._fname
         csig = initialChar
         db.execute_query("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, "
@@ -210,8 +240,7 @@ class DescriptionDB(RF2FileWrapper):
         changed = current_value.typeId != typeid or current_value.term != term or current_value.languageCode != language
 
         if not current_value.locked:
-            if current_value.changeset != changeset or \
-                changed:
+            if current_value.changeset != changeset or changed:
                 if cp_values.ss:
                     return "Description: Cannot update an existing snapshot record"
                 else:

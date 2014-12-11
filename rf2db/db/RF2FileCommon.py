@@ -102,11 +102,11 @@ global_rf2_parms.moduleid = moduleidparam()
 class RF2FileWrapper(object):
     """ Abstract wrapper class for RF2 files """
     # ================== Virtual parameters ===============
-    directory  = None    # 'Terminology' or 'Refset/Content', 'Refset/Language', etc
-    prefixes   = []      # 'sct2_Concept_', 'der2_cRefset_AttributeValue', 'der2_Refset_Simple', etc.
-    table      = None    # 'concept', 'description', 'simplemap', etc.
-    createSTMT = None    # SQL create statement for table. 'table' is available as a parameter
-    isRF1File  = False   # True means this is an RF1 table w/ different behavior
+    directory = None    # 'Terminology' or 'Refset/Content', 'Refset/Language', etc
+    prefixes = []       # 'sct2_Concept_', 'der2_cRefset_AttributeValue', 'der2_Refset_Simple', etc.
+    table = None        # 'concept', 'description', 'simplemap', etc.
+    createSTMT = None   # SQL create statement for table. 'table' is available as a parameter
+    isRF1File = False   # True means this is an RF1 table w/ different behavior
 
     _file_base = '''id bigint(20) NOT NULL,
 effectiveTime int(11) NOT NULL,
@@ -141,6 +141,7 @@ moduleId bigint(20) NOT NULL '''
         self._exists= False
         self._hascontents = False
 
+    hasrf2rec = False
 
     def connect(self):
         """

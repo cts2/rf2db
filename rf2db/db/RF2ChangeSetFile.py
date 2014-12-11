@@ -33,7 +33,7 @@ import re
 
 from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
 from rf2db.db.RF2FileCommon import global_rf2_parms
-from rf2db.parsers.RF2RefsetParser import RF2ChangeSetReferenceEntry
+from rf2db.parsers.RF2RefsetParser import RF2ChangeSetReferenceEntry, RF2ChangeSetDetails
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, booleanparam, strparam
 from rf2db.constants.RF2ValueSets import changeSetRefSet
 from rf2db.db.RF2ConceptFile import ConceptDB
@@ -43,6 +43,7 @@ from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB
 from rf2db.db.RF2RelationshipFile import RelationshipDB
 from rf2db.db.RF2LanguageFile import LanguageDB
 from rf2db.db.RF2SimpleReferencesetFile import SimpleReferencesetDB
+from rf2db.db.AllFiles import read_by_changeset
 
 changeset_parms = ParameterDefinitionList(global_rf2_parms)
 changeset_parms.open = booleanparam(default=True)
@@ -108,6 +109,9 @@ class ChangeSetDB(RF2RefsetWrapper):
     def __init__(self, *args, **kwargs):
         RF2RefsetWrapper.__init__(self, *args, **kwargs)
 
+    def __new__(cls, *args, **kwargs):
+        return RF2RefsetWrapper.__new__(cls, *args, **kwargs)
+
     def read(self, changeset=None, csname=None, **kwargs):
         """ Read the supplied changeset record
         @param changeset: UUID of the changeset
@@ -141,6 +145,28 @@ class ChangeSetDB(RF2RefsetWrapper):
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
+    def read_details(self, changeset=None, csname=None, **kwargs):
+        """ Read the supplied changeset record and all associated files
+        @param changeset: UUID of the changeset
+        @param csname: unique name of the changeset
+        @param kwargs: Contextual arguments
+        @return: RF2ChangeSetReferenceEntry or None if changeset doesn't exist
+        """
+        changeset, csname = csorname(changeset, csname)
+        if not changeset:
+            changeset = self._read_by_name(csname)
+        filter_ = "refsetId=%s AND referencedComponentId='%s' " % (changeSetRefSet, changeset)
+        if csname:
+            filter_ += "AND name='%s' " % csname
+        db = self.connect()
+        base = db.singleton_query(self._fname,
+                                  RF2ChangeSetDetails,
+                                  filter_=filter_,
+                                  changeset=changeset, **kwargs)
+        details = read_by_changeset(changeset)
+        for k,v in details.items():
+            base.__setattr__(k, v)
+        return base
 
     def invalid_new_reason(self, changeset=None, owner=None, description=None, csname=None, **kwargs):
         if csname and self._read_by_name(csname):

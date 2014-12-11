@@ -76,6 +76,11 @@ class DescriptionTextDB(RF2FileWrapper):
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
+    hasrf2rec = True
+    @classmethod
+    def rf2rec(cls, *args, **kwargs):
+        return RF2Description(*args, **kwargs)
+
     @staticmethod
     def _d(**kwargs):
         return vars()['kwargs']

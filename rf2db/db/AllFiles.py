@@ -26,7 +26,7 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-import RF1CanonicalCore, RF2ChangeSetFile, RF2ComplexMapFile, RF2ConceptFile, RF2DescriptionFile,  \
+import RF1CanonicalCore, RF2ComplexMapFile, RF2ConceptFile, RF2DescriptionFile,  \
     RF2DescriptionTextFile, RF2LanguageFile, RF2ModuleDependencyFile, RF2ModuleVersionsFile, RF2PnAndFSN, \
     RF2RelationshipFile, RF2SimpleMapFile, RF2SimpleReferencesetFile, RF2StatedRelationshipFile, \
     RF2TransitiveChildren, RF2TransitiveChildrenCanonical, RF2TransitiveClosure,\
@@ -36,13 +36,12 @@ from RF2DBConnection import RF2DBConnection
 # TODO: CannonicalCore not updated
 # TODO: RF2ModuleVersionsFile.ModuleVersionsDB, RF2PnAndFSN.PNandFSNDB
 # TODO: RF2TransitiveChildren.TransitiveChildrenDB, RF2TransitiveChildrenCanonical.TransitiveChildrenCanonicalDB
-# TODO: RF2TransitiveClosure.TransitiveClosureDB, RF2TransitiveClosureCanonical.TransitiveClosureCanonicalDB,
+# TODO: RF2TransitiveClosureCanonical.TransitiveClosureCanonicalDB,
 allfiles = [RF2ComplexMapFile.ComplexMapDB,
             RF2ConceptFile.ConceptDB, RF2DescriptionFile.DescriptionDB, RF2DescriptionTextFile.DescriptionTextDB,
             RF2LanguageFile.LanguageDB, RF2ModuleDependencyFile.ModuleDependencyDB,
             RF2RelationshipFile.RelationshipDB, RF2SimpleMapFile.SimpleMapDB,
-            RF2SimpleReferencesetFile.SimpleReferencesetDB, RF2StatedRelationshipFile.StatedRelationshipDB,
-            RF2ChangeSetFile.ChangeSetDB]
+            RF2SimpleReferencesetFile.SimpleReferencesetDB, RF2StatedRelationshipFile.StatedRelationshipDB,]
 
 
 def delete(filter_):
@@ -51,7 +50,23 @@ def delete(filter_):
     rval = {}
     for f in allfiles:
         rval[f.fname()] = db.execute_query(query % (f.fname(), filter_))['affected_rows']
-    fname = RF2TransitiveClosure.TransitiveClosureDB.fname()
-    rval[fname] = db.execute_query(query % (fname, "locked=1"))['affected_rows']
-    db.commit()
+        db.commit(disconnect=False)
+    # Have to do changeset separately to prevent import loops
+    from rf2db.db.RF2ChangeSetFile import ChangeSetDB
+    f = RF2ChangeSetFile.ChangeSetDB
+    rval[f.fname()] = db.execute_query(query % (f.fname(), filter_))['affected_rows']
+    db.commit(disconnect=False)
+    return rval
+
+
+def read_by_changeset(changeset):
+    db = RF2DBConnection()
+    query = "SELECT * FROM %s WHERE changeset = '" + str(changeset) + "'"
+    rval = {}
+    for f in allfiles:
+        if f.hasrf2rec:
+            print f.table
+            db.execute(query % f.fname())
+            fi = f()
+            rval[f.table] = [fi.rf2rec(c) for c in db.ResultsGenerator(db)]
     return rval

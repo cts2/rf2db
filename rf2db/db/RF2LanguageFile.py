@@ -85,8 +85,12 @@ class LanguageDB(RF2RefsetWrapper):
     def __init__(self, *args, **kwargs):
         RF2RefsetWrapper.__init__(self, *args, **kwargs)
 
-    # We have to override the refset wrapper because the call would be recursive otherwise
+    hasrf2rec = True
+    @classmethod
+    def rf2rec(cls, *args, **kwargs):
+        return RF2LanguageRefsetEntry(*args, **kwargs)
 
+    # We have to override the refset wrapper because the call would be recursive otherwise
     def _build_knowns(self, language):
         self._known_refsets = self.valid_refsets(self._fname)
         self._refset_names = {k: v[0] for k, v in self.preferred_term_for_concepts(self._known_refsets.items(),
