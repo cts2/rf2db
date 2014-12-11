@@ -174,6 +174,6 @@ class RF2DescriptionFormatReferenceSetEntry(rf2.DescriptionFormatReferenceSetEnt
     pass
 
 @rf2link(rf2.ChangeSetReferenceSetEntry, rf2.ChangeSetReferenceSetEntry_,
-        ['name', 'creator', 'changeDescription', 'isFinal', 'inRelease'])
+        ['name', 'owner', 'changeDescription', 'isFinal', 'inRelease'])
 class RF2ChangeSetReferenceEntry(rf2.ChangeSetReferenceSetEntry_, RF2RefsetBase):
     pass

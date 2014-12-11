@@ -49,8 +49,8 @@ class NewChangeSetTestCase(unittest.TestCase):
         matchptn_ =  (r'RF2ChangeSetReferenceEntry\(id:%(uuidre)s, '
                 r'effectiveTime:%(tsre)s, active:1, moduleId:%(moduleid)s, '
                 r'refsetId:%(rsid)s, referencedComponentId:%(uuidre)s, name:%(uuidre)s, ') % vars()
-        self.matchptn1 = re.compile(matchptn_ + r'creator:None, changeDescription:None, isFinal:0, inRelease:None\)')
-        self.matchptn2 = re.compile(matchptn_ + r'creator:Joel Stevens, changeDescription:my really happy changeset, isFinal:0, inRelease:None\)')
+        self.matchptn1 = re.compile(matchptn_ + r'owner:None, changeDescription:None, isFinal:0, inRelease:None\)')
+        self.matchptn2 = re.compile(matchptn_ + r'owner:Joel Stevens, changeDescription:my really happy changeset, isFinal:0, inRelease:None\)')
         self.csdb = ChangeSetDB()
         self.concdb = ConceptDB()
         self.addedSets = []
@@ -69,7 +69,7 @@ class NewChangeSetTestCase(unittest.TestCase):
     def testNew(self):
         self.addedSets.append(self.csdb.new(**add_changeset_parms.parse().dict))
         self.assertIsNotNone(self.matchptn1.match(str(self.addedSets[-1])))
-        parms = add_changeset_parms.parse(creator='Joel Stevens', description='my really happy changeset')
+        parms = add_changeset_parms.parse(owner='Joel Stevens', description='my really happy changeset')
         self.addedSets.append(self.csdb.new(**parms.dict))
         self.assertIsNotNone(self.matchptn2.match(str(self.addedSets[-1])))
 
