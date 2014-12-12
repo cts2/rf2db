@@ -43,6 +43,7 @@ from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB
 from rf2db.db.RF2RelationshipFile import RelationshipDB
 from rf2db.db.RF2LanguageFile import LanguageDB
 from rf2db.db.RF2SimpleReferencesetFile import SimpleReferencesetDB
+from rf2db.db.RF2ModuleDependencyFile import ModuleDependencyDB
 from rf2db.db.AllFiles import read_by_changeset
 
 changeset_parms = ParameterDefinitionList(global_rf2_parms)
@@ -269,7 +270,8 @@ class ChangeSetDB(RF2RefsetWrapper):
                       (LanguageDB, 'nLanguages'),
                       (StatedRelationshipDB, 'nStatedRelationships'),
                       (RelationshipDB, 'nRelationships'),
-                      (SimpleReferencesetDB, 'nSimpleRefsets')]
+                      (SimpleReferencesetDB, 'nSimpleRefsets'),
+                      (ModuleDependencyDB, 'nModuleDependencies')]
 
     def rollback(self, changeset=None, csname=None, **kwargs):
         """ Roll back all of the changes identified in the supplied changeset. If the changeset isn't supplied or
@@ -322,5 +324,5 @@ class ChangeSetDB(RF2RefsetWrapper):
     @classmethod
     def _commit(cls, db, changeset, **args):
         fname = cls.fname()
-        return db.execute_query("UPDATE %(fname)s SET locked=0 AND isFinal=1 WHERE changeset = '%(changeset)s'" % vars())
+        return db.execute_query("UPDATE %(fname)s SET locked=0, isFinal=1 WHERE changeset = '%(changeset)s'" % vars())
 

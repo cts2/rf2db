@@ -31,6 +31,7 @@
 """
 
 from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
+from rf2db.parsers.RF2RefsetParser import RF2ModuleDependencyReferenceSetEntry
 
 class ModuleDependencyDB(RF2RefsetWrapper):
 
@@ -47,6 +48,11 @@ class ModuleDependencyDB(RF2RefsetWrapper):
 
     def __init__(self, *args, **kwargs):
         RF2RefsetWrapper.__init__(self, *args, **kwargs)
+
+    hasrf2rec = True
+    @classmethod
+    def rf2rec(cls, *args, **kwargs):
+        return RF2ModuleDependencyReferenceSetEntry(*args, **kwargs)
 
 
 
