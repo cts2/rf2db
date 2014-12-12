@@ -193,7 +193,7 @@ class RF2DBConnection(object):
 
     @staticmethod
     def build_query(table, filter_="", sort=None, active=True, start=0, maxtoreturn=None, refdate=None,
-                    moduleid=None, order='asc', changeset=None, **_):
+                    moduleid=None, order='asc', changeset=None, ignore_locks=False,  **_):
         """ Query an RF2 table taking the historical information into account.
         
         @param table: table to query
@@ -222,6 +222,9 @@ class RF2DBConnection(object):
 
         @param changeset: changeset to include in the query
         @type changeset: C{uuid}
+
+        @param ignore_locks: True means pay no attention to ock settings
+        @type ignore_locks: C{bool}
         
         @return: query
         @rtype: C{String}
@@ -254,10 +257,11 @@ class RF2DBConnection(object):
             query += " AND active = 1 "
         if moduleid:
             query += " AND (" + ' OR '.join(['moduleid = %s' % m for m in listify(moduleid)]) + ') '
-        if changeset:
-            query += " AND (changeset = '%s' OR locked = 0)" % changeset
-        else:
-            query += " AND locked = 0"
+        if not ignore_locks:
+            if changeset:
+                query += " AND (changeset = '%s' OR locked = 0)" % changeset
+            else:
+                query += " AND locked = 0"
         if sort:
             query += " ORDER BY " + ', '.join([('tbl.%s' % e) for e in listify(sort)]) + ' %s ' % order
         if maxtoreturn > 0:

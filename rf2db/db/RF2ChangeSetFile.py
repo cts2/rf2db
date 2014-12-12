@@ -122,7 +122,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         """
         changeset, csname = csorname(changeset, csname)
         if not changeset:
-            changeset = self._read_by_name(csname)
+            changeset = self._read_by_name(csname, **kwargs)
         filter_ = "refsetId=%s AND referencedComponentId='%s' " % (changeSetRefSet, changeset)
         if csname:
             filter_ += "AND name='%s' " % csname
@@ -132,19 +132,20 @@ class ChangeSetDB(RF2RefsetWrapper):
                                   filter_=filter_,
                                   changeset=changeset, **kwargs)
 
-    def _read_by_name(self, csname):
+    def _read_by_name(self, csname, changeset=None, **kwargs):
         """ Read the supplied changeset record by csname
         @param csname: name of the changeset
         @param kwargs: Contextual arguments
         @return: changeset id for name or None
         """
-        fname = self._fname
-        query = "SELECT referencedComponentId from %(fname)s WHERE name='%(csname)s'" % vars()
         db = self.connect()
-        db.execute(query)
-        rlist = list(db.ResultsGenerator(db))
-        assert (len(rlist) < 2)
-        return rlist[0] if len(rlist) else None
+        base = db.singleton_query(self._fname,
+                                  RF2ChangeSetReferenceEntry,
+                                  filter_="name='%s'" % csname,
+                                  changeset=changeset,
+                                  ignore_locks=True,
+                                  **kwargs)
+        return base.referencedComponentId.uuid if base else None
 
     def read_details(self, changeset=None, csname=None, **kwargs):
         """ Read the supplied changeset record and all associated files
@@ -155,7 +156,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         """
         changeset, csname = csorname(changeset, csname)
         if not changeset:
-            changeset = self._read_by_name(csname)
+            changeset = self._read_by_name(csname, **kwargs)
         filter_ = "refsetId=%s AND referencedComponentId='%s' " % (changeSetRefSet, changeset)
         if csname:
             filter_ += "AND name='%s' " % csname
@@ -170,7 +171,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         return base
 
     def invalid_new_reason(self, changeset=None, owner=None, description=None, csname=None, **kwargs):
-        if csname and self._read_by_name(csname):
+        if csname and self._read_by_name(csname, **kwargs):
             return "Changeset name: '%s' already exists" % csname
         if changeset and self.read(changeset, **kwargs):
             return "Changeset %s already exists" % changeset
@@ -219,7 +220,7 @@ class ChangeSetDB(RF2RefsetWrapper):
             if not csrec:
                 return "Changeset %s does not exist" % changeset
         elif csname:
-            changeset = self._read_by_name(csname)
+            changeset = self._read_by_name(csname, **kwargs)
             if not changeset:
                 return "Changeset name: '%s' does not exist" % csname
             csrec = self.read(changeset)
@@ -241,7 +242,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         if self.invalid_update_reason(changeset, owner, description, csname, **kwargs):
             return None
         if not changeset:
-            changeset = self._read_by_name(csname)
+            changeset = self._read_by_name(csname, **kwargs)
         query = "UPDATE %s SET " % self._fname
         parms = []
         if owner:
@@ -287,7 +288,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         if self.invalid_update_reason(changeset=changeset, csname=csname, **kwargs):
             return None
         if csname and not changeset:
-            changeset = self._read_by_name(csname)
+            changeset = self._read_by_name(csname, **kwargs)
         if changeset:
             db = self.connect()
             for f, a in ChangeSetDB.changesetFiles:
@@ -311,7 +312,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         if self.invalid_update_reason(changeset=changeset, csname=csname, **kwargs):
             return None
         if csname and not changeset:
-            changeset = self._read_by_name(csname)
+            changeset = self._read_by_name(csname, **kwargs)
         if changeset:
             db = self.connect()
             for f, a in ChangeSetDB.changesetFiles:
