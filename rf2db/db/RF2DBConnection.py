@@ -33,7 +33,7 @@ import sys
 import re
 from functools import reduce
 import mysql.connector as mysql
-from mysql.connector.errorcode import CR_SERVER_GONE_ERROR
+from mysql.connector.errorcode import CR_SERVER_GONE_ERROR, CR_CONNECTION_ERROR
 import sqlalchemy.pool as pool
 
 from ConfigManager.ConfigArgs import ConfigArg, ConfigArgs
@@ -123,6 +123,30 @@ class RF2DBConnection(object):
                 pass
             self._connection = None
 
+    def _dosql(self, func, stmt, retrycount=0):
+        """ Execute a create/delete/update statement
+        @paramm func: function to execute
+        @param stmt:  The sql statement to execute
+        @type stmt: C{str}
+
+        @param retrycount: The number of times the execution has been tried
+        @type retrycount: C{int}
+
+        @return: Result of cursor.execute(stmt)
+        """
+        if booleanparam.v(db_values.trace, False):
+            print("===== %s" % stmt)
+        try:
+            self._connect()
+            return func(self, stmt)
+        except db.Error as e:
+            self._disconnect()
+            if retrycount == 0 and e.errno in (CR_SERVER_GONE_ERROR, CR_CONNECTION_ERROR):
+                print >> sys.stderr, ("Database timeout error - reconnecting")
+                return self._dosql(func, stmt, retrycount+1)
+            else:
+                raise e
+
     # TODO: merge this with execute
     def execute_query(self, stmt, retrycount=0):
         """ Execute a create/delete/update statement
@@ -135,47 +159,22 @@ class RF2DBConnection(object):
 
         @return: Result of cursor.execute(stmt)
         """
-        if booleanparam.v(db_values.trace, False):
-            print("===== %s" % stmt)
-        try:
-            self._connect()
-            return self._connection.cmd_query(stmt)
-        except db.Error as e:
-            self._disconnect()
-            if retrycount == 0 and e.errno == CR_SERVER_GONE_ERROR:
-                print >> sys.stderr, ("Database timeout error - reconnecting")
-                self._connect()
-                return self.execute_query(stmt, retrycount + 1)
-            else:
-                raise e
+        return self._dosql(lambda self, stmt: self._connection.cmd_query(stmt), stmt)
+
 
     def execute(self, stmt, retrycount=0):
         """ Execute stmt.  
         
         @param stmt:  The sql statement to execute
         @type stmt: C{str}
-        
-        @param retrycount: The number of times the execution has been tried
-        @type retrycount: C{int}
-        
+
         @return: Result of cursor.execute(stmt)
         """
-        if booleanparam.v(db_values.trace, False):
-            print("===== %s" % stmt)
-        try:
-            self._connect()
+        def f(self, stmt):
             self._cursor = self._connection.cursor()
             rval = self._cursor.execute(stmt)
             return self._cursor
-        except db.Error as e:
-            self._disconnect()
-            if retrycount == 0 and e.args[0] == 2006:
-                print >> sys.stderr, ("Database timeout error - reconnecting")
-                self._connect()
-                return self.execute(stmt, retrycount + 1)
-            else:
-                print >> sys.stderr, ("**********", stmt)
-                raise e
+        return self._dosql(f, stmt)
 
     class ResultsGenerator(object):
         """ Generator wrapper for sql cursor.  Returns tab separated value list for the query """

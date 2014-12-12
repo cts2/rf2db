@@ -315,7 +315,7 @@ class RelationshipDB(RF2FileWrapper):
         @param kwargs: context
         @return: stated or inferred record
         """
-        rrec = self._srdb.getRelationship(**kwargs)
+        rrec = self._srdb.getRelationship(rel=rel, **kwargs)
         if rrec:
             return rrec
         db = self.connect()
@@ -325,9 +325,9 @@ class RelationshipDB(RF2FileWrapper):
                                                       **kwargs)]
         return rlist[0] if len(rlist) else None
 
-    def _doadd(self, db, id, effectiveTime, active, moduleId, sourceId, destinationId,
+    def _doadd(self, db, fname, id, effectiveTime, active, moduleId, sourceId, destinationId,
                relationshipGroup, typeId, characteristicTypeId, modifierId, isCanonical, changeset='', locked=1):
-        db.execute_query(self.insert_stmt % self._srdb._fname + self.addrow % vars())
+        db.execute_query(self.insert_stmt % fname + self.addrow % vars())
         clear_caches()
 
     @classmethod
@@ -350,7 +350,7 @@ class RelationshipDB(RF2FileWrapper):
         if self.validconcept(source, None, **{}):
             return "Cannot change the definition of an existing concept (%s)" % source
         if not self.validconcept(source, changeset, **kwargs):
-            return "Source (parent) concept (%s) is not valid" % source
+            return "Source (parent) concept: %s is not valid" % source
         if not self.validconcept(target, changeset, **kwargs):
             return "Destination (target) concept (%s) is not valid" % target
         if predicate != is_a and not self._validconcept(predicate, changeset, **kwargs):
@@ -358,7 +358,7 @@ class RelationshipDB(RF2FileWrapper):
         return None
 
     def add(self, source=None, target=None, predicate=is_a, effectivetime=None, group=0,
-            changeset=None, moduleid=None, **kwargs):
+            changeset=None, csname=None, moduleid=None, **kwargs):
         """ Add a relationship.  This actually goes into the stated relationship file...
         @param source: source or child sctid
         @param target: target or parent sctid
@@ -367,6 +367,7 @@ class RelationshipDB(RF2FileWrapper):
         @param moduleid: owning module.  Default: service module (ep_values.moduleId)
         @param group: role group number. Default: 0
         @param changeset: scoping changeset
+        @param csname: scoping changeset name
         @param kwargs: context
         @return: new relationship record or error string
         """
@@ -379,11 +380,14 @@ class RelationshipDB(RF2FileWrapper):
         effectivetime, moduleid = self.effectivetime_and_moduleid(effectivetime, moduleid)
         if not self.changesetisvalid(changeset):
             return self.changeseterror(changeset)
+        db = RelationshipDB().connect()
         rid = self.newrelationshipid()
-        db = StatedRelationshipDB().connect()
-        self._doadd(db, self.newrelationshipid(), effectivetime, 1, moduleid, source,
+        self._doadd(db, StatedRelationshipDB.fname(), rid, effectivetime, 1, moduleid, source,
                     target, group, predicate, statedRelationship, some, 0, changeset)
-
+        db.commit(disconnect=False)
+        self._doadd(db, RelationshipDB.fname(), self.newrelationshipid(), effectivetime, 1, moduleid, source,
+                    target, group, predicate, inferredRelationship, some, 0, changeset)
+        db.commit(disconnect=False)
         self._tcdb().add(source, predicate, target, changeset)
         db.commit()
         return self.read(rid, changeset=changeset, **kwargs)

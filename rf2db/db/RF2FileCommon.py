@@ -358,6 +358,7 @@ moduleId bigint(20) NOT NULL '''
             self._concdb = ConceptDB()
         localargs = singleresultargs(**kwargs)
         localargs['active'] = False
+        localargs.pop('moduleid', None)
         return bool(self._concdb.read(conceptid, changeset=changeset, **localargs))
 
     @staticmethod

@@ -72,6 +72,7 @@ class NewDescriptionTestCase(unittest.TestCase):
                                     source=self.concid,
                                     target=test_target)
         dbrec = self.reldb.add(**parms.dict)
+        self.assertIsNotNone(dbrec, self.reldb.invalid_add_reason(**parms.dict))
         etn = effectivetimenow()
         relid = dbrec.id
         self.assertEqual('RF2Relationship(id:%s, effectiveTime:%s, active:1, moduleId:11000160102, '

@@ -81,7 +81,5 @@ class NewDescriptionTestCase(unittest.TestCase):
         self.assertRaises(self.descdb.read(dbrec.id))
         self.csdb.commit(**changeset_parms.parse(changeset=testChangeSet).dict)
 
-
-
 if __name__ == '__main__':
     unittest.main()

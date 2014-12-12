@@ -34,7 +34,7 @@ parent or child.  In the case of multiple paths, the shortest number of hops is 
 """
 
 from mysql.connector import ProgrammingError
-from mysql.connector.errorcode import ER_CANT_DROP_FIELD_OR_KEY
+from mysql.connector.errorcode import ER_CANT_DROP_FIELD_OR_KEY, ER_DUP_ENTRY
 
 from rf2db.db.RF2DBConnection import RF2DBConnection, cp_values, singleresultargs
 from rf2db.db.RF2FileCommon import RF2FileWrapper
@@ -203,7 +203,12 @@ class TransitiveClosureDB(RF2FileWrapper):
         locked = 1
         isleaf = 1 if isleaf else 0
         isroot = 1 if isroot else 0
-        db.execute_query(self.addstatement % vars())
+        try:
+            db.execute_query(self.addstatement % vars())
+        except Exception as e:
+            if e.errno == ER_DUP_ENTRY:
+                print(e)
+                raise e
         if not isroot:
             for p in self.parents(parent):
                 self.addrow(db, p, child, depth+1, 0, self.hasParents(p, changeset), changeset)

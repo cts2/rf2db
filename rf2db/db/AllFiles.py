@@ -26,11 +26,9 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-import RF1CanonicalCore, RF2ComplexMapFile, RF2ConceptFile, RF2DescriptionFile,  \
+import RF2ComplexMapFile, RF2ConceptFile, RF2DescriptionFile,  \
     RF2DescriptionTextFile, RF2LanguageFile, RF2ModuleDependencyFile, RF2ModuleVersionsFile, RF2PnAndFSN, \
-    RF2RelationshipFile, RF2SimpleMapFile, RF2SimpleReferencesetFile, RF2StatedRelationshipFile, \
-    RF2TransitiveChildren, RF2TransitiveChildrenCanonical, RF2TransitiveClosure,\
-    RF2TransitiveClosureCanonical
+    RF2RelationshipFile, RF2SimpleMapFile, RF2SimpleReferencesetFile, RF2StatedRelationshipFile
 from RF2DBConnection import RF2DBConnection
 
 # TODO: CannonicalCore not updated
@@ -53,7 +51,7 @@ def delete(filter_):
         db.commit(disconnect=False)
     # Have to do changeset separately to prevent import loops
     from rf2db.db.RF2ChangeSetFile import ChangeSetDB
-    f = RF2ChangeSetFile.ChangeSetDB
+    f = ChangeSetDB
     rval[f.fname()] = db.execute_query(query % (f.fname(), filter_))['affected_rows']
     db.commit(disconnect=False)
     return rval
