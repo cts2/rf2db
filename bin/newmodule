@@ -1,0 +1,380 @@
+#!/usr/local/bin/python
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Mayo Clinic
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification,
+# are permitted provided that the following conditions are met:
+#
+# Redistributions of source code must retain the above copyright notice, this
+# list of conditions and the following disclaimer.
+#
+# Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+#     and/or other materials provided with the distribution.
+#
+#     Neither the name of the <ORGANIZATION> nor the names of its contributors
+#     may be used to endorse or promote products derived from this software
+#     without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+# OF THE POSSIBILITY OF SUCH DAMAGE.
+from __future__ import print_function
+import argparse
+import uuid
+import os
+import sys
+from datetime import datetime
+
+
+# We are assuming that the rf2db package and ConfigManager package live at the same root that we do
+# TODO: make ConfigManager, rf2db, etc. first class installable packages
+_curdir = os.path.join(os.getcwd(), os.path.dirname(__file__), '..')
+sys.path.append(_curdir)
+sys.path.append(os.path.join(_curdir, '..', 'ConfigManager'))
+sys.path.append(os.path.join(_curdir, '..', 'rf2db'))
+
+from ConfigManager.ConfigManager import ConfigManager
+
+from rf2db.db.RF2DBConnection import RF2DBConnection
+from rf2db.db.RF2ConceptFile import ConceptDB
+from rf2db.db.RF2DescriptionFile import DescriptionDB
+from rf2db.db.RF2RelationshipFile import RelationshipDB
+from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB
+from rf2db.db.RF2LanguageFile import LanguageDB
+from rf2db.db.RF2ModuleDependencyFile import ModuleDependencyDB
+from rf2db.db.RF2ChangeSetFile import ChangeSetDB
+from rf2db.utils.sctid_generator import sctid_generator
+from rf2db.constants.RF2ValueSets import primitive, fsn, synonym, insensitive, module, some, is_a, \
+    statedRelationship, inferredRelationship, us_english, gb_english, preferred, snomedCTmodelComponent, \
+    snomedCTcore, moduleDependencyRefset, changeSetRefSet
+
+
+class NamespaceIdentifiers():
+    """ Generate the set of identifiers needed to bootstrap the database.
+    1) The module identifier
+    2) Two description ids -- one for fsn and one for preferred name
+    3) One relationship id to link the module identifier to its parent to its parent
+    4) One stated relationship id for the same purpose
+    5) The changeset identifier that embodies this set of changes
+    """
+
+    def __init__(self, namespace):
+        self.moduleid = sctid_generator(namespace, sctid_generator.CONCEPT, 1).next()
+        self.descId1 = sctid_generator(namespace, sctid_generator.DESCRIPTION, 1).next()
+        self.descId2 = sctid_generator(namespace, sctid_generator.DESCRIPTION, 2).next()
+        self.relId1 = sctid_generator(namespace, sctid_generator.RELATIONSHIP, 1).next()
+        self.relId2 = sctid_generator(namespace, sctid_generator.RELATIONSHIP, 2).next()
+        self.changeset = uuid.uuid4()
+
+
+def validate_parameters(opts):
+    """ Validate the incoming parameters
+    @param opts: User supplied parameters
+    @return: True if parms are ok, false otherwise
+    """
+    if opts.namespace < 1000000 or opts.namespace > 1999999:
+        print("Namespace must be a seven digit positive number", file=sys.stderr)
+        return False
+    if not opts.delete:
+        try:
+            datetime.strptime(str(opts.releasedate), '%Y%m%d')
+        except ValueError:
+            print("Release id format must be MMMMDDYY", file=sys.stderr)
+            return False
+
+    return True
+
+
+def create_concept(db, moduleid, effectivetime, changeset):
+    """ Create a concept file entry for the supplied module
+    @param db: database to add the module to
+    @type db: RF2DBConnection
+    @param moduleid: module identifier to add to the database
+    @param effectivetime: timestamp/release identifier of entry (format: yyyymmdd)
+    @param changeset: uuid of the changeset for this changed
+    """
+    query = ("INSERT into %(fname)s (id, effectiveTime, active, moduleId, definitionStatusId, changeset, locked) "
+             "VALUES (%(moduleid)s, %(effectivetime)s, 1, %(moduleid)s, %(definitionstatus)s,'%(changeset)s', 1)")
+    fname = ConceptDB.fname()
+    definitionstatus = primitive
+    db.execute(query % vars())
+
+
+def delete_concept(db, moduleid):
+    """ Remove the concept file entry for the supplied module
+    @param db: database to add the module to
+    @type db: RF2DBConnection
+    @param moduleid: module identifier to delete from the database
+    """
+    fname = ConceptDB.fname()
+    db.execute("DELETE FROM %(fname)s WHERE id = %(moduleid)s" % vars())
+
+
+def create_description(db, descid1, descid2, effectivetime, moduleid, name, changeset):
+    """ Create two description file entries -- one for the fsn and one for the preferred name
+    @param db: database to add the module to
+    @type db: RF2DBConnection
+    @param descid1: sctid of first description
+    @param descid2: sctid of second description
+    @param effectivetime: timestamp/release identifier of entry (format: yyyymmdd)
+    @param moduleid: module identifier to delete from the database
+    @param name: module name
+    @type name: array of string
+    @param changeset: uuid of the changeset for this changed
+    """
+    query = ("INSERT into %(fname)s (id, effectiveTime, active, moduleId, conceptId, languageCode, typeId, term, "
+             "caseSignificanceId, changeset, locked) "
+             "VALUES (%(descid)s, %(effectivetime)s, 1, %(moduleid)s, %(moduleid)s, 'en', %(typeid)s, '%(term)s', "
+             "%(case)s, changeset, 1)")
+    fname = DescriptionDB.fname()
+    descid = descid1
+    typeid = fsn
+    case = insensitive
+    term = ' '.join(name) + ' (core metadata concept)'
+    db.execute(query % vars())
+    typeid = synonym
+    descid = descid2
+    term = ' '.join(name)
+    db.execute(query % vars())
+
+
+def delete_description(db, moduleid):
+    """ Delete the descriptions associated with the supplied module id
+    @param db: database to add the module to
+    @type db: RF2DBConnection
+    @param moduleid: module identifier to delete from the database
+    """
+    fname = DescriptionDB.fname()
+    db.execute("DELETE FROM %(fname)s WHERE conceptId = %(moduleid)s" % vars())
+
+
+def create_relationship(db, relid1, relid2, effectivetime, moduleid, changeset):
+    """ Create two relationship table entries - one in stated and one in inferred that asserts that the new module
+     identifier is a module
+    @param db: database to add the module to
+    @type db: RF2DBConnection
+    @param relid1: sctid of first description
+    @param relid2: sctid of second description
+    @param effectivetime: timestamp/release identifier of entry (format: yyyymmdd)
+    @param moduleid: module identifier to delete from the database
+    @param changeset: uuid of the changeset for this changed
+    """
+    query = ("INSERT into %(fname)s "
+             "(id, effectiveTime, active, moduleId, sourceId, destinationId, relationshipGroup, typeId, "
+             "characteristicTypeId, modifierId, changeset, locked) "
+             "VALUES (%(relid)s, %(effectivetime)s, 1, %(moduleid)s, %(moduleid)s, %(destinationid)s, 0, "
+             "%(typeid)s, %(chartypeid)s, %(modifierid)s, '%(changeset)s', 1)")
+    fname = RelationshipDB.fname()
+    relid = relid1
+    destinationid = module
+    typeid = is_a
+    chartypeid = inferredRelationship
+    modifierid = some
+    db.execute(query % vars())
+    fname = StatedRelationshipDB.fname()
+    chartypeid = statedRelationship
+    db.execute(query % vars())
+
+
+def delete_relationship(db, moduleid):
+    """ Delete the relationship table entries associated with the supplied module.
+    @param db: database to remove the entries from
+    @type db: RF2DBConnection
+    @param moduleid: module identifier to remove
+    """
+    fname = RelationshipDB.fname()
+    db.execute("DELETE FROM %(fname)s WHERE sourceId = %(moduleid)s" % vars())
+    fname = StatedRelationshipDB.fname()
+    db.execute("DELETE FROM %(fname)s WHERE sourceId = %(moduleid)s" % vars())
+
+
+def create_language(db, effectivetime, descid, moduleid, changeset):
+    """ Create the EN and GB language entries that make the module id name preferred.
+    @param db: database to add entries to
+    @type db: RF2DBConnection
+    @param descid: description identifier to make preferred
+    @param effectivetime: timestamp/release identifier of entry (format: yyyymmdd)
+    @param moduleid: module identifier to delete from the database
+    @param changeset: uuid of the changeset for this changed
+    """
+    query = ("INSERT into %(fname)s "
+             "(id, effectiveTime, active, moduleId, refsetId, referencedComponentId, acceptabilityId, conceptId, "
+             "changeset, locked) "
+             "VALUES ('%(langid)s', %(effectivetime)s, 1, %(moduleid)s, %(refsetid)s, %(descid)s, %(pref)s, "
+             "%(moduleid)s, '%(changeset)s', 1)")
+
+    fname = LanguageDB.fname()
+    refsetid = us_english
+    pref = preferred
+    langid = uuid.uuid4()
+    db.execute(query % vars())
+    refsetId = gb_english
+    langid = uuid.uuid4()
+    db.execute(query % vars())
+
+
+def delete_language(db, moduleid):
+    """ Delete the EN and GB language entries for the supplied module id
+    @param db: database to pull entries from
+    @type db: RF2DBConnection
+    @param moduleid: module identifier to remove
+    """
+    fname = LanguageDB.fname()
+    db.execute("DELETE FROM %(fname)s WHERE conceptId = %(moduleid)s" % vars())
+
+
+def create_moduledependency(db, effectivetime, moduleid, changeset):
+    # Look up the source EffectiveTimes for the two targets
+    fname = ModuleDependencyDB.fname()
+    metamodule = snomedCTmodelComponent
+    rootmodule = snomedCTcore
+    mdrefset = moduleDependencyRefset
+    results = list(db.executeAndReturn("SELECT sourceEffectiveTime, targetEffectiveTime FROM %(fname)s "
+                                       "WHERE active=1 and moduleId=%(rootmodule)s and "
+                                       "referencedComponentId=%(metamodule)s" % vars()))
+    if results:
+        rooteffectivetime, metaeffectivetime = results[0]
+        mdid = uuid.uuid4()
+        module = rootmodule
+        et = rooteffectivetime
+        query = ("INSERT into %(fname)s "
+                 "(id, effectiveTime, active, moduleId, refsetId, referencedComponentId, "
+                 "sourceEffectiveTime, targetEffectiveTime, changeset, locked) "
+                 "VALUES ('%(mdid)s', %(effectivetime)s, 1, %(moduleid)s, %(mdrefset)s, %(module)s, "
+                 "%(effectivetime)s, %(et)s, '%(changeset)s', 1)")
+        db.execute(query % vars())
+        mdid = uuid.uuid4()
+        module = metamodule
+        et = metaeffectivetime
+        db.execute(query % vars())
+    else:
+        print("Unable to get SNOMED CT Core and Model Component effective times", file=sys.stdeff)
+
+
+def delete_moduledependency(db, moduleid):
+    """ Delete the module dependency entries for the supplied module.
+    @param db: database to pull entries from
+    @type db: RF2DBConnection
+    @param moduleid: module identifier to remove
+    """
+    fname = ModuleDependencyDB.fname()
+    db.execute("DELETE FROM %(fname)s WHERE moduleId = %(moduleid)s" % vars())
+
+
+def create_changeset(db, effectivetime, moduleid, changeset, csname, owner='', description=''):
+    """ Create a new changeset entry
+    @param db: database to create entry in
+    @param effectivetime: timestamp/release identifier of entry (format: yyyymmdd)
+    @param moduleid: module identifier to delete from the database
+    @param changeset: uuid of the changeset for this changed
+    @param csname: name of the changeset
+    @param owner: owner of the changeset
+    @param description: description of the changeset
+    """
+    fname = ChangeSetDB.fname()
+    refsetentryid = uuid.uuid4()
+    refsetid = changeSetRefSet
+    query = ("INSERT into %(fname)s "
+             "(id, effectiveTime, active, moduleId, refsetId, "
+             "referencedComponentId, name, owner, description, isFinal, changeset, locked) "
+             "VALUES ('%(refsetentryid)s', %(effectivetime)s, 1, %(moduleid)s, %(refsetid)s, "
+             "'%(changeset)s', '%(csname)s', '%(owner)s', '%(description)s', 0, '%(changeset)s', 1)")
+    db.execute(query % vars())
+
+
+def delete_changeset(db, moduleid):
+    """ Delete the changeset entry for the supplied module id
+    @param db: database to pull entries from
+    @type db: RF2DBConnection
+    @param moduleid: module identifier to remove
+    """
+    fname = ChangeSetDB.fname()
+    db.execute("DELETE FROM %(fname)s WHERE moduleId = %(moduleid)s" % vars())
+
+
+def create_entries(opts, identifiers):
+    if opts.verbose:
+        print("Creating module %s in changeset %s" % (identifiers.moduleid, identifiers.changeset))
+    db = RF2DBConnection()
+    if opts.verbose:
+        print("   Adding changeset %s" % identifiers.changeset)
+    create_changeset(db, opts.releasedate, identifiers.moduleid, identifiers.changeset, ''.join(opts.module),
+                     opts.owner, opts.desc)
+    if opts.verbose:
+        print("   Adding conceptid %s" % identifiers.moduleid)
+    create_concept(db, identifiers.moduleid, opts.releasedate, identifiers.changeset)
+    create_description(db, identifiers.descId1, identifiers.descId2, opts.releasedate, identifiers.moduleid,
+                       opts.module, identifiers.changeset)
+    if opts.verbose:
+        print("   Adding relationship entries")
+    create_relationship(db, identifiers.relId1, identifiers.relId2, opts.releasedate, identifiers.moduleid,
+                        identifiers.changeset)
+    create_language(db, opts.releasedate, identifiers.descId2, identifiers.moduleid, identifiers.changeset)
+    if opts.verbose:
+        print("   Adding module dependencies")
+    create_moduledependency(db, opts.releasedate, identifiers.moduleid, identifiers.changeset)
+    db.commit(True)
+    if opts.verbose:
+        print("Complete")
+    print("Changset %s must be committed for this to be visible" % identifiers.changeset)
+
+
+def delete_entries(opts, moduleid):
+    if opts.verbose: 
+        print("Deleting module %s" % moduleid)
+    db = RF2DBConnection()
+    if opts.verbose: 
+        print("   Deleting concept entry")
+    delete_concept(db, moduleid)
+    if opts.verbose: 
+        print("   Deleting description entries")
+    delete_description(db, moduleid)
+    if opts.verbose:
+        print("   Deleting relationship entries")
+    delete_relationship(db, moduleid)
+    if opts.verbose: 
+        print("   Deleting language entries")
+    delete_language(db, moduleid)
+    if opts.verbose:
+        print("   Deleting module dependency entries")
+    delete_moduledependency(db, moduleid)
+    if opts.verbose: 
+        print("   Removing change set entry")
+    delete_changeset(db, moduleid)
+    db.commit(True)
+
+
+def main():
+    """
+    Add or remove a module identifier for a namespace to a database.  The target database must already exist and (ideally) be
+    loaded using the rf2db module.
+    """
+    parser = argparse.ArgumentParser(
+        description="SNOMED CT Module Bootstrap.  Add or remove a module identifier from a RF2 database")
+    parser.add_argument('-n', '--namespace', type=int, help="Namespace", required=True)
+    parser.add_argument('-d', '--delete', help="Delete Namespace", action="store_true")
+    parser.add_argument('-r', '--releasedate', help="Release date")
+    parser.add_argument('module', help="Module Name", nargs='*')
+    parser.add_argument('-c', '--configfile', help="Configuration file location", default="settings.conf")
+    parser.add_argument('-v', '--verbose', help="Verbose", action="store_true")
+    parser.add_argument('-o', '--owner', help="Changeset owner")
+    parser.add_argument('--desc', help="Changeset description")
+
+    opts = parser.parse_args()
+    if validate_parameters(opts):
+        identifiers = NamespaceIdentifiers(opts.namespace)
+        ConfigManager.set_configfile(opts.configfile)
+        delete_entries(opts, identifiers.moduleid) if opts.delete else create_entries(opts, identifiers)
+
+
+if __name__ == '__main__':
+    main()

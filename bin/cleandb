@@ -1,0 +1,114 @@
+#!/usr/local/bin/python
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Mayo Clinic
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification,
+# are permitted provided that the following conditions are met:
+#
+# Redistributions of source code must retain the above copyright notice, this
+# list of conditions and the following disclaimer.
+#
+#     Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation
+#     and/or other materials provided with the distribution.
+#
+#     Neither the name of the <ORGANIZATION> nor the names of its contributors
+#     may be used to endorse or promote products derived from this software
+#     without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+# OF THE POSSIBILITY OF SUCH DAMAGE.
+
+import sys
+import argparse
+import os
+
+
+# Assuming that we are running in the bin directory
+_curdir = os.path.join(os.getcwd(), os.path.dirname(__file__))
+sys.path.append(os.path.join(_curdir, '..'))
+# TODO: Make this into a package
+sys.path.append(os.path.join(_curdir, '..', '..', 'ConfigManager'))
+
+
+from rf2db.parameterparser.ParmParser import booleanparam, sctidparam
+from rf2db.db.RF2DBConnection import db_values, RF2DBConnection
+from rf2db.db.AllFiles import delete
+from rf2db.db.RF2ConceptFile import ConceptDB
+from rf2db.db.RF2TransitiveClosure import TransitiveClosureDB
+
+
+def yesno(prompt):
+    a = None
+    while a is None:
+        try:
+            a = booleanparam().value(raw_input(prompt + ' [y/n]:'))
+        except ValueError:
+            print('?')
+    return a
+
+def main(args):
+    """ Load a set of RF2 tables into an existing database.  The configuration is maintained with the <i>newdb</i>
+    utility, although it can be edited manually.
+    """
+    parser = argparse.ArgumentParser(description="Clean records out of a database")
+    parser.add_argument('configfile', help="Configuration file location")
+    parser.add_argument('-a', '--all', help="Include unlocked records", action='store_true')
+    parser.add_argument('-m', '--module', type=int, help="Restrict to supplied module id")
+    parser.add_argument('-q', '--query', help="Don't do action, just say what you would do", action='store_true')
+
+    opts = parser.parse_args(args)
+    db_values.set_configfile(opts.configfile)
+    if opts.module and not sctidparam().isValid(opts.module):
+        print("Invalid module id: %s" % opts.module)
+        exit(0)
+
+    if opts.all and not opts.module:
+        print("Please specifiy a module")
+        sys.exit(0)
+
+    if not yesno("Will delete %s records %s" % ('all' if opts.all else 'locked' if opts.module else 'all locked',
+                                                'from module id %s' % opts.module if opts.module else '')):
+        sys.exit(0)
+    filtrs = []
+    if not opts.all:
+        filtrs.append("locked = 1")
+    if opts.module:
+        filtrs.append("moduleId = %s" % opts.module)
+    filtr = ' AND '.join(filtrs)
+    if opts.query:
+        print("DELETE * from {file} WHERE %s" % filtr)
+    else:
+        # Transitive closure db has to remove everything in concept file
+        tfn = TransitiveClosureDB.fname()
+        cfn = ConceptDB.fname()
+        db = RF2DBConnection()
+        query = "DELETE t.* FROM %(tfn)s t, %(cfn)s WHERE id=child " % vars()
+        if opts.module:
+            query += "AND moduleid=%s " % opts.module
+        if not opts.all:
+            query += "AND t.locked=1"
+
+        nrecs=db.execute_query(query)['affected_rows']
+        db.commit()
+        rval = delete(filtr)
+        if nrecs:
+            print("Deleted %d %s records" % (nrecs, tfn))
+        for k, v in rval.items():
+            if v:
+                print("Deleted %d %s records" % (v, k))
+
+
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

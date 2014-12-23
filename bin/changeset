@@ -1,0 +1,67 @@
+#!/usr/local/bin/python
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Mayo Clinic
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification,
+# are permitted provided that the following conditions are met:
+#
+# Redistributions of source code must retain the above copyright notice, this
+# list of conditions and the following disclaimer.
+#
+#     Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation
+#     and/or other materials provided with the distribution.
+#
+#     Neither the name of the <ORGANIZATION> nor the names of its contributors
+#     may be used to endorse or promote products derived from this software
+#     without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+# OF THE POSSIBILITY OF SUCH DAMAGE.
+
+import sys
+import argparse
+import os
+
+
+# Assuming that we are running in the bin directory
+_curdir = os.path.join(os.getcwd(), os.path.dirname(__file__))
+sys.path.append(os.path.join(_curdir, '..'))
+# TODO: Make this into a package
+sys.path.append(os.path.join(_curdir, '..', '..', 'ConfigManager'))
+
+
+from rf2db.db.RF2DBConnection import db_values
+from rf2db.db.RF2ChangeSetFile import ChangeSetDB
+
+
+def main(args):
+    """ Query or change the state of a change set
+    """
+    parser = argparse.ArgumentParser(description="Query or change the state of a change set")
+    parser.add_argument('configfile', help="Configuration file location")
+    parser.add_argument('-cs', '--changeset', help="Changeset identifier")
+    parser.add_argument('-c', '--commit', help="Commit changeset", action='store_true')
+    parser.add_argument('-r', '--rollback', help="Rollback changeset", action='store_true')
+
+    opts = parser.parse_args(args)
+    db_values.set_configfile(opts.configfile)
+    db = ChangeSetDB()
+    if not db.isValid(opts.changeset):
+        print("Invalid changeset: %s" % opts.changeset)
+    if opts.commit:
+        db.commit(opts.changeset)
+    elif opts.rollback:
+        db.rollback(opts.changeset)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
