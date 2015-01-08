@@ -61,12 +61,14 @@ load_sections = [
     ('simplerefset', (RF2SimpleReferencesetFile.SimpleReferencesetDB,)),
     ('moduleversions', (RF2ModuleVersionsFile.ModuleVersionsDB,)),
     ('moduledependency', (RF2ModuleDependencyFile.ModuleDependencyDB,)),
-    ('canonical', (RF1CanonicalCore.CanonicalCoreDB,)),
     ('pnandfsn', (RF2PnAndFSN.PNandFSNDB,)),
     ('transitive', (RF2TransitiveClosure.TransitiveClosureDB,)),
-    ('transitive_c', (RF2TransitiveClosureCanonical.TransitiveClosureCanonicalDB,)),
     ('cts2_entity', (CTS2Entity.CTS2EntityDB,)),
-    ('transitive_children', (RF2TransitiveChildren.TransitiveChildrenDB,)),
+    ('transitive_children', (RF2TransitiveChildren.TransitiveChildrenDB,))]
+
+canonical_sections = [
+    ('canonical', (RF1CanonicalCore.CanonicalCoreDB,)),
+    ('transitive_c', (RF2TransitiveClosureCanonical.TransitiveClosureCanonicalDB,)),
     ('transitive_children_c', (RF2TransitiveChildrenCanonical.TransitiveChildrenCanonicalDB,))]
 
 
@@ -98,6 +100,7 @@ def main(args):
     parser.add_argument('-d', '--drop', help="Drop table(s) if present", action="store_true")
     parser.add_argument('--show', '-s', dest='show', action="store_true", help="show current configuration")
     parser.add_argument('--load', '-l', action="store_true", help="load the database")
+    parser.add_argument('-c', '--canonical', action="store_true", help="load canonical files")
 
        # Can't do a lot more if there isn't configuration file
     if len(args) == 0 or (len(args) == 1 and args[0] in helpargs):
@@ -120,6 +123,11 @@ def main(args):
             if not opts.files or e[0] in opts.files:
                 for loader in e[1]:
                     load_file(loader, opts, rf2_values)
+    # TODO: This hasn't been tested
+    if opts.canonical:
+        for e in canonical_sections:
+            for loader in e[1]:
+                load_file(loader, opts, rf2_values)
 
 
 if __name__ == '__main__':

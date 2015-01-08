@@ -148,5 +148,9 @@ class StatedRelationshipDB(RF2FileWrapper):
         return rlist[0] if len(rlist) else None
 
 
-
+    @classmethod
+    def _rollback(cls, db, changeset, **args):
+        for subj in cls.subjs(db, changeset):
+            RF2Relationship._tcdb().remove(db, subj)
+        return super(StatedRelationshipDB, cls)._rollback(db, changeset, **args)
 

@@ -36,6 +36,7 @@ from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, rf2_values
 from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB, rel_id
 from rf2db.db.RF1CanonicalCore import CanonicalCoreDB
 from rf2db.parsers.RF2Iterator import RF2RelationshipList
+from rf2db.db.RF2DBConnection import RF2DBConnection
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, booleanparam, sctidparam, intparam
 from rf2db.utils.lfu_cache import lfu_cache, clear_caches
 from rf2db.utils.sctid_generator import *
@@ -170,12 +171,11 @@ class RelationshipDB(RF2FileWrapper):
     class _BlockWriter(object):
         blocksize = 1000
 
-
-        def __init__(self, tname, release):
+        def __init__(self, tname, release, stmt):
             self.idGenerator = sctid_generator(MAYO_Namespace, sctid_generator.RELATIONSHIP, 0)
             self.moduleId = self.idGenerator.next()
             self.effectiveTime = release
-            self._stmt = self.insert_stmt_short % tname
+            self._stmt = stmt % tname
             self.active = 1
             self.characteristicTypeId = additionalRelationship
             self.modifierId = some
@@ -213,12 +213,12 @@ class RelationshipDB(RF2FileWrapper):
         db.commit()
 
         # Step 2: Add additional relationship entries for new assertions in the canonical table
-        bw = self._BlockWriter(self._fname, rf2_values.release)
+        bw = self._BlockWriter(self._fname, rf2_values.release, self.insert_stmt_short)
         query = """SELECT conceptid1, relationshiptype, conceptid2, c.relationshipgroup FROM %s c
              LEFT JOIN %s r ON (conceptid1=sourceid AND conceptid2=destinationid AND
              relationshiptype=typeid AND c.relationshipgroup=r.relationshipgroup) WHERE sourceid IS NULL OR active=0""" % (
             canon_fname, self._fname)
-        for e in db.executeAndReturn(query):
+        for e in db.execute(query):
             bw.addrec(e)
         bw.flush()
 
@@ -394,13 +394,13 @@ class RelationshipDB(RF2FileWrapper):
 
     @classmethod
     def _commit(cls, db, changeset, **args):
-        for subj in StatedRelationshipDB.subjs(db, changeset):
+        for subj in StatedRelationshipDB.subjs(RF2DBConnection(), changeset):
             cls._tcdb().unlock(db, subj)
         return super(RelationshipDB, cls)._commit(db, changeset, **args)
 
     @classmethod
     def _rollback(cls, db, changeset, **args):
-        for subj in StatedRelationshipDB.subjs(db, changeset):
+        for subj in StatedRelationshipDB.subjs(RF2DBConnection(), changeset):
             cls._tcdb().remove(db, subj)
         return super(RelationshipDB, cls)._rollback(db, changeset, **args)
 

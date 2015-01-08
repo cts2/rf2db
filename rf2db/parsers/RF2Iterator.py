@@ -210,3 +210,7 @@ class RF2ModuleDepencencyReferenceSet(rf2.ModuleDepencencyReferenceSet_, RF2Iter
 @rf2iterlink(rf2.DescriptionFormatReferenceSet, rf2.DescriptionFormatReferenceSet_)
 class RF2DescriptionFormatReferenceSet(rf2.DescriptionFormatReferenceSet_, RF2Iterator):
     pass
+
+@rf2iterlink(rf2.ChangeSetReferenceSet, rf2.ChangeSetReferenceSet_)
+class RF2ChangeSetReferenceSet(rf2.ChangeSetReferenceSet_, RF2Iterator):
+    pass

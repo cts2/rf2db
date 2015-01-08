@@ -1,7 +1,7 @@
 # ../rf2db/schema/rf2.py
 # -*- coding: utf-8 -*-
 # PyXB bindings for NM:a62023a1e63ecb635c8d1a3482d1f64c6fb3e0f6
-# Generated 2014-12-11 15:37:33.444183 by PyXB version 1.2.4 using Python 2.7.8.final.0
+# Generated 2015-01-06 15:11:26.101084 by PyXB version 1.2.4 using Python 2.7.8.final.0
 # Namespace http://snomed.info/schema/rf2
 
 from __future__ import unicode_literals
@@ -15,7 +15,7 @@ import sys
 import pyxb.utils.six as _six
 
 # Unique identifier for bindings created at the same time
-_GenerationUID = pyxb.utils.utility.UniqueIdentifier('urn:uuid:ada67c2b-818e-11e4-b76c-6c40088fdb3a')
+_GenerationUID = pyxb.utils.utility.UniqueIdentifier('urn:uuid:9292824f-95e8-11e4-bccc-6c40088fdb3a')
 
 # Version of PyXB used to generate the bindings
 _PyXBVersion = '1.2.4'
@@ -6078,7 +6078,7 @@ DescriptionFormatReferenceSet_._Automaton = _BuildAutomaton_37()
 
 
 
-ChangeSetReferenceSet_._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, 'entry'), ChangeSetReferenceSet_, scope=ChangeSetReferenceSet_, location=pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 8095, 20)))
+ChangeSetReferenceSet_._AddElement(pyxb.binding.basis.element(pyxb.namespace.ExpandedName(Namespace, 'entry'), ChangeSetReferenceSetEntry_, scope=ChangeSetReferenceSet_, location=pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 8095, 20)))
 
 def _BuildAutomaton_38 ():
     # Remove this helper function from the namespace after it is invoked

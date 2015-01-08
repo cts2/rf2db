@@ -106,6 +106,7 @@ def main(args):
         for k, v in rval.items():
             if v:
                 print("Deleted %d %s records" % (v, k))
+        print("\nNOTE: You must restart the server to reset the identifier allocation records!")
 
 
 

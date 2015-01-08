@@ -77,7 +77,7 @@ class LanguageDB(RF2RefsetWrapper):
        %(keys)s ); """
 
     updateSTMT = """UPDATE %(table)s l
-        INNER JOIN description_ss d
+        INNER JOIN %(desctbl)s d
         ON d.id = l.referencedcomponentid
         SET l.conceptid = d.conceptid"""
 
@@ -111,7 +111,7 @@ class LanguageDB(RF2RefsetWrapper):
         super(LanguageDB, self).loadTable(rf2file)
         db = self.connect()
         print("\t...adding concept identifiers")
-        db.execute(self.updateSTMT % {'table': self._fname})
+        db.execute(self.updateSTMT % {'table': self._fname, 'desctbl': DescriptionDB.fname()})
         db.commit()
 
     @staticmethod
@@ -166,26 +166,28 @@ class LanguageDB(RF2RefsetWrapper):
         db.execute(stmt)
         return {e[0]: (e[2], e[1]) for e in map(lambda r: r.split('\t', 2), db.ResultsGenerator(db))}
 
-
-
-    def add(self, db, effectivetime, moduleid, refsetid, descid, acceptabilityid, concept,  changeset, **kwargs):
+    def add(self, db, effectivetime, moduleid, language, descid, acceptabilityid, concept,  changeset, **kwargs):
         """ Add a new language entry.  It is assumed that this function is invoked from the DescriptionDB
              and the parameters have all been validated.
         @param db: database to insert the entry into
         @param effectivetime: timestamp
         @param moduleid: module identifier
-        @param refsetid: the language refset (us english, gb english, etc)
+        @param language: the language name ("en", "en-gb", "es", etc.)
         @param descid: description identifier
-        @param acceptibilityid: accetibility id
+        @param acceptibilityid: acceptibilityid id
         @param concept: reference concept (not an RF2 parameter)
         @param changeset: change set identifier
         """
         id = str(uuid.uuid4())
         fname = self._fname
+        refsetid = language_map.get(language, None)
+        if not refsetid:
+            raise Exception("Unknown language code: %s" % language)
         db.execute_query("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, "
                          "refsetId, referencedComponentId, acceptabilityId, conceptId, changeset, locked) "
                          "VALUES ('%(id)s', %(effectivetime)s, 1, %(moduleid)s, "
                          "%(refsetid)s, %(descid)s, %(acceptabilityid)s, %(concept)s, '%(changeset)s', 1)" % vars())
+        db.commit()
 
 
 

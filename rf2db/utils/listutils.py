@@ -84,6 +84,5 @@ def flatten(possible_list):
         else:
             yield pl
 
-
     return list(flatten_(possible_list)) if isList(possible_list) else possible_list
 

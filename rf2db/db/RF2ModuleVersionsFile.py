@@ -129,5 +129,3 @@ class ModuleVersionsDB(RF2FileWrapper):
             return len(rval) == len(moduleids)
 
         return True
-
-        

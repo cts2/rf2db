@@ -213,6 +213,7 @@ class TransitiveClosureDB(RF2FileWrapper):
             for p in self.parents(parent):
                 self.addrow(db, p, child, depth+1, 0, self.hasParents(p, changeset), changeset)
 
+
     def add(self, sourceid, typeid, destinationid, changeset):
         if typeid != is_a:
             return
@@ -234,16 +235,14 @@ class TransitiveClosureDB(RF2FileWrapper):
         fname = self._fname
         db.execute_query("DELETE FROM %(fname)s WHERE child=%(sourceid)s AND locked=1" % vars())
 
-
     def are_related(self, parent, child, changeset=None):
         if parent == child:
             return True
         db = self.connect()
         tname = self._fname
         filtr = " AND locked = 0" if not changeset else ""
-        return bool(list(db.executeAndReturn(
+        return bool(list(db.execute(
             "SELECT count(*) FROM %(tname)s WHERE parent = %(parent)s AND child=%(child)s %(filtr)s" % locals()))[0][0])
-
 
     def doquery(self, rtnchild, sctid, start=0, maxtoreturn=0, changeset=None, **_):
         db = self.connect()

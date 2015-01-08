@@ -5,7 +5,7 @@
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
 #
-#     Redistributions of source code must retain the above copyright notice, this
+# Redistributions of source code must retain the above copyright notice, this
 #     list of conditions and the following disclaimer.
 #
 #     Redistributions in binary form must reproduce the above copyright notice,
@@ -32,15 +32,16 @@
 
 from rf2db.db.RF2FileCommon import RF2FileWrapper
 from rf2db.db.RF2DescriptionFile import DescriptionDB
-from rf2db.db.RF2LanguageFile import LanguageDB
+from rf2db.db.RF2LanguageFile import LanguageDB, language_map
 from rf2db.db.RF2DBConnection import RF2DBConnection, cp_values
 from rf2db.constants import RF2ValueSets
-from rf2db.utils.lfu_cache import lfu_cache
+from rf2db.utils.lfu_cache import lfu_cache, clear_caches
 
 BATCH_SIZE = 1000
 
+
 class PNandFSNDB(RF2FileWrapper):
-    directory = ''        # Loaded strictly from other tables
+    directory = ''  # Loaded strictly from other tables
     prefixes = []
     table = 'RF2PNandFSN'
 
@@ -60,7 +61,6 @@ class PNandFSNDB(RF2FileWrapper):
 
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
-
 
     class _inserter(object):
         def __init__(self, db, filename, batchsize):
@@ -103,23 +103,20 @@ class PNandFSNDB(RF2FileWrapper):
 
         db = self.connect()
 
-        args = self._d(descfn = descdb._fname,
-                       langfn = langdb._fname,
-                       pref = RF2ValueSets.preferred,
-                       fsn = RF2ValueSets.fsn,
-                       syn = RF2ValueSets.synonym)
+        args = self._d(descfn=descdb._fname,
+                       langfn=langdb._fname,
+                       pref=RF2ValueSets.preferred,
+                       fsn=RF2ValueSets.fsn,
+                       syn=RF2ValueSets.synonym)
 
         loader = self._inserter(RF2DBConnection(), self._fname, BATCH_SIZE)
         key = [0, 0]
         fsn = ""
         pn = ""
-        print "Executing query..."
-        for e in db.executeAndReturn(self.selSTMT % args):
+        for e in db.execute(self.selSTMT % args):
             if key != e[0:2]:
                 if key[0]:
                     loader.append("(%s, %s, '%s', '%s')" % (key[0], key[1], fsn, pn))
-                else:
-                    print "done"
                 key = e[0:2]
                 fsn = ""
                 pn = ""
@@ -131,25 +128,53 @@ class PNandFSNDB(RF2FileWrapper):
 
     @lfu_cache(maxsize=200)
     def getfsn(self, cid, language=RF2ValueSets.us_english, **_):
-        rlist = [e[0] for e in self.connect().executeAndReturn(
+        rlist = [e[0] for e in self.connect().execute(
             "SELECT fsn FROM %s WHERE id = %s AND lang = %s" % (self._fname, cid, language))]
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
     @lfu_cache(maxsize=200)
     def getpn(self, cid, language=RF2ValueSets.us_english, **_):
-        rlist = [e[0] for e in self.connect().executeAndReturn(
+        rlist = [e[0] for e in self.connect().execute(
             "SELECT pn FROM %s WHERE id = %s AND lang = %s" % (self._fname, cid, language))]
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
     @lfu_cache(maxsize=200)
     def getpnfsn(self, cid, language=RF2ValueSets.us_english, **_):
-        rlist = [(e[0], e[1]) for e in self.connect().executeAndReturn(
-            "SELECT pn, fsn FROM %s WHERE id = %s AND lang = %s" % (self._fname, cid, language))]
+        rlist = list(self.connect().execute("SELECT pn, fsn FROM %s WHERE id = %s AND lang = %s" % (self._fname, cid, language)))
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
+    def updatepnfsn(self, cid, language, pn, fsn, **_):
+        language_refset = language_map.get(language, None)
+        db = self.connect()
+        fname = self._fname
+        existingpnfsn = self.getpnfsn(cid, language_refset)
+        if existingpnfsn:
+            if not pn:
+                pn = existingpnfsn[0]
+            if not fsn:
+                fsn = existingpnfsn[1]
+            query = "UPDATE %(fname)s SET pn = '%(pn)s', fsn='%(fsn)s' WHERE id=%(cid)s and lang=%(language_refset)s" % vars()
+        else:
+            if not pn:
+                pn = fsn
+            if not fsn:
+                fsn = pn
+            query = "INSERT INTO %(fname)s (id, lang, fsn, pn) VALUES (%(cid)s, %(language_refset)s, '%(pn)s', '%(fsn)s')" % vars()
+        db.execute_query(query)
+        db.commit()
+        clear_caches()
+        return True
 
+    def deletepnandfsn(self, cid):
+        db = self.connect()
+        fname = self._fname
+        query = "DELETE FROM %fname)s WHERE id=%(cid)s"
+        db.execute_query(query)
+        db.commit()
+        clear_caches()
+        return True
 
 

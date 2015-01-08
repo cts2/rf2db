@@ -36,12 +36,9 @@ from rf2db.parsers.RF2Iterator import RF2DescriptionList, iter_parms
 from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms
 from rf2db.utils.lfu_cache import lfu_cache, clear_caches
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, sctidparam, intparam, enumparam, strparam
-from rf2db.constants.RF2ValueSets import definition, fsn, synonym, initialChar, preferred, acceptable, us_english, \
-    gb_english, spanish
+from rf2db.constants.RF2ValueSets import definition, synonym, initialChar, preferred, acceptable
 from rf2db.db.RF2DBConnection import cp_values
-from rf2db.db.RF2LanguageFile import LanguageDB
 from rf2db.constants.RF2ValueSets import fsn
-import rf2db.utils.lfu_cache
 
 # Parameters for description access
 description_parms = ParameterDefinitionList(global_rf2_parms)
@@ -173,6 +170,9 @@ class DescriptionDB(RF2FileWrapper):
         @param term: actual description
         @return: Description record or none if error.
         """
+        from rf2db.db.RF2LanguageFile import LanguageDB, language_map
+        from rf2db.db.RF2PnAndFSN import PNandFSNDB
+
         if not self.changesetisvalid(changeset):
             return self.changeseterror(changeset)
         if not self.validconcept(concept, changeset, **kwargs):
@@ -185,35 +185,28 @@ class DescriptionDB(RF2FileWrapper):
         if not descid:
             descid = self.newdescriptionid()
         language = language.lower()
+        if language not in language_map:
+            return "Unknown language code: %s" % language
         typeid = definition if type == 'd' else fsn if type == 'f' else synonym
         effectivetime, moduleid = self.effectivetime_and_moduleid(effectivetime, moduleid)
         fname = self._fname
         csig = initialChar
         db.execute_query("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, "
-                   "conceptId, languageCode, typeId, term, caseSignificanceId, changeset, locked) "
-                   "VALUES (%(descid)s, %(effectivetime)s, 1, %(moduleid)s, "
-                   "%(concept)s, '%(language)s', %(typeid)s, '%(term)s', %(csig)s, '%(changeset)s', 1 )" % vars())
-        fname = DescriptionTextDB.fname()
-        db.execute_query("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, "
-                   "conceptId, languageCode, typeId, term, caseSignificanceId, changeset, locked) "
-                   "VALUES (%(descid)s, %(effectivetime)s, 1, %(moduleid)s, "
-                   "%(concept)s, '%(language)s', %(typeid)s, '%(term)s', %(csig)s, '%(changeset)s', 1 )" % vars())
-        if (type == 'p' or type == 's') and language in ('en'):
+                         "conceptId, languageCode, typeId, term, caseSignificanceId, changeset, locked) "
+                         "VALUES (%(descid)s, %(effectivetime)s, 1, %(moduleid)s, "
+                         "%(concept)s, '%(language)s', %(typeid)s, '%(term)s', %(csig)s, '%(changeset)s', 1 )" % vars())
+        db.commit()
+        DescriptionTextDB().add(**vars())
+        if type == 'f' or type == 'p':
+            PNandFSNDB().updatepnfsn(concept, language, term if type == 'f' else None, term if type == 'p' else None)
+        if (type == 'p' or type == 's') and language in 'en':
             acc = preferred if type == 'p' else acceptable
-            # TODO: There is already a language map on the language side.  This code id redundant
             if language == 'en':
                 # 'en' means the same in both languages
-                LanguageDB().add(db, effectivetime, moduleid, us_english, descid, acc, concept,  changeset, **kwargs)
-                LanguageDB().add(db, effectivetime, moduleid, gb_english, descid, acc, concept,  changeset, **kwargs)
-            elif language == 'en-gb':
-                LanguageDB().add(db, effectivetime, moduleid, gb_english, descid, acc, concept,  changeset, **kwargs)
-            elif language == 'en-us':
-                LanguageDB().add(db, effectivetime, moduleid, gb_english, descid, acc, concept,  changeset, **kwargs)
-            elif language == 'es':
-                LanguageDB().add(db, effectivetime, moduleid, spanish, descid, acc, concept,  changeset, **kwargs)
+                LanguageDB().add(db, effectivetime, moduleid, 'en-us', descid, acc, concept,  changeset, **kwargs)
+                LanguageDB().add(db, effectivetime, moduleid, 'en-gb', descid, acc, concept,  changeset, **kwargs)
             else:
-                return "Unknown language code: %s" % language
-        db.commit()
+                success = LanguageDB().add(db, effectivetime, moduleid, language, descid, acc, concept,  changeset, **kwargs)
         clear_caches()
         return self.read(descid, changeset=changeset, **kwargs)
 
@@ -257,7 +250,6 @@ class DescriptionDB(RF2FileWrapper):
                     return "Description: Full record update is not implemented"
             else:
                 return "Description: Record is locked under a different changeset"
-
 
     def delete(self, desc, changeset=None, **kwargs):
         """ Delete or deactivate a description

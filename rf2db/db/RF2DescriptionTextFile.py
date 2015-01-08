@@ -178,5 +178,12 @@ class DescriptionTextDB(RF2FileWrapper):
         return [RF2Description(d) for d in db.ResultsGenerator(db)] if maxtoreturn != 0 else list(
             db.ResultsGenerator(db))
 
-
-
+    def add(self, **kwargs):
+        locals = kwargs.copy()
+        locals['fname'] = self._fname
+        db = self.connect()
+        db.execute_query("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, "
+                         "conceptId, languageCode, typeId, term, caseSignificanceId, conceptActive, changeset, locked) "
+                         "VALUES (%(descid)s, %(effectivetime)s, 1, %(moduleid)s, "
+                         "%(concept)s, '%(language)s', %(typeid)s, '%(term)s', %(csig)s, 1, '%(changeset)s', 1 )" % locals)
+        db.commit()

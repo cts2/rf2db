@@ -147,7 +147,6 @@ class RF2DBConnection(object):
             else:
                 raise e
 
-    # TODO: merge this with execute
     def execute_query(self, stmt, retrycount=0):
         """ Execute a create/delete/update statement
 
@@ -172,8 +171,8 @@ class RF2DBConnection(object):
         """
         def f(self, stmt):
             self._cursor = self._connection.cursor()
-            rval = self._cursor.execute(stmt)
-            return self._cursor
+            self._cursor.execute(stmt)
+            return self
         return self._dosql(f, stmt)
 
     class ResultsGenerator(object):
@@ -310,9 +309,6 @@ class RF2DBConnection(object):
         rlist = [cls(c) for c in self.query(table, **singleresultargs(**kwargs))]
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
-
-    def executeAndReturn(self, query):
-        return self._cursor if self.execute(query) else []
 
 
     @staticmethod

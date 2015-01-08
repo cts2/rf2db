@@ -33,6 +33,7 @@ import re
 
 from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
 from rf2db.db.RF2FileCommon import global_rf2_parms
+from rf2db.parsers.RF2Iterator import RF2ChangeSetReferenceSet, iter_parms
 from rf2db.parsers.RF2RefsetParser import RF2ChangeSetReferenceEntry, RF2ChangeSetDetails
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, booleanparam, strparam
 from rf2db.constants.RF2ValueSets import changeSetRefSet
@@ -45,6 +46,7 @@ from rf2db.db.RF2LanguageFile import LanguageDB
 from rf2db.db.RF2SimpleReferencesetFile import SimpleReferencesetDB
 from rf2db.db.RF2ModuleDependencyFile import ModuleDependencyDB
 from rf2db.db.AllFiles import read_by_changeset
+from rf2db.utils.listutils import listify
 
 changeset_parms = ParameterDefinitionList(global_rf2_parms)
 changeset_parms.open = booleanparam(default=True)
@@ -58,6 +60,13 @@ add_changeset_parms.description = strparam(splittable=False)
 validate_changeset_parms = ParameterDefinitionList(changeset_parms)
 
 update_changeset_parms = ParameterDefinitionList(add_changeset_parms)
+
+list_changeset_parms = ParameterDefinitionList(iter_parms)
+list_changeset_parms.open = booleanparam(default=True)
+list_changeset_parms.final = booleanparam(default=False)
+list_changeset_parms.released = booleanparam(default=None)
+list_changeset_parms.owner = strparam(splittable=True)
+list_changeset_parms.release = strparam(splittable=True)
 
 class CountList(object):
     """ This carries various counts of things that rolled back.  Anything not referenced
@@ -76,6 +85,10 @@ def csorname(changeset, csname):
     @param id: ambiguous identifer
     @return: updated args
     """
+    if isinstance(changeset, list):
+        changeset = ' '.join(changeset)
+    if isinstance(csname, list):
+        csname = ' '.join(changeset)
     if changeset and not csname:
         return (changeset, None) if uuidre.match(changeset) else (None, changeset)
     return changeset, csname
@@ -323,7 +336,36 @@ class ChangeSetDB(RF2RefsetWrapper):
         return rval
 
     @classmethod
-    def _commit(cls, db, changeset, **args):
+    def _commit(cls, db, changeset, **_):
         fname = cls.fname()
         return db.execute_query("UPDATE %(fname)s SET locked=0, isFinal=1 WHERE changeset = '%(changeset)s'" % vars())
 
+    def list(self, open=True, final=False, released=None, release=None, owner=None, ignore_locks=False, maxtoreturn=None, **kwargs):
+        filtr = "TRUE "
+
+        # Open changesets are necessarily locked.  Override the other setting
+        if open:
+            ignore_locks = True
+        if open and not final:
+            filtr += " AND isFinal = 0 "
+        elif final and not open:
+            filtr += " AND isFinal = 1 "
+        elif not open and not final:
+            # TODO: return nothing or an error message
+            pass
+        # TODO: redefine released so we can different
+        if released is not None:
+            filtr += "AND inRelease is " + ('not' if released else '') + " null "
+        if release:
+            filtr += "AND inRelease in (" + ','.join("'%s'" %r for r in listify(release)) + ") "
+        if owner:
+            filtr += "AND owner in (" + ','.join("'%s'" % r for r in listify(owner)) + ") "
+        db = self.connect()
+        db.execute(db.build_query(self._fname, filter_=filtr, ignore_locks=ignore_locks, maxtoreturn=maxtoreturn, **kwargs))
+        return [RF2ChangeSetReferenceEntry(c) for c in db.ResultsGenerator(db)] \
+            if maxtoreturn else list(db.ResultsGenerator(db))
+
+
+    @classmethod
+    def refsettype(cls, parms):
+        return RF2ChangeSetReferenceSet(parms)

@@ -77,7 +77,7 @@ from rf2db.parameterparser.ParmParser import ParameterDefinitionList
 #     - changeset - a changeset id.  If supplied and the changeset is open, values will be visible in service
 global_rf2_parms = ParameterDefinitionList()
 global_rf2_parms.active = booleanparam(default=True)
-global_rf2_parms.changeset = strparam(required=False)
+global_rf2_parms.changeset = strparam(required=False, splittable=False)
 
 class moduleidparam(sctidparam):
     """ Module id parameter.  Validate sctid's that are also children of the module file
@@ -143,7 +143,8 @@ moduleId bigint(20) NOT NULL '''
 
     hasrf2rec = False
 
-    def connect(self):
+    @staticmethod
+    def connect():
         """
         @return: Database connection.
         """
@@ -156,7 +157,7 @@ moduleId bigint(20) NOT NULL '''
         """
         if not self._exists:
             db = self.connect()
-            self._exists = len(db.execute(self._existsQuery % self._fname).fetchall()) > 0
+            self._exists = len(list(db.execute(self._existsQuery % self._fname))) > 0
             db.close()
         return self._exists
 
@@ -234,8 +235,7 @@ moduleId bigint(20) NOT NULL '''
         """
         db = self.connect()
         query = 'SELECT MAX(id) from %s WHERE (id %% 10000000000) div 1000 = %s' % (self._fname, namespace)
-        db.execute(query)
-        ns = db.next()[0]
+        ns = db.execute(query).next()[0]
         return DecodedNamespace(0 if ns is None else ns)
 
 
@@ -333,7 +333,12 @@ moduleId bigint(20) NOT NULL '''
         """
         reldir = ('Snapshot' if cp_values.ss else 'Full') if not self.isRF1File else ''
         if rf2_values.fileloc:
+            # Pre 2015 release format
             base = os.path.join(rf2_values.fileloc, 'RF1Release' if self.isRF1File else 'RF2Release', reldir, self.directory)
+            # Post 2015 release format -- release is in the base path
+            # TODO: add the RF1 link
+            if not os.path.exists(base):
+                base = os.path.join(rf2_values.fileloc, reldir, self.directory)
             if os.path.exists(base):
                 for fname in os.listdir(base):
                     for p in self.prefixes:
