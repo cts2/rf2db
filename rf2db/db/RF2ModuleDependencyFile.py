@@ -8,7 +8,7 @@
 # Redistributions of source code must retain the above copyright notice, this
 # list of conditions and the following disclaimer.
 #
-#     Redistributions in binary form must reproduce the above copyright notice,
+# Redistributions in binary form must reproduce the above copyright notice,
 #     this list of conditions and the following disclaimer in the documentation
 #     and/or other materials provided with the distribution.
 #
@@ -30,14 +30,16 @@
 """ RF2 ModuleDependency reference file
 """
 
-from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
+from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper, global_refset_parms
 from rf2db.parsers.RF2RefsetParser import RF2ModuleDependencyReferenceSetEntry
 
-class ModuleDependencyDB(RF2RefsetWrapper):
 
-    directory   = 'Refset/Metadata'
-    prefixes    = ['der2_ssRefset_ModuleDependency']
-    table       = 'moduleDependency'
+class ModuleDependencyDB(RF2RefsetWrapper):
+    directory = 'Refset/Metadata'
+    prefixes = ['der2_ssRefset_ModuleDependency']
+    table = 'moduleDependency'
+
+    _wrapper_cls = lambda self, e: RF2ModuleDependencyReferenceSetEntry(e)
 
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
      %(base)s,
@@ -50,6 +52,7 @@ class ModuleDependencyDB(RF2RefsetWrapper):
         RF2RefsetWrapper.__init__(self, *args, **kwargs)
 
     hasrf2rec = True
+
     @classmethod
     def rf2rec(cls, *args, **kwargs):
         return RF2ModuleDependencyReferenceSetEntry(*args, **kwargs)

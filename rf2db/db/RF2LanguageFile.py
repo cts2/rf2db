@@ -33,8 +33,8 @@ import uuid
 
 from rf2db.parsers.RF2RefsetParser import RF2LanguageRefsetEntry
 from rf2db.parsers.RF2Iterator import RF2LanguageReferenceSet, iter_parms
-from rf2db.db.RF2FileCommon import global_rf2_parms, rf2_values
-from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
+from rf2db.db.RF2FileCommon import global_rf2_parms
+from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper, global_refset_parms
 from rf2db.utils.lfu_cache import lfu_cache
 from rf2db.utils.listutils import listify
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, enumparam, sctidparam
@@ -45,7 +45,7 @@ from rf2db.constants.RF2ValueSets import us_english, gb_english, spanish, prefer
 
 
 # Parameters for language file access
-language_parms = global_rf2_parms
+language_parms = global_refset_parms
 
 language_list_parms = ParameterDefinitionList(global_rf2_parms)
 language_list_parms.add(iter_parms)
@@ -68,6 +68,8 @@ class LanguageDB(RF2RefsetWrapper):
     directory = 'Refset/Language'
     prefixes = ['der2_cRefset_Language']
     table = 'language'
+
+    _wrapper_cls = lambda self, e: RF2LanguageRefsetEntry(e)
 
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
      %(base)s,
@@ -117,6 +119,7 @@ class LanguageDB(RF2RefsetWrapper):
     @staticmethod
     def _langfltr(fltr, language=None, **kwargs):
         return (fltr + " AND refsetId=%s " % language_map[language]) if (language and language in language_map) else fltr
+
 
     @lfu_cache(maxsize=100)
     def get_entries_for_description(self, desc=None, maxtoreturn=None, **kwargs):

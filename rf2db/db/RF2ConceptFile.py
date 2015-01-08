@@ -79,21 +79,15 @@ class ConceptDB(RF2FileWrapper):
     def rf2rec(cls, *args, **kwargs):
         return RF2Concept(*args, **kwargs)
 
-    @lfu_cache(maxsize=100)
-    def read(self, cid, active=1, changeset=None, **kwargs):
+    @lfu_cache(maxsize=200)
+    def read(self, cid, **kwargs):
         """
         Read the concept record
         @param cid: concept sctid
         @return: Updated RF2Concept record if valid else None
         """
         db = self.connect()
-        rlist = [RF2Concept(c) for c in db.query(self._fname,
-                                                 filter_="id=%s" % cid,
-                                                 changeset=changeset,
-                                                 **singleresultargs(**kwargs))]
-        assert (len(rlist) < 2)
-        return rlist[0] if len(rlist) else None
-
+        return db.singleton_query(self._fname, RF2Concept, filter_="id=%s" % cid, **kwargs)
 
     def _doupdate(self, cid, changeset, effectivetime=None, definitionstatusid=None, **kwargs):
         """ Helper function to update a concept record

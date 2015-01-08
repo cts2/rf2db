@@ -27,8 +27,12 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from rf2db.db.RF2FileCommon import RF2FileWrapper, rf2_values
+from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms
 from rf2db.db.RF2DBConnection import RF2DBConnection
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, strparam
+
+global_refset_parms = ParameterDefinitionList(global_rf2_parms)
+global_refset_parms.uuid = strparam()
 
 class RF2RefsetWrapper(RF2FileWrapper):
 
@@ -47,6 +51,8 @@ KEY component (referencedComponentId)'''
 
     _keys_ss = RF2FileWrapper._keys_ss + ',' + _wrapper_keys
     _keys_full = RF2FileWrapper._keys_full + ',' + _wrapper_keys
+
+    _wrapper_cls = None
 
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
@@ -70,6 +76,15 @@ KEY component (referencedComponentId)'''
         self._refset_names = {k:v[0] for k,v in LanguageDB().preferred_term_for_concepts(self._known_refsets,
                                                                                          language=language).items()}
 
+    def read(self, uuid=None, **kwargs):
+        """
+        Read the language record
+        @param uuid: language refset id
+        @return: language record if found else None
+        """
+        db = self.connect()
+        # TODO: Sanitize uuid (!)
+        return db.singleton_query(self._fname, self._wrapper_cls, filter_="id='%s'" % uuid, **kwargs)
 
     def valid_refsets(self, active=True, moduleids=None):
         stmt = "SELECT DISTINCT refsetId FROM %s WHERE " % self._fname

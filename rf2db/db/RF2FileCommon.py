@@ -348,7 +348,7 @@ moduleId bigint(20) NOT NULL '''
                 print("Directory %s does not exist!" % base, file=sys.stderr)
                 raise StopIteration
 
-    lfu_cache()
+    @lfu_cache()
     def validconcept(self, conceptid, changeset, **kwargs):
         """ Determine whether the supplied concept is valid (active or inactive)
         @param conceptid: concept
