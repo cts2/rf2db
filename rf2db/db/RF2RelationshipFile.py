@@ -281,6 +281,7 @@ class RelationshipDB(RF2FileWrapper):
         return sorted(rval.values(), key=key)
 
 
+    @lfu_cache()
     def getSourceRecs(self, sourceId, **kwargs):
         """ Return all relationship records with the given sourceId. """
         return self._getRecs('sourceId = %s ' % sourceId, lambda r: (r.relationshipGroup, r.destinationId), **kwargs)
@@ -292,6 +293,7 @@ class RelationshipDB(RF2FileWrapper):
                              **kwargs)
 
 
+    @lfu_cache()
     def getTargetRecs(self, targetId, **kwargs):
         """ Return all Relationship records associated with the given targetId """
         return self._getRecs('destinationId = %s ' % targetId, lambda r: (r.relationshipGroup, r.sourceId), **kwargs)

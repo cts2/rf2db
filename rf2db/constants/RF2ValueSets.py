@@ -81,6 +81,9 @@ snomedCTInternational = sctid(900000000000207008)
 snomedCTSpanishEdition = sctid(450829007)
 snomedCTUSExtension = sctid(731000124108)
 
+# Parent of simple type reference sets
+simpleReferenceSetRoot = sctid(446609009)
+
 # Simple map refsets from SCT International
 icdoSimpleMap = sctid(446608001)
 ctv3simplemap = sctid(900000000000497000)

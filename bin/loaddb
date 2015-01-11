@@ -87,7 +87,6 @@ def load_file(loader, opts, cfg):
     rf2file.loadTable(rf2file)
 
 
-
 def main(args):
     """ Load a set of RF2 tables into an existing database.  The configuration is maintained with the <i>newdb</i>
     utility, although it can be edited manually.
@@ -102,7 +101,7 @@ def main(args):
     parser.add_argument('--load', '-l', action="store_true", help="load the database")
     parser.add_argument('-c', '--canonical', action="store_true", help="load canonical files")
 
-       # Can't do a lot more if there isn't configuration file
+    # Can't do a lot more if there isn't configuration file
     if len(args) == 0 or (len(args) == 1 and args[0] in helpargs):
         config_parms.add_to_parser(parser)
         parser.parse_args(args)

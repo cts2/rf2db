@@ -29,19 +29,30 @@
 
 """ RF2 Simple Reference Set file access
 """
+import uuid
 
-
-from rf2db.db.RF2FileCommon import global_rf2_parms, rf2_values
-from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
+from rf2db.db.RF2ConceptFile import new_concept_parms, ConceptDB
+from rf2db.db.RF2TransitiveClosure import TransitiveClosureDB
+from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper, global_refset_parms
 from rf2db.parsers.RF2RefsetParser import RF2SimpleReferenceSetEntry
 from rf2db.parsers.RF2Iterator import RF2SimpleReferenceSet, iter_parms
-from rf2db.parameterparser.ParmParser import ParameterDefinitionList, sctidparam
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, sctidparam, enumparam, booleanparam
+from rf2db.constants.RF2ValueSets import simpleReferenceSetRoot
+from rf2db.utils.listutils import listify
 
-
-simplerefset_list_parms = ParameterDefinitionList(global_rf2_parms)
+simplerefset_list_parms = ParameterDefinitionList(global_refset_parms)
 simplerefset_list_parms.add(iter_parms)
 simplerefset_list_parms.component = sctidparam()
 simplerefset_list_parms.refset = sctidparam()
+
+new_simplerefset_parms = ParameterDefinitionList(new_concept_parms)
+
+update_simplerefset_parms = ParameterDefinitionList(global_refset_parms)
+update_simplerefset_parms.operation = enumparam(('add', 'remove', 'replace'), default='add')
+update_simplerefset_parms.refset = sctidparam(required=True)
+update_simplerefset_parms.component = sctidparam(splittable=True)
+update_simplerefset_parms.children = booleanparam(default=False)
+update_simplerefset_parms.leafonly = booleanparam(default=False)
 
 
 class SimpleReferencesetDB(RF2RefsetWrapper):
@@ -73,3 +84,65 @@ class SimpleReferencesetDB(RF2RefsetWrapper):
     def refsettype(cls, parms):
         return RF2SimpleReferenceSet(parms)
 
+    def new(self, changeset=None, parent=None, **kwargs):
+        if not parent:
+            parent = simpleReferenceSetRoot
+        db = self.connect()
+        return db.add(changeset, parent=parent, **kwargs)
+
+    @staticmethod
+    def _resolvecomponents(cdb, tcdb, changeset, component, children, leafonly, **kwargs):
+        components = listify(component)
+        for c in components:
+            if not cdb.validconcept(c, changeset, **kwargs):
+                return "Invalid member concept: %s" % c
+        if not children:
+            return components
+        return set(tcdb.children(c) for c in components)
+
+    class _rowgenerator():
+        def __init__(self, effectivetime, moduleid, refsetid, changeset):
+            self._et, self._mi, self._ri, self._cs = effectivetime, moduleid, refsetid, "'" + changeset + "'"
+
+        def row(self, component):
+            return "(" + ','.join((uuid.uuid4(), self._et, "1", self._mi, self._ri, component, self._cs, 1) + ")")
+
+    def update(self, operation="add", changeset=None, refset=None, effectivetime=None, moduleid=None, component=None,
+               children=False, leafonly=False, **kwargs):
+
+        # Make sure the change set is open and editable
+        if not self.changesetisvalid(changeset):
+            return self.changeseterror(changeset)
+
+        # Make sure that the refset is a valid refset and is editable
+        cdb = ConceptDB()
+        if not cdb.validconcept(refset, changeset, **kwargs):
+            return "Unrecognized refset concept "
+        tcdb = TransitiveClosureDB()
+        if simpleReferenceSetRoot not in tcdb.parents(refset, **kwargs):
+            return "%s is not a simple reference set"
+
+        # Resolve the components of the reference set
+        components = self._resolvecomponents(cdb, tcdb, changeset, children, children, leafonly, **kwargs)
+        if not isinstance(components, list):
+            return components
+        effectivetime, moduleid = self.effectivetime_and_moduleid(effectivetime, moduleid)
+        rg = self._rowgenerator(effectivetime, moduleid, refset, changeset)
+        if components:
+            sql = "INSERT IGNORE INTO %(fname)s (id, effectiveTime, active, moduleId, refsetId, referencedComponentId, " \
+                "changeset, locked) VALUES " + ','.join(list(rg(c) for c in components))
+        print(sql)
+
+
+
+    def remove_concepts(self, changeset, refsetid, concepts, children=False, leafonly=False, **kwargs):
+        pass
+
+    def remove_all_concepts(self, changeset, refsetid, **kwargs):
+        pass
+
+    def update(self, changeset, simplemapid, refsetid, **kwargs):
+        pass
+
+    def delete(self, simplemapid, changeset=None, **kwargs):
+        pass

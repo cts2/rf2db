@@ -77,7 +77,7 @@ class PNandFSNDB(RF2FileWrapper):
         def flush(self):
             if len(self._insertList):
                 self._db.execute(
-                    "INSERT INTO %s (id, lang, fsn, pn) VALUES " % self._filename + ','.join(self._insertList))
+                    "INSERT IGNORE INTO %s (id, lang, fsn, pn) VALUES " % self._filename + ','.join(self._insertList))
                 self._db.commit(disconnect=False)
             self._insertList = []
 

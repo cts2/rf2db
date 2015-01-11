@@ -196,7 +196,8 @@ class DescriptionDB(RF2FileWrapper):
                          "VALUES (%(descid)s, %(effectivetime)s, 1, %(moduleid)s, "
                          "%(concept)s, '%(language)s', %(typeid)s, '%(term)s', %(csig)s, '%(changeset)s', 1 )" % vars())
         db.commit()
-        DescriptionTextDB().add(**vars())
+        DescriptionTextDB().add(descid=descid, effectivetime=effectivetime, moduleid=moduleid, concept=concept,
+                                language=language, typeid=typeid, term=term, csig=csig, changeset=changeset, **kwargs)
         if type == 'f' or type == 'p':
             PNandFSNDB().updatepnfsn(concept, language, term if type == 'f' else None, term if type == 'p' else None)
         if (type == 'p' or type == 's') and language in 'en':

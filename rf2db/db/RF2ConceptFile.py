@@ -8,7 +8,7 @@
 # Redistributions of source code must retain the above copyright notice, this
 # list of conditions and the following disclaimer.
 #
-#     Redistributions in binary form must reproduce the above copyright notice,
+# Redistributions in binary form must reproduce the above copyright notice,
 #     this list of conditions and the following disclaimer in the documentation
 #     and/or other materials provided with the distribution.
 #
@@ -33,7 +33,7 @@
 from rf2db.parsers.RF2BaseParser import RF2Concept
 from rf2db.parsers.RF2Iterator import RF2ConceptList, iter_parms
 from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, ep_values, rf2_values
-from rf2db.db.RF2DBConnection import cp_values, singleresultargs
+from rf2db.db.RF2DBConnection import cp_values
 from rf2db.utils.lfu_cache import lfu_cache, clear_caches
 from rf2db.utils.listutils import listify
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, intparam, enumparam, sctidparam
@@ -64,7 +64,6 @@ class ConceptDB(RF2FileWrapper):
     prefixes = ['sct2_Concept_']
     table = 'concept'
 
-
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
       %(base)s,
       definitionStatusId bigint(20) NOT NULL,
@@ -75,6 +74,7 @@ class ConceptDB(RF2FileWrapper):
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
     hasrf2rec = True
+
     @classmethod
     def rf2rec(cls, *args, **kwargs):
         return RF2Concept(*args, **kwargs)
@@ -137,8 +137,8 @@ class ConceptDB(RF2FileWrapper):
         # Don't update effective time if nothing will change (PUT is idempotent)
         if not current_value.locked:
             if current_value.changeset != changeset or \
-               current_value.isPrimitive and definitionstatus == 'f' or \
-               current_value.isFullyDefined and definitionstatus == 'p':
+                            current_value.isPrimitive and definitionstatus == 'f' or \
+                            current_value.isFullyDefined and definitionstatus == 'p':
                 if cp_values.ss:
                     return "Concept: Cannot update an existing snapshot record"
                 else:
@@ -190,7 +190,6 @@ class ConceptDB(RF2FileWrapper):
                 return None
             else:
                 return "Concept: Record is locked under a different changeset"
-
 
     def add(self, changeset, cid=None, effectivetime=None, moduleid=None, definitionstatus='p', **kwargs):
         """

@@ -29,10 +29,10 @@
 
 from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms
 from rf2db.db.RF2DBConnection import RF2DBConnection
-from rf2db.parameterparser.ParmParser import ParameterDefinitionList, strparam
+from rf2db.parameterparser.ParmParser import ParameterDefinitionList, strparam, uuidparam
 
 global_refset_parms = ParameterDefinitionList(global_rf2_parms)
-global_refset_parms.uuid = strparam()
+global_refset_parms.uuid = uuidparam()
 
 class RF2RefsetWrapper(RF2FileWrapper):
 
@@ -44,9 +44,7 @@ refsetId bigint(20) NOT NULL,'''
     _file_base = _file_base_ + '''
 referencedComponentId bigint(20) NOT NULL '''
 
-    _wrapper_keys = '''KEY ars (active, refsetId),
-KEY rac (refsetId, referencedComponentId),
-KEY refset (refsetId),
+    _wrapper_keys = '''KEY rac (refsetId, referencedComponentId),
 KEY component (referencedComponentId)'''
 
     _keys_ss = RF2FileWrapper._keys_ss + ',' + _wrapper_keys
@@ -94,5 +92,3 @@ KEY component (referencedComponentId)'''
         db = RF2DBConnection()
         db.execute(stmt)
         return list(db.ResultsGenerator(db))
-
-

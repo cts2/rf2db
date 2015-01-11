@@ -31,10 +31,9 @@
 import uuid
 import re
 
-from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper
-from rf2db.db.RF2FileCommon import global_rf2_parms
+from rf2db.db.RF2RefsetWrapper import RF2RefsetWrapper, global_refset_parms
 from rf2db.parsers.RF2Iterator import RF2ChangeSetReferenceSet, iter_parms
-from rf2db.parsers.RF2RefsetParser import RF2ChangeSetReferenceEntry, RF2ChangeSetDetails
+from rf2db.parsers.RF2RefsetParser import RF2ChangeSetReferenceSetEntry, RF2ChangeSetDetails
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, booleanparam, strparam
 from rf2db.constants.RF2ValueSets import changeSetRefSet
 from rf2db.db.RF2ConceptFile import ConceptDB
@@ -48,11 +47,11 @@ from rf2db.db.RF2ModuleDependencyFile import ModuleDependencyDB
 from rf2db.db.AllFiles import read_by_changeset
 from rf2db.utils.listutils import listify
 
-changeset_parms = ParameterDefinitionList(global_rf2_parms)
+changeset_parms = ParameterDefinitionList(global_refset_parms)
 changeset_parms.open = booleanparam(default=True)
 changeset_parms.csname = strparam(splittable=False)
 
-add_changeset_parms = ParameterDefinitionList(global_rf2_parms)
+add_changeset_parms = ParameterDefinitionList(global_refset_parms)
 add_changeset_parms.csname = strparam(splittable=False)
 add_changeset_parms.owner = strparam(splittable=False)
 add_changeset_parms.description = strparam(splittable=False)
@@ -82,7 +81,8 @@ uuidre = re.compile('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 def csorname(changeset, csname):
     """ Return a uuid if id parses as such, otherwise a name
-    @param id: ambiguous identifer
+    @param changeset: changeset identifier or name
+    @param csname: changeset name
     @return: updated args
     """
     if isinstance(changeset, list):
@@ -92,6 +92,7 @@ def csorname(changeset, csname):
     if changeset and not csname:
         return (changeset, None) if uuidre.match(changeset) else (None, changeset)
     return changeset, csname
+
 
 class ChangeSetDB(RF2RefsetWrapper):
     """
@@ -104,10 +105,11 @@ class ChangeSetDB(RF2RefsetWrapper):
     isFinal -- 0 means set is open, 1 means final
     inRelease -- release identifier that contains the changset (meaning it has been distributed.
     """
-    directory = 'Refset/Language'
-    # TODO: Correct file name
+    directory = 'Refset/Metadata'
     prefixes = ['der2_sssiiRefset_Changeset']
     table = 'changeset'
+
+    _wrapper_cls = lambda self, e: RF2ChangeSetReferenceSetEntry(self, e)
 
     createSTMT = "CREATE TABLE IF NOT EXISTS %(table)s (" + RF2RefsetWrapper._file_base_ + """
       referencedComponentId char(36) COLLATE utf8_bin NOT NULL,
@@ -126,13 +128,16 @@ class ChangeSetDB(RF2RefsetWrapper):
     def __new__(cls, *args, **kwargs):
         return RF2RefsetWrapper.__new__(cls, *args, **kwargs)
 
-    def read(self, changeset=None, csname=None, **kwargs):
+    def read(self, changeset=None, csname=None, uuid=None, **kwargs):
         """ Read the supplied changeset record
         @param changeset: UUID of the changeset
         @param csname: unique name of the changeset
         @param kwargs: Contextual arguments
         @return: RF2ChangeSetReferenceEntry or None if changeset doesn't exist
         """
+        if uuid:
+            return super(ChangeSetDB, self).read(changset=changeset, csname=csname, uuid=uuid, **kwargs)
+
         changeset, csname = csorname(changeset, csname)
         if not changeset:
             changeset = self._read_by_name(csname, **kwargs)
@@ -141,9 +146,11 @@ class ChangeSetDB(RF2RefsetWrapper):
             filter_ += "AND name='%s' " % csname
         db = self.connect()
         return db.singleton_query(self._fname,
-                                  RF2ChangeSetReferenceEntry,
+                                  RF2ChangeSetReferenceSetEntry,
                                   filter_=filter_,
                                   changeset=changeset, **kwargs)
+
+
 
     def _read_by_name(self, csname, changeset=None, **kwargs):
         """ Read the supplied changeset record by csname
@@ -153,7 +160,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         """
         db = self.connect()
         base = db.singleton_query(self._fname,
-                                  RF2ChangeSetReferenceEntry,
+                                  RF2ChangeSetReferenceSetEntry,
                                   filter_="name='%s'" % csname,
                                   changeset=changeset,
                                   ignore_locks=True,
@@ -170,6 +177,8 @@ class ChangeSetDB(RF2RefsetWrapper):
         changeset, csname = csorname(changeset, csname)
         if not changeset:
             changeset = self._read_by_name(csname, **kwargs)
+            if not changeset:
+                return None
         filter_ = "refsetId=%s AND referencedComponentId='%s' " % (changeSetRefSet, changeset)
         if csname:
             filter_ += "AND name='%s' " % csname
@@ -178,8 +187,10 @@ class ChangeSetDB(RF2RefsetWrapper):
                                   RF2ChangeSetDetails,
                                   filter_=filter_,
                                   changeset=changeset, **kwargs)
+        if not base:
+            return None
         details = read_by_changeset(changeset)
-        for k,v in details.items():
+        for k, v in details.items():
             base.__setattr__(k, v)
         return base
 
@@ -362,7 +373,7 @@ class ChangeSetDB(RF2RefsetWrapper):
             filtr += "AND owner in (" + ','.join("'%s'" % r for r in listify(owner)) + ") "
         db = self.connect()
         db.execute(db.build_query(self._fname, filter_=filtr, ignore_locks=ignore_locks, maxtoreturn=maxtoreturn, **kwargs))
-        return [RF2ChangeSetReferenceEntry(c) for c in db.ResultsGenerator(db)] \
+        return [RF2ChangeSetReferenceSetEntry(c) for c in db.ResultsGenerator(db)] \
             if maxtoreturn else list(db.ResultsGenerator(db))
 
 

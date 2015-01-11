@@ -370,7 +370,7 @@ def main():
     parser.add_argument('-n', '--namespace', type=int, help="Namespace", required=True)
     parser.add_argument('-d', '--delete', help="Delete Namespace", action="store_true")
     parser.add_argument('-r', '--releasedate', help="Release date")
-    parser.add_argument('module', help="Module Name", nargs='*')
+    parser.add_argument('module', help="Module Name", nargs='+')
     parser.add_argument('-c', '--configfile', help="Configuration file location", default="settings.conf")
     parser.add_argument('-v', '--verbose', help="Verbose", action="store_true")
     parser.add_argument('-o', '--owner', help="Changeset owner")

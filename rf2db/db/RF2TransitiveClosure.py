@@ -34,7 +34,7 @@ parent or child.  In the case of multiple paths, the shortest number of hops is 
 """
 
 from mysql.connector import ProgrammingError
-from mysql.connector.errorcode import ER_CANT_DROP_FIELD_OR_KEY, ER_DUP_ENTRY
+from mysql.connector.errorcode import ER_CANT_DROP_FIELD_OR_KEY, ER_DUP_ENTRY, ER_DUP_KEYNAME
 
 from rf2db.db.RF2DBConnection import RF2DBConnection, cp_values, singleresultargs
 from rf2db.db.RF2FileCommon import RF2FileWrapper
@@ -157,7 +157,7 @@ class TransitiveClosureDB(RF2FileWrapper):
     @staticmethod
     def _writeblock(tc, db, fname):
         insertlist = ["(%s,%s,%s,%s)" % e for e in tc]
-        db.execute("INSERT INTO %(fname)s (parent, child, depth, isLeaf) VALUES " % vars() + ','.join(insertlist))
+        db.execute("INSERT IGNORE INTO %(fname)s (parent, child, depth, isLeaf) VALUES " % vars() + ','.join(insertlist))
         db.commit()
 
     @staticmethod
@@ -165,11 +165,18 @@ class TransitiveClosureDB(RF2FileWrapper):
         db = RF2DBConnection()
         commit_needed = False
         # Strange as it may seem, mysql doesn't have a drop index if exists command
+        #
+        # Index 1 is needed to prevent dups on load
+        # try:
+        #     db.execute_query("DROP INDEX %(fname)s_idx1 on %(fname)s" % vars())
+        #     commit_needed = True
+        # except ProgrammingError as e:
+        #     if e.errno != ER_CANT_DROP_FIELD_OR_KEY:
+        #         raise e
         try:
-            db.execute_query("DROP INDEX %(fname)s_idx1 on %(fname)s" % vars())
-            commit_needed = True
+            db.execute("CREATE UNIQUE INDEX %(fname)s_idx1 ON %(fname)s(parent, child)" % vars())
         except ProgrammingError as e:
-            if e.errno != ER_CANT_DROP_FIELD_OR_KEY:
+            if e.errno != ER_DUP_KEYNAME:
                 raise e
         try:
             db.execute_query("DROP INDEX %(fname)s_idx2 on %(fname)s" % vars())
@@ -190,7 +197,7 @@ class TransitiveClosureDB(RF2FileWrapper):
     @staticmethod
     def _createindices(fname):
         db = RF2DBConnection()
-        db.execute("CREATE UNIQUE INDEX %(fname)s_idx1 ON %(fname)s(parent, child)" % vars())
+        # db.execute("CREATE UNIQUE INDEX %(fname)s_idx1 ON %(fname)s(parent, child)" % vars())
         db.execute("CREATE INDEX %(fname)s_idx2 ON %(fname)s(parent, locked)" % vars())
         db.execute("CREATE INDEX %(fname)s_idx3 ON %(fname)s(child, locked)" % vars())
         db.commit()
@@ -260,18 +267,14 @@ class TransitiveClosureDB(RF2FileWrapper):
         rval = set([e if len(e) > 1 else e[0] for e in db])
         return rval
 
-
     def hasChildren(self, sctid, **kwargs):
         return bool(self.children(sctid, **singleresultargs(**kwargs)))
-
 
     def children(self, sctid, **kwargs):
         return self.doquery(True, sctid, **kwargs)
 
-
     def hasParents(self, sctid, **kwargs):
         return bool(self.parents(sctid, **singleresultargs(**kwargs)))
-
 
     def parents(self, sctid, **kwargs):
         return self.doquery(False, sctid, **kwargs)

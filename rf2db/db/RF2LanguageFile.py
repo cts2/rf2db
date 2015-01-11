@@ -76,6 +76,7 @@ class LanguageDB(RF2RefsetWrapper):
       acceptabilityId bigint(20) NOT NULL,
       conceptId bigint(20) DEFAULT 0,
       KEY concept (conceptId) USING BTREE,
+      KEY rcc (referencedComponentId, conceptId) USING BTREE,
        %(keys)s ); """
 
     updateSTMT = """UPDATE %(table)s l
@@ -141,28 +142,28 @@ class LanguageDB(RF2RefsetWrapper):
         return [RF2LanguageRefsetEntry(d) for d in db.ResultsGenerator(db)] if maxtoreturn \
             else list(db.ResultsGenerator(db))
 
-    # This can't be cached because it returns a list...
-    def preferred_term_for_concepts(self, conceptIds, language='en', active=True, moduleid=None, **kwargs):
+    @lfu_cache()
+    def preferred_term_for_concepts(self, conceptids, language='en', active=True, moduleid=None, **kwargs):
         """ Return a list of concept id to prefname/desc id.  Note: If you just want the PN or FSN, use RF2PnAndFSN instead
 
-        @param conceptIds: concept id(s) too lookup
+        @param conceptids: concept id(s) too lookup
         @param language: limit language
         @param parmlist: parameters.  We use active, moduleid, language.
         @return: dictionary - key is concept id, value is (prefname/description id) tuple
         """
         from rf2db.db.RF2DescriptionFile import DescriptionDB
         db = self.connect()
-        conceptIds = listify(conceptIds)
+        conceptids = listify(conceptids)
         stmt = "SELECT l.conceptId, d.id, d.term FROM %s l, %s d " \
                "WHERE l.conceptId IN (%s) AND l.referencedComponentId = d.id " \
                "AND l.acceptabilityId = %s AND d.typeid = %s" % \
                (self._fname,
                 DescriptionDB.fname(),
-                ', '.join(str(c) for c in conceptIds),
+                ', '.join(str(c) for c in conceptids),
                 preferred,
                 synonym)
         if active:
-            stmt += ' AND l.active=1 AND d.active=1 '
+            stmt += ' AND l.active=1 '
         if moduleid:
             stmt += " AND d.moduleId in (" + ', '.join(str(m) for m in listify(moduleid)) + ") "
         stmt += self._langfltr('', language=language, **kwargs)

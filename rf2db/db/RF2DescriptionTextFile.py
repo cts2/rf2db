@@ -63,7 +63,7 @@ class DescriptionTextDB(RF2FileWrapper):
        %(keys)s
     ) ENGINE=MyISAM;"""
 
-    _loadStmt1 = """INSERT INTO %(table)s SELECT d.*, 0 FROM %(desctable)s d, 
+    _loadStmt1 = """INSERT IGNORE INTO %(table)s SELECT d.*, 0 FROM %(desctable)s d,
          (SELECT id, MAX(effectiveTime) AS effectiveTime FROM %(desctable)s GROUP BY id) as d_keys
         WHERE d.id = d_keys.id AND d.effectiveTime = d_keys.effectiveTime AND d.active = 1;"""
 

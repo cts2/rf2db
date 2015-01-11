@@ -318,6 +318,19 @@ class sctidparam(ParameterDefinition):
         return sctid(val)
 
 
+class uuidparam(ParameterDefinition):
+    uuidre = re.compile('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+
+    def __init__(self, **args):
+        ParameterDefinition.__init__(self, "uuid", **args)
+
+    def _isValid(self, val):
+        return self.uuidre.match(val.lower())
+
+    def _value(self, val):
+        return val.lower()
+
+
 class enumparam(ParameterDefinition):
     def __init__(self, possvalues, casesensitive=False, **args):
         self._possvalues = [str(v) if casesensitive else str(v).lower() for v in possvalues]
