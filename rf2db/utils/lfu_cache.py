@@ -107,7 +107,7 @@ def lfu_cache(maxsize=100):
         def wrapper(*args, **kwargs):
             if booleanparam.v(db_values.nocache, False):
                 return user_function(*args, **kwargs)
-            key = args[1:]
+            key = tuple(tuple(e) if isinstance(e, list) else e for e in args[1:])
             kwkey = tuple(sorted((k, v if isinstance(v, collections.Hashable) else str(v))
                                  for k, v in kwargs.items()  if not k.startswith('_')))
             if kwkey:
