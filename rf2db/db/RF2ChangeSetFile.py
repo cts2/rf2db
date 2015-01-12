@@ -109,7 +109,12 @@ class ChangeSetDB(RF2RefsetWrapper):
     prefixes = ['der2_sssiiRefset_Changeset']
     table = 'changeset'
 
-    _wrapper_cls = lambda self, e: RF2ChangeSetReferenceSetEntry(self, e)
+    def _wrapper(self, e):
+        return RF2ChangeSetReferenceSetEntry(e)
+
+    _wrapper_cls = _wrapper
+
+    # _wrapper_cls = lambda self, e: RF2ChangeSetReferenceSetEntry(self, e)
 
     createSTMT = "CREATE TABLE IF NOT EXISTS %(table)s (" + RF2RefsetWrapper._file_base_ + """
       referencedComponentId char(36) COLLATE utf8_bin NOT NULL,
@@ -136,8 +141,11 @@ class ChangeSetDB(RF2RefsetWrapper):
         @return: RF2ChangeSetReferenceEntry or None if changeset doesn't exist
         """
         if uuid:
-            return super(ChangeSetDB, self).read(changset=changeset, csname=csname, uuid=uuid, **kwargs)
-
+            rval = super(ChangeSetDB, self).read(changset=changeset, csname=csname, uuid=uuid, **kwargs)
+            if rval:
+                return rval
+            changeset = uuid
+            uuid=None
         changeset, csname = csorname(changeset, csname)
         if not changeset:
             changeset = self._read_by_name(csname, **kwargs)
@@ -275,19 +283,21 @@ class ChangeSetDB(RF2RefsetWrapper):
             parms.append("description='%s' " % description)
         if csname and changeset:
             parms.append("name='%s' " % csname)
-        query += ', '.join(parms) + " WHERE referencedComponentId = '%s' " % changeset
-        db = self.connect()
-        db.execute_query(query)
-        db.commit()
+        if parms:
+            query += ', '.join(parms) + " WHERE referencedComponentId = '%s' " % changeset
+            db = self.connect()
+            db.execute_query(query)
+            db.commit()
         return self.read(changeset=changeset, csname=csname, **kwargs)
 
-    def isValid(self, changeset=None, **kwargs):
+    def isValid(self, changeset=None, csname=None, **kwargs):
         """ Determine whether the supplied changeset is valid in the given context
         @param changeset: uuid of changeset
         @param kwargs: contextual args
         @return: True if valid
         """
-        return self.read(changeset=changeset, **kwargs) is not None
+        changeset, csname = csorname(changeset, csname)
+        return self.read(changeset=changeset, csname=csname, **kwargs) is not None
 
     changesetFiles = [(ConceptDB, 'nConcepts'),
                       (DescriptionDB, 'nDescriptions'),

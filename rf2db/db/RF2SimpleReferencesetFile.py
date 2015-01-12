@@ -39,6 +39,7 @@ from rf2db.parsers.RF2Iterator import RF2SimpleReferenceSet, iter_parms
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, sctidparam, enumparam, booleanparam
 from rf2db.constants.RF2ValueSets import simpleReferenceSetRoot
 from rf2db.utils.listutils import listify
+from rf2db.utils.lfu_cache import clear_caches
 
 simplerefset_list_parms = ParameterDefinitionList(global_refset_parms)
 simplerefset_list_parms.add(iter_parms)
@@ -63,6 +64,7 @@ class SimpleReferencesetDB(RF2RefsetWrapper):
     
     createSTMT = """CREATE TABLE IF NOT EXISTS %(table)s (
       %(base)s,
+      UNIQUE KEY racu (refsetId, referencedComponentId),
        %(keys)s ); """
 
     def __init__(self, *args, **kwargs):
@@ -102,10 +104,27 @@ class SimpleReferencesetDB(RF2RefsetWrapper):
 
     class _rowgenerator():
         def __init__(self, effectivetime, moduleid, refsetid, changeset):
-            self._et, self._mi, self._ri, self._cs = effectivetime, moduleid, refsetid, "'" + changeset + "'"
+            self._et, self._mi, self._ri, self._cs = effectivetime, moduleid, refsetid, changeset
 
         def row(self, component):
-            return "(" + ','.join((uuid.uuid4(), self._et, "1", self._mi, self._ri, component, self._cs, 1) + ")")
+            return "('%s', %s, %s, %s, %s, %s, '%s', %s)" % \
+                   (uuid.uuid4(), self._et, 1, self._mi, self._ri, component, self._cs, 1)
+
+    def _removeall(self, refset, changeset):
+            sql = "DELETE FROM %s WHERE refsetId=%s AND changeset='%s' AND locked=1 " % (self._fname, refset, changeset)
+            db = self.connect()
+            db.execute_query(sql)
+            db.commit()
+
+    def _doadd(self, effectivetime, moduleid, refset, changeset, components):
+            effectivetime, moduleid = self.effectivetime_and_moduleid(effectivetime, moduleid)
+            rg = self._rowgenerator(effectivetime, moduleid, refset, changeset)
+            if components:
+                sql = "INSERT IGNORE INTO %s (id, effectiveTime, active, moduleId, refsetId, referencedComponentId, " \
+                    "changeset, locked) VALUES " + ','.join(list(rg.row(c) for c in components))
+                db = self.connect()
+                db.execute_query(sql % self._fname)
+                db.commit()
 
     def update(self, operation="add", changeset=None, refset=None, effectivetime=None, moduleid=None, component=None,
                children=False, leafonly=False, **kwargs):
@@ -119,30 +138,48 @@ class SimpleReferencesetDB(RF2RefsetWrapper):
         if not cdb.validconcept(refset, changeset, **kwargs):
             return "Unrecognized refset concept "
         tcdb = TransitiveClosureDB()
-        if simpleReferenceSetRoot not in tcdb.parents(refset, **kwargs):
-            return "%s is not a simple reference set"
+        if simpleReferenceSetRoot not in tcdb.parents(refset, changeset=changeset, moduleid=moduleid, **kwargs):
+            return "%s is not a simple reference set" % refset
 
         # Resolve the components of the reference set
-        components = self._resolvecomponents(cdb, tcdb, changeset, children, children, leafonly, **kwargs)
+        components = self._resolvecomponents(cdb, tcdb, changeset, component, children, leafonly, **kwargs)
         if not isinstance(components, list):
             return components
-        effectivetime, moduleid = self.effectivetime_and_moduleid(effectivetime, moduleid)
-        rg = self._rowgenerator(effectivetime, moduleid, refset, changeset)
-        if components:
-            sql = "INSERT IGNORE INTO %(fname)s (id, effectiveTime, active, moduleId, refsetId, referencedComponentId, " \
-                "changeset, locked) VALUES " + ','.join(list(rg(c) for c in components))
-        print(sql)
 
+        if operation == 'add':
+            self._doadd(effectivetime, moduleid, refset, changeset, components)
+            clear_caches()
+            return None
 
+        if operation == 'remove':
+            if components:
+                sql = "DELETE FROM %s WHERE refsetId=%s AND changeset='%s' AND locked=1 AND " \
+                      "referencedComponentId in (%s)" % (self._fname, refset, changeset, ','.join(str(c) for c in components))
+                db = self.connect()
+                db.execute_query(sql)
+                db.commit()
+            else:
+                self._removeall(refset, changeset)
+            clear_caches()
+            return None
 
-    def remove_concepts(self, changeset, refsetid, concepts, children=False, leafonly=False, **kwargs):
-        pass
+        if operation == 'replace':
+            self._removeall(refset, changeset)
+            self._doadd(effectivetime, moduleid, refset, changeset, components)
+            clear_caches()
+            return None
 
-    def remove_all_concepts(self, changeset, refsetid, **kwargs):
-        pass
+        return None, (500, "Unknown operation: " % operation)
 
-    def update(self, changeset, simplemapid, refsetid, **kwargs):
-        pass
+    def delete(self, changeset=None, refset=None, **kwargs):
+        # Make sure the change set is open and editable
+        if not self.changesetisvalid(changeset):
+            return self.changeseterror(changeset)
 
-    def delete(self, simplemapid, changeset=None, **kwargs):
-        pass
+        # Make sure that the refset is a valid refset and is editable
+        cdb = ConceptDB()
+        if not cdb.validconcept(refset, changeset, **kwargs):
+            return "Unrecognized refset concept "
+        self._removeall(refset, changeset)
+        clear_caches()
+        return None

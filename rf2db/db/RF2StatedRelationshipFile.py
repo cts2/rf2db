@@ -150,7 +150,9 @@ class StatedRelationshipDB(RF2FileWrapper):
 
     @classmethod
     def _rollback(cls, db, changeset, **args):
+        db1 = StatedRelationshipDB().connect()
+        from rf2db.db.RF2RelationshipFile import RelationshipDB
         for subj in cls.subjs(db, changeset):
-            RF2Relationship._tcdb().remove(db, subj)
+            RelationshipDB._tcdb().remove(db1, subj)
         return super(StatedRelationshipDB, cls)._rollback(db, changeset, **args)
 

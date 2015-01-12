@@ -59,12 +59,12 @@ class TransitiveChildrenDB(RF2FileWrapper):
             return
         tname = self._fname
         tcdbname = TransitiveClosureDB.fname()
-        db.execute("""INSERT INTO %(tname)s
+        db.execute_query("""INSERT IGNORE INTO %(tname)s
                       SELECT DISTINCT parent, depth, 0 FROM %(tcdbname)s""" % locals())
         db.commit()
 
         print("Computing number of children")
-        db.execute("""UPDATE %(tname)s t,
+        db.execute_query("""UPDATE %(tname)s t,
                        (SELECT c.parent, c.depth, count(t.parent) AS dc
                            FROM %(tcdbname)s t, %(tname)s c
                            WHERE t.parent=c.parent AND t.depth<=c.depth

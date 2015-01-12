@@ -81,7 +81,6 @@ KEY component (referencedComponentId)'''
         @return: language record if found else None
         """
         db = self.connect()
-        # TODO: Sanitize uuid (!)
         return db.singleton_query(self._fname, self._wrapper_cls, filter_="id='%s'" % uuid, **kwargs)
 
     def valid_refsets(self, active=True, moduleids=None):

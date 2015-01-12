@@ -213,7 +213,7 @@ class TransitiveClosureDB(RF2FileWrapper):
         try:
             db.execute_query(self.addstatement % vars())
         except Exception as e:
-            if e.errno == ER_DUP_ENTRY:
+            if e.errno != ER_DUP_ENTRY:
                 print(e)
                 raise e
         if not isroot:

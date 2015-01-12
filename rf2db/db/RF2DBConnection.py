@@ -330,9 +330,10 @@ class RF2DBConnection(object):
 
 
     def commit(self, disconnect=True):
-        self._connection.commit()
-        if disconnect:
-            self._disconnect()
+        if self._connection:
+            self._connection.commit()
+            if disconnect:
+                self._disconnect()
 
     def close(self):
         self._disconnect()
