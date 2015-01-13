@@ -288,8 +288,27 @@ moduleId bigint(20) NOT NULL '''
         if not csname_id_or_uuid:
             return None
         from rf2db.db.RF2ChangeSetFile import ChangeSetDB
-        dbrec = ChangeSetDB().read(changeset=csname_id_or_uuid, **kwargs)
+        if not cls._csdb:
+            cls._csdb = ChangeSetDB()
+        dbrec = cls._csdb.read(changeset=csname_id_or_uuid, **kwargs)
         return dbrec.referencedComponentId.uuid if dbrec else None
+
+    @classmethod
+    def changesetisvalid(cls, changeset):
+        """ Return the real changeset identifier if the supplied changeset or name is valid
+        @param changeset: UUID or name of changeset
+        @return: True means ok, false means invalid
+        """
+        # TODO: this method is deprecated
+        return cls.tochangesetuuid(changeset)
+
+    @classmethod
+    def changeseterror(cls, changeset):
+        if not changeset:
+            return "Changeset identifier must be supplied"
+        if cls.tochangesetuuid(changeset):
+            return None
+        return "Change set (%s) is not valid or has been committed" % changeset
 
 
     @property

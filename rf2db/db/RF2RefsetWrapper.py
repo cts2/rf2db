@@ -44,7 +44,8 @@ refsetId bigint(20) NOT NULL,'''
     _file_base = _file_base_ + '''
 referencedComponentId bigint(20) NOT NULL '''
 
-    _wrapper_keys = '''KEY rac (refsetId, referencedComponentId),
+    _wrapper_keys = '''KEY refsetid (refsetId),
+    KEY rac (refsetId, referencedComponentId),
 KEY component (referencedComponentId)'''
 
     _keys_ss = RF2FileWrapper._keys_ss + ',' + _wrapper_keys

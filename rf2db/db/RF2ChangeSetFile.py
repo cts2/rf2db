@@ -137,13 +137,17 @@ class ChangeSetDB(RF2RefsetWrapper):
     def __new__(cls, *args, **kwargs):
         return RF2RefsetWrapper.__new__(cls, *args)
 
-    def read(self, changeset=None, csname=None, **kwargs):
+    def read(self, changeset=None, csname=None, uuid=None, ignore_locks=None, **kwargs):
         """ Read the supplied changeset record
         @param changeset: changeset id or referencedComponentId
         @param csname: unique name of the changeset
+        @param uuid: id ... could be id or referencedComponentId
+        @param ignore_locks: pulling out of kwargs because we need to ignore them here
         @param kwargs: Contextual arguments
         @return: RF2ChangeSetReferenceEntry or None if changeset doesn't exist
         """
+        if not changeset:
+            changeset = uuid
         changeset, csname = csorname(changeset, csname)
         # changeset takes precedence over name -- if both are present chances are the user is changing the name
         if changeset:
@@ -154,7 +158,7 @@ class ChangeSetDB(RF2RefsetWrapper):
                                        filter_=filter_,
                                        ignore_locks=True,
                                        **kwargs)
-            return dbrec if dbrec else super(ChangeSetDB, self).read(uuid=changeset, **kwargs)
+            return dbrec if dbrec else super(ChangeSetDB, self).read(uuid=changeset, ignore_locks=True, **kwargs)
         elif csname:
             filter_ = "name='%s'" % csname
             db = self.connect()

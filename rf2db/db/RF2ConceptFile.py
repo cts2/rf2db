@@ -201,8 +201,10 @@ class ConceptDB(RF2FileWrapper):
         @param definitionstatus: 'p' (primitive) or 'f' (fully defined).  Default: 'p'
         @return: Concept record or none if error.
         """
-        if not self.changesetisvalid(changeset):
-            return self.changeseterror(changeset)
+        cs = self.tochangesetuuid(changeset, **kwargs)
+        if not cs:
+            # TODO: re-add self.changeseterror
+            return "Changeset " + changeset + " is not valid"
 
         db = self.connect()
         if not cid:
@@ -214,10 +216,10 @@ class ConceptDB(RF2FileWrapper):
         db.execute("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, "
                    "definitionStatusId, changeset, locked) "
                    "VALUES (%(cid)s, %(effectivetime)s, 1, %(moduleid)s, "
-                   "%(definitionstatusid)s, '%(changeset)s', 1 )" % vars())
+                   "%(definitionstatusid)s, '%(cs)s', 1 )" % vars())
         db.commit()
         clear_caches()
-        return self.read(cid, changeset=changeset, **kwargs)
+        return self.read(cid, changeset=cs, **kwargs)
 
     def getAllConcepts(self, active=1, order='asc', sort=None, page=0, maxtoreturn=None, after=0,
                        changeset=None, moduleid=None, locked=False, **kwargs):
