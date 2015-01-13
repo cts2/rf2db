@@ -280,19 +280,17 @@ moduleId bigint(20) NOT NULL '''
         return db.execute_query("UPDATE %(fname)s SET locked=0 WHERE changeset = '%(changeset)s'" % vars())
 
     @classmethod
-    def changesetisvalid(cls, changeset):
-        return cls.changeseterror(changeset) is None
+    def tochangesetuuid(cls, csname_id_or_uuid, **kwargs):
+        """ Validate the supplied changeset name or uuid and return the uuid if it is valid
+        @param csname_id_or_uuid: the id, name or uuid of a changeset
+        @return: uuid of changeset if it is valid, none elsewise
+        """
+        if not csname_id_or_uuid:
+            return None
+        from rf2db.db.RF2ChangeSetFile import ChangeSetDB
+        dbrec = ChangeSetDB().read(changeset=csname_id_or_uuid, **kwargs)
+        return dbrec.referencedComponentId.uuid if dbrec else None
 
-    @classmethod
-    def changeseterror(cls, changeset):
-        if not changeset:
-            return "Changeset identifier must be supplied"
-        if not cls._csdb:
-            from rf2db.db.RF2ChangeSetFile import ChangeSetDB
-            cls._csdb = ChangeSetDB()
-        if not cls._csdb.isValid(changeset):
-            return "Change set (%s) is not valid or has been committed" % changeset
-        return None
 
     @property
     def _fname(self):

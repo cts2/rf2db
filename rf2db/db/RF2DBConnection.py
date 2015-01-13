@@ -192,7 +192,7 @@ class RF2DBConnection(object):
 
     @staticmethod
     def build_query(table, filter_="", sort=None, active=True, start=0, maxtoreturn=None, refdate=None,
-                    moduleid=None, order='asc', changeset=None, ignore_locks=False,  **_):
+                    moduleid=None, order='asc', changeset=None, ignore_locks=False, locked=False,  **_):
         """ Query an RF2 table taking the historical information into account.
         
         @param table: table to query
@@ -228,6 +228,10 @@ class RF2DBConnection(object):
         @return: query
         @rtype: C{String}
         """
+        if changeset:
+            from rf2db.db.RF2FileCommon import RF2FileWrapper
+            changeset = RF2FileWrapper.tochangesetuuid(changeset)
+
         start = int(start) if start is not None else 0
         if maxtoreturn is None:
             from rf2db.db.RF2FileCommon import rf2_values
@@ -252,15 +256,21 @@ class RF2DBConnection(object):
         else:
             sel = 'tbl.*' if maxtoreturn else 'count(*)'
             query = """ SELECT %(sel)s FROM %(table)s tbl WHERE %(filter_)s """ % locals()
+        if not changeset and locked and not ignore_locks:
+            query += " AND False "
         if active:
             query += " AND active = 1 "
         if moduleid:
             query += " AND (" + ' OR '.join(['moduleid = %s' % m for m in listify(moduleid)]) + ') '
         if not ignore_locks:
-            if changeset:
-                query += " AND (changeset = '%s' OR locked = 0)" % changeset
+            if locked and not changeset:
+                query += " AND locked = 1 "
+            elif locked and changeset:
+                query += " AND (changeset = '%s' AND locked = 1) " % changeset
+            elif changeset:
+                query += " AND (changeset = '%s' OR locked = 0) " % changeset
             else:
-                query += " AND locked = 0"
+                query += ' AND locked = 0 '
         if sort:
             query += " ORDER BY " + ', '.join([('tbl.%s' % e) for e in listify(sort)]) + ' %s ' % order
         if maxtoreturn > 0:

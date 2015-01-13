@@ -63,7 +63,6 @@ def read_by_changeset(changeset):
     rval = {}
     for f in allfiles:
         if f.hasrf2rec:
-            print f.table
             db.execute(query % f.fname())
             fi = f()
             rval[f.table] = [fi.rf2rec(c) for c in db.ResultsGenerator(db)]

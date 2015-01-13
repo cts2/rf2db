@@ -8,7 +8,7 @@
 # Redistributions of source code must retain the above copyright notice, this
 # list of conditions and the following disclaimer.
 #
-#     Redistributions in binary form must reproduce the above copyright notice,
+# Redistributions in binary form must reproduce the above copyright notice,
 #     this list of conditions and the following disclaimer in the documentation
 #     and/or other materials provided with the distribution.
 #
@@ -67,31 +67,36 @@ list_changeset_parms.released = booleanparam(default=None)
 list_changeset_parms.owner = strparam(splittable=True)
 list_changeset_parms.release = strparam(splittable=True)
 
+
 class CountList(object):
     """ This carries various counts of things that rolled back.  Anything not referenced
     returns a count of 0
     """
+
     def __getattr__(self, item):
         return self.__dict__.get(item, 0)
 
     def setcount(self, name, count):
         self.__dict__[name] = count
 
+
 uuidre = re.compile('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
 
+
 def csorname(changeset, csname):
-    """ Return a uuid if id parses as such, otherwise a name
+    """ Return a uuid if id parses as such, otherwise a name.  Put the name back together if it got cut into parts
     @param changeset: changeset identifier or name
     @param csname: changeset name
     @return: updated args
     """
+    # Put the name back together if it got split coming in
+    if isinstance(csname, list):
+        csname = ' '.join(csname)
     if isinstance(changeset, list):
         changeset = ' '.join(changeset)
-    if isinstance(csname, list):
-        csname = ' '.join(changeset)
-    if changeset and not csname:
-        return (changeset, None) if uuidre.match(changeset) else (None, changeset)
-    return changeset, csname
+    if changeset and uuidre.match(changeset):
+        return changeset, csname
+    return None, changeset
 
 
 class ChangeSetDB(RF2RefsetWrapper):
@@ -126,54 +131,38 @@ class ChangeSetDB(RF2RefsetWrapper):
       UNIQUE INDEX %(table)s_name (name),
        %(keys)s );"""
 
-
     def __init__(self, *args, **kwargs):
         RF2RefsetWrapper.__init__(self, *args, **kwargs)
 
     def __new__(cls, *args, **kwargs):
-        return RF2RefsetWrapper.__new__(cls, *args, **kwargs)
+        return RF2RefsetWrapper.__new__(cls, *args)
 
-    def read(self, changeset=None, csname=None, uuid=None, **kwargs):
+    def read(self, changeset=None, csname=None, **kwargs):
         """ Read the supplied changeset record
-        @param changeset: UUID of the changeset
+        @param changeset: changeset id or referencedComponentId
         @param csname: unique name of the changeset
         @param kwargs: Contextual arguments
         @return: RF2ChangeSetReferenceEntry or None if changeset doesn't exist
         """
-        if uuid:
-            rval = super(ChangeSetDB, self).read(changset=changeset, csname=csname, uuid=uuid, **kwargs)
-            if rval:
-                return rval
-            changeset = uuid
-            uuid=None
         changeset, csname = csorname(changeset, csname)
-        if not changeset:
-            changeset = self._read_by_name(csname, **kwargs)
-        filter_ = "refsetId=%s AND referencedComponentId='%s' " % (changeSetRefSet, changeset)
-        if csname:
-            filter_ += "AND name='%s' " % csname
-        db = self.connect()
-        return db.singleton_query(self._fname,
-                                  RF2ChangeSetReferenceSetEntry,
-                                  filter_=filter_,
-                                  changeset=changeset, **kwargs)
-
-
-
-    def _read_by_name(self, csname, changeset=None, **kwargs):
-        """ Read the supplied changeset record by csname
-        @param csname: name of the changeset
-        @param kwargs: Contextual arguments
-        @return: changeset id for name or None
-        """
-        db = self.connect()
-        base = db.singleton_query(self._fname,
-                                  RF2ChangeSetReferenceSetEntry,
-                                  filter_="name='%s'" % csname,
-                                  changeset=changeset,
-                                  ignore_locks=True,
-                                  **kwargs)
-        return base.referencedComponentId.uuid if base else None
+        # changeset takes precedence over name -- if both are present chances are the user is changing the name
+        if changeset:
+            filter_ = "refsetId=%s AND referencedComponentId='%s' " % (changeSetRefSet, changeset)
+            db = self.connect()
+            dbrec = db.singleton_query(self._fname,
+                                       RF2ChangeSetReferenceSetEntry,
+                                       filter_=filter_,
+                                       ignore_locks=True,
+                                       **kwargs)
+            return dbrec if dbrec else super(ChangeSetDB, self).read(uuid=changeset, **kwargs)
+        elif csname:
+            filter_ = "name='%s'" % csname
+            db = self.connect()
+            return db.singleton_query(self._fname,
+                                      RF2ChangeSetReferenceSetEntry,
+                                      filter_=filter_,
+                                      ignore_locks=True,
+                                      **kwargs)
 
     def read_details(self, changeset=None, csname=None, **kwargs):
         """ Read the supplied changeset record and all associated files
@@ -182,32 +171,19 @@ class ChangeSetDB(RF2RefsetWrapper):
         @param kwargs: Contextual arguments
         @return: RF2ChangeSetReferenceEntry or None if changeset doesn't exist
         """
-        changeset, csname = csorname(changeset, csname)
-        if not changeset:
-            changeset = self._read_by_name(csname, **kwargs)
-            if not changeset:
-                return None
-        filter_ = "refsetId=%s AND referencedComponentId='%s' " % (changeSetRefSet, changeset)
-        if csname:
-            filter_ += "AND name='%s' " % csname
-        db = self.connect()
-        base = db.singleton_query(self._fname,
-                                  RF2ChangeSetDetails,
-                                  filter_=filter_,
-                                  changeset=changeset, **kwargs)
-        if not base:
+        dbrec = self.read(changeset, csname, **kwargs)
+        if not dbrec:
             return None
-        details = read_by_changeset(changeset)
-        for k, v in details.items():
-            base.__setattr__(k, v)
-        return base
-
-    def invalid_new_reason(self, changeset=None, owner=None, description=None, csname=None, **kwargs):
-        if csname and self._read_by_name(csname, **kwargs):
-            return "Changeset name: '%s' already exists" % csname
-        if changeset and self.read(changeset, **kwargs):
-            return "Changeset %s already exists" % changeset
-        return None
+        changeset = dbrec.referencedComponentId.uuid
+        db = self.connect()
+        details = db.singleton_query(self._fname,
+                                     RF2ChangeSetDetails,
+                                     filter_="referencedComponentId = '%s'" % changeset,
+                                     changeset=changeset, **kwargs)
+        detail_list = read_by_changeset(changeset)
+        for k, v in detail_list.items():
+            details.__setattr__(k, v)
+        return details
 
     def new(self, changeset=None, owner=None, description=None, csname=None, **kwargs):
         """ Create a new open changeset
@@ -218,9 +194,9 @@ class ChangeSetDB(RF2RefsetWrapper):
         @param kwargs: context
         @return: New changeset record or None if there is an error.  Use invalid_new_reason to find out why.
         """
-        changeset, csname = csorname(changeset, csname)
-        if self.invalid_new_reason(changeset, owner, description, csname, **kwargs):
-            return None
+        dbrec = self.read(changeset, csname, **kwargs)
+        if dbrec:
+            return "Changeset %s already exists" % (changeset if changeset else csname)
         fname = self._fname
         db = self.connect()
         guid = str(uuid.uuid4())
@@ -246,19 +222,19 @@ class ChangeSetDB(RF2RefsetWrapper):
             kwargs['changeset'] = csid
         return self.read(**kwargs)
 
-    def invalid_update_reason(self, changeset=None, owner=None, description=None, csname=None, **kwargs):
-        if changeset:
-            csrec = self.read(changeset, **kwargs)
-            if not csrec:
-                return "Changeset %s does not exist" % changeset
-        elif csname:
-            changeset = self._read_by_name(csname, **kwargs)
-            if not changeset:
-                return "Changeset name: '%s' does not exist" % csname
-            csrec = self.read(changeset)
-        else:
-            return "Either a changeset name or a changeset id must be supplied"
-        if csrec.isFinal:
+    @staticmethod
+    def invalid_update_reason(dbrec, changeset=None, csname=None, **kwargs):
+        """ Return the reason that it would be invalid to update this changeset
+        @param dbrec: result of reading changeset or changeset name
+        @param changeset: changeset id or uuid
+        @param csname: changeset name
+        @return: Reason it can't be done otherwise None
+        """
+        if not dbrec:
+            if not changeset and not csname:
+                return "Either a changeset name or a changeset id must be supplied"
+            return "Changeset %s does not exist" % (changeset if changeset else csname)
+        if dbrec.isFinal:
             return "Changeset is finalized -- cannot be modified"
         return None
 
@@ -270,11 +246,9 @@ class ChangeSetDB(RF2RefsetWrapper):
         @param csname: Name of changeset
         @return: New record or None if error
         """
-        changeset, csname = csorname(changeset, csname)
-        if self.invalid_update_reason(changeset, owner, description, csname, **kwargs):
+        dbrec = self.read(changeset, csname, **kwargs)
+        if self.invalid_update_reason(dbrec, changeset, csname, **kwargs):
             return None
-        if not changeset:
-            changeset = self._read_by_name(csname, **kwargs)
         query = "UPDATE %s SET " % self._fname
         parms = []
         if owner:
@@ -284,11 +258,11 @@ class ChangeSetDB(RF2RefsetWrapper):
         if csname and changeset:
             parms.append("name='%s' " % csname)
         if parms:
-            query += ', '.join(parms) + " WHERE referencedComponentId = '%s' " % changeset
+            query += ', '.join(parms) + " WHERE referencedComponentId = '%s' " % dbrec.referencedComponentId.uuid
             db = self.connect()
             db.execute_query(query)
             db.commit()
-        return self.read(changeset=changeset, csname=csname, **kwargs)
+        return self.read(dbrec.referencedComponentId.uuid, **kwargs)
 
     def isValid(self, changeset=None, csname=None, **kwargs):
         """ Determine whether the supplied changeset is valid in the given context
@@ -296,8 +270,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         @param kwargs: contextual args
         @return: True if valid
         """
-        changeset, csname = csorname(changeset, csname)
-        return self.read(changeset=changeset, csname=csname, **kwargs) is not None
+        return self.read(changeset, csname, **kwargs) is not None
 
     changesetFiles = [(ConceptDB, 'nConcepts'),
                       (DescriptionDB, 'nDescriptions'),
@@ -308,60 +281,46 @@ class ChangeSetDB(RF2RefsetWrapper):
                       (SimpleReferencesetDB, 'nSimpleRefsets'),
                       (ModuleDependencyDB, 'nModuleDependencies')]
 
-    def rollback(self, changeset=None, csname=None, **kwargs):
-        """ Roll back all of the changes identified in the supplied changeset. If the changeset isn't supplied or
+
+    def _rollback_or_commit(self, rollback, changeset, csname, **kwargs):
+        """ Roll back or commit all of the changes identified in the supplied changeset. If the changeset isn't supplied or
         there is no record of it existing, the function returns success.  This function is always considered successful,
         and has no impact on records that aren't locked.
+        @param rollback: True means roll back, false means commit
         @param changeset: uuid of changeset
         @param csname: name of the changeset
         @param kwargs: context
         @return: Count of things that are rolled back or None if error.  Call invalid_update_reason to find out why
         """
-        changeset, csname = csorname(changeset, csname)
+        dbrec = self.read(changeset, csname, **kwargs)
         rval = CountList()
-        if self.invalid_update_reason(changeset=changeset, csname=csname, **kwargs):
-            return None
-        if csname and not changeset:
-            changeset = self._read_by_name(csname, **kwargs)
-        if changeset:
-            db = self.connect()
-            for f, a in ChangeSetDB.changesetFiles:
-                rval.setcount(a, f._rollback(db, changeset, **kwargs)['affected_rows'])
-                db.commit(False)
-            rval.setcount('nChangesets', self._rollback(db, changeset, **kwargs)['affected_rows'])
-            db.commit()
+        if self.invalid_update_reason(dbrec, changeset, csname, **kwargs):
+            return rval
+        changeset = dbrec.referencedComponentId.uuid
+        db = self.connect()
+        for cls, countname in ChangeSetDB.changesetFiles:
+            f = getattr(cls, '_rollback' if rollback else '_commit')
+            rval.setcount(countname, f(db, changeset, **kwargs)['affected_rows'])
+            db.commit(False)
+        f = self._rollback if rollback else self._commit
+        rval.setcount('nChangesets', f(db, changeset, **kwargs)['affected_rows'])
+        db.commit()
         return rval
 
+    def rollback(self, changeset=None, csname=None, **kwargs):
+        return self._rollback_or_commit(True, changeset, csname, **kwargs)
+
     def commit(self, changeset=None, csname=None, **kwargs):
-        """ Commit all of the changes identified in the supplied changeset. If the changeset isn't supplied or
-        there is no record of it existing, the function returns success.  This function is always considered successful,
-        and has no impact on records that aren't locked.
-        @param changeset: uuid of changeset
-        @param csname: name of the changeset
-        @param kwargs: context
-        @return: Count of things that are rolled back.
-        """
-        changeset, csname = csorname(changeset, csname)
-        rval = CountList()
-        if self.invalid_update_reason(changeset=changeset, csname=csname, **kwargs):
-            return None
-        if csname and not changeset:
-            changeset = self._read_by_name(csname, **kwargs)
-        if changeset:
-            db = self.connect()
-            for f, a in ChangeSetDB.changesetFiles:
-                rval.setcount(a, f._commit(db, changeset, **kwargs)['affected_rows'])
-                db.commit(False)
-            rval.setcount('nChangesets', self._commit(db, changeset, **kwargs)['affected_rows'])
-            db.commit()
-        return rval
+        return self._rollback_or_commit(False, changeset, csname, **kwargs)
+
 
     @classmethod
     def _commit(cls, db, changeset, **_):
         fname = cls.fname()
         return db.execute_query("UPDATE %(fname)s SET locked=0, isFinal=1 WHERE changeset = '%(changeset)s'" % vars())
 
-    def list(self, open=True, final=False, released=None, release=None, owner=None, ignore_locks=False, maxtoreturn=None, **kwargs):
+    def list(self, open=True, final=False, released=None, release=None, owner=None, ignore_locks=False,
+             maxtoreturn=None, **kwargs):
         filtr = "TRUE "
 
         # Open changesets are necessarily locked.  Override the other setting
@@ -378,14 +337,14 @@ class ChangeSetDB(RF2RefsetWrapper):
         if released is not None:
             filtr += "AND inRelease is " + ('not' if released else '') + " null "
         if release:
-            filtr += "AND inRelease in (" + ','.join("'%s'" %r for r in listify(release)) + ") "
+            filtr += "AND inRelease in (" + ','.join("'%s'" % r for r in listify(release)) + ") "
         if owner:
             filtr += "AND owner in (" + ','.join("'%s'" % r for r in listify(owner)) + ") "
         db = self.connect()
-        db.execute(db.build_query(self._fname, filter_=filtr, ignore_locks=ignore_locks, maxtoreturn=maxtoreturn, **kwargs))
+        db.execute(db.build_query(self._fname, filter_=filtr, ignore_locks=ignore_locks,
+                                  maxtoreturn=maxtoreturn, **kwargs))
         return [RF2ChangeSetReferenceSetEntry(c) for c in db.ResultsGenerator(db)] \
             if maxtoreturn else list(db.ResultsGenerator(db))
-
 
     @classmethod
     def refsettype(cls, parms):

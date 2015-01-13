@@ -225,7 +225,10 @@ class ConceptDB(RF2FileWrapper):
         Read a number of concept records
         @param parmlist: parsed parameter list
         """
-
+        if changeset:
+            changeset = self.tochangesetuuid(changeset, active=active, **kwargs)
+            if not changeset and locked:
+                return []
         if maxtoreturn is None:
             maxtoreturn = rf2_values.defaultblocksize
 
@@ -236,11 +239,13 @@ class ConceptDB(RF2FileWrapper):
 
         query = 'SELECT %s FROM %s' % ('*' if maxtoreturn != 0 else 'count(*)', self._fname)
         query += ' WHERE %s ' % ('active=1' if active else 'TRUE')
-        if changeset:
-            if locked:
-                query += " AND (changeset = '%s' AND locked = 1)" % changeset
-            else:
-                query += " AND (changeset = '%s' OR locked = 0)" % changeset
+
+        if locked and not changeset:
+            query += " AND locked = 1 "
+        elif locked and changeset:
+            query += " AND (changeset = '%s' AND locked = 1)" % changeset
+        elif changeset:
+            query += " AND (changeset = '%s' OR locked = 0)" % changeset
         else:
             query += ' AND locked = 0'
         if after:
