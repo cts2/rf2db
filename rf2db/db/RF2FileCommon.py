@@ -254,20 +254,20 @@ moduleId bigint(20) NOT NULL '''
 
     @staticmethod
     def _generator():
-        from rf2db.db.RF2Namespaces import IDGenerator
-        return IDGenerator(ep_values.namespace)
+        from rf2db.db.RF2Namespaces import RF2Namespace
+        return RF2Namespace(ep_values.namespace)
 
     @staticmethod
     def newconceptid():
-        return RF2FileWrapper._generator().next(sctid_generator.CONCEPT)
+        return RF2FileWrapper._generator().nextConceptId()
 
     @staticmethod
     def newdescriptionid():
-        return RF2FileWrapper._generator().next(sctid_generator.DESCRIPTION)
+        return RF2FileWrapper._generator().nextDescriptionId()
 
     @staticmethod
     def newrelationshipid():
-        return RF2FileWrapper._generator().next(sctid_generator.RELATIONSHIP)
+        return RF2FileWrapper._generator().nextRelationshipId()
 
     @classmethod
     def _rollback(cls, db, changeset, **_):
