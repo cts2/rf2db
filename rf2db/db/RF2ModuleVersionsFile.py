@@ -35,6 +35,7 @@ from rf2db.db.RF2ConceptFile import ConceptDB
 from rf2db.db.RF2DescriptionFile import DescriptionDB
 from rf2db.db.RF2RelationshipFile import RelationshipDB
 from rf2db.db.RF2StatedRelationshipFile import StatedRelationshipDB
+from rf2db.db.RF2ChangeSetFile import ChangeSetDB
 from rf2db.db.RF2LanguageFile import LanguageDB
 from rf2db.constants.RF2ValueSets import acceptable, synonym, preferred
 from rf2db.utils.listutils import listify
@@ -59,7 +60,9 @@ class ModuleVersionsDB(RF2FileWrapper):
     _versionTables = [ConceptDB(),
                       DescriptionDB(),
                       RelationshipDB(),
-                      StatedRelationshipDB()]
+                      StatedRelationshipDB(),
+                      ChangeSetDB()
+                      ]
     
     def __init__(self, *args, **kwargs):
         RF2FileWrapper.__init__(self, *args, **kwargs)
