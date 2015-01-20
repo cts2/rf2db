@@ -141,7 +141,7 @@ class RF2DBConnection(object):
             return func(self, stmt)
         except db.Error as e:
             self._disconnect()
-            if retrycount == 0 and e.errno in (CR_SERVER_GONE_ERROR, CR_CONNECTION_ERROR):
+            if retrycount == 0 and e.errno in (CR_SERVER_GONE_ERROR, CR_CONNECTION_ERROR, -1):
                 print >> sys.stderr, ("Database timeout error - reconnecting")
                 return self._dosql(func, stmt, retrycount+1)
             else:
