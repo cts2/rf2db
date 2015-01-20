@@ -151,6 +151,9 @@ class LanguageDB(RF2RefsetWrapper):
         @param parmlist: parameters.  We use active, moduleid, language.
         @return: dictionary - key is concept id, value is (prefname/description id) tuple
         """
+        conceptids = listify(conceptids)
+        if not conceptids:
+            return {}
         from rf2db.db.RF2DescriptionFile import DescriptionDB
         db = self.connect()
         conceptids = listify(conceptids)
