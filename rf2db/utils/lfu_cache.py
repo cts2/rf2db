@@ -27,13 +27,6 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-"""
-Created on Sep 14, 2012
-
-@author: mrf7578 - copied from http://code.activestate.com/recipes/498245-lru-and-lfu-cache-decorators/
-"""
-
 import functools
 import collections
 from heapq import nsmallest

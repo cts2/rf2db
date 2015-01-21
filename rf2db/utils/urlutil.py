@@ -71,6 +71,10 @@ def complete_uri():
     return strip_control_params(
         completeuri_sans_parms() + (('?' + request.query_string) if request.query_string else ''))
 
+def parms():
+    """ Return the query string """
+    return request.query_string
+
 
 def forxml(uri):
     """ Escape XML nasties in a URI """
@@ -129,6 +133,3 @@ def remove_params(base_uri, parms):
     splitlist = list(spliturl)
     splitlist[3] = urlencode(urlparms, True)
     return urlunsplit(splitlist)
-
-
-
