@@ -29,7 +29,7 @@
 
 import unittest
 
-from SetConfig import setConfig
+from tests.SetConfig import setConfig
 from rf2db.utils.lfu_cache import lfu_cache, clear_caches, cache_stats
 
 

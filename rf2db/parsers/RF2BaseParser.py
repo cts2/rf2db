@@ -29,6 +29,7 @@
 
 """ Convert RF2 Tab seperated values into the equivalent XML format
 """
+import sys
 from rf2db.schema import rf2
 
 from rf2db.constants import RF2ValueSets
@@ -77,9 +78,9 @@ class RF2Base(rf2.Base, object):
     def __hash__(self):
         return self.__str__().__hash__()
 
-
     def strify(self, key):
-        return str(getattr(self, key))
+        v = getattr(self, key)
+        return bytearray.decode(v) if isinstance(v, bytearray) else str(v)
 
     def issctid(self, key):
         return key in self._sctidFields
@@ -115,7 +116,10 @@ class RF2Concept(rf2.Concept_, RF2Base):
          ['conceptId', 'typeId', 'caseSignificanceId'], linefilter=xmlutils.cleanxml)
 class RF2Description(rf2.Description_, RF2Base):
     def strify(self, key):
-        return getattr(self, key).encode('utf-8') if key == 'term' else RF2Base.strify(self, key)
+        if sys.version_info.major < 3:
+            return getattr(self, key).encode('utf-8') if key == 'term' else RF2Base.strify(self, key)
+        else:
+            return RF2Base.strify(self, key)
 
     @property
     def isDefinition(self):

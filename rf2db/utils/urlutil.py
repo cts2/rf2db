@@ -26,14 +26,11 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-from urlparse import urlsplit, parse_qs, urlunsplit
-from urllib import urlencode
+from urllib.parse import urlunsplit, parse_qs, urlsplit, urlencode
 from cherrypy import request, HTTPRedirect
 
 from rf2db.utils import xmlutils
-from ConfigManager.ConfigArgs import ConfigArg, ConfigArgs
+from ConfigManager.ConfigArgs import ConfigArgs, ConfigArg
 from ConfigManager.ConfigManager import ConfigManager
 
 config_parms = ConfigArgs('hrefbase',
@@ -52,6 +49,7 @@ def redirect(reluri):
     """
     raise HTTPRedirect(base_uri() + '/' + reluri)
 
+
 def base_uri():
     """ Return the base URI - up to the root of the service without an additional parameters
         that get you to the service itself.  This is used to create URL's to ancillary
@@ -66,10 +64,12 @@ def completeuri_sans_parms():
     """ Return the complete URI of this call sans parms """
     return base_uri() + request.path_info
 
+
 def complete_uri():
     """ Return the complete URI that invoked this call """
     return strip_control_params(
         completeuri_sans_parms() + (('?' + request.query_string) if request.query_string else ''))
+
 
 def parms():
     """ Return the query string """
@@ -79,6 +79,7 @@ def parms():
 def forxml(uri):
     """ Escape XML nasties in a URI """
     return xmlutils.cleanxml(uri)
+
 
 def relative_uri():
     """ Return the relative URI that invoked this call """
@@ -108,9 +109,8 @@ def append_params(base_uri, parms):
     @type parms: c{dict}
     """
     spliturl = urlsplit(base_uri)
-    urlparms = parse_qs(spliturl.query,True)
-    for (k,v) in parms.items():
-        urlparms[k] = v
+    urlparms = parse_qs(spliturl.query, True)
+    urlparms.update(parms)
     splitlist = list(spliturl)
     splitlist[3] = urlencode(urlparms, True)
     return urlunsplit(splitlist)

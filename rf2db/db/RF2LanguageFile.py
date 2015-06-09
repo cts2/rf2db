@@ -96,7 +96,7 @@ class LanguageDB(RF2RefsetWrapper):
     # We have to override the refset wrapper because the call would be recursive otherwise
     def _build_knowns(self, language):
         self._known_refsets = self.valid_refsets(self._fname)
-        self._refset_names = {k: v[0] for k, v in self.preferred_term_for_concepts(self._known_refsets.items(),
+        self._refset_names = {k: v[0] for k, v in self.preferred_term_for_concepts(list(self._known_refsets.items()),
                                                                                    language=language)}
         for k, v in list(language_map.items()):
             if v not in self._known_refsets:
@@ -105,7 +105,7 @@ class LanguageDB(RF2RefsetWrapper):
     def loadTable(self, rf2file):
         from rf2db.db.RF2DescriptionFile import DescriptionDB
         if not DescriptionDB().hascontent():
-            print("Description database must be loaded before loading %s" % self._fname)
+            print(("Description database must be loaded before loading %s" % self._fname))
             return
 
         import warnings
@@ -171,7 +171,7 @@ class LanguageDB(RF2RefsetWrapper):
             stmt += " AND d.moduleId in (" + ', '.join(str(m) for m in listify(moduleid)) + ") "
         stmt += self._langfltr('', language=language, **kwargs)
         db.execute(stmt)
-        return {e[0]: (e[2], e[1]) for e in map(lambda r: r.split('\t', 2), db.ResultsGenerator(db))}
+        return {e[0]: (e[2], e[1]) for e in [r.split('\t', 2) for r in db.ResultsGenerator(db)]}
 
     def add(self, db, effectivetime, moduleid, language, descid, acceptabilityid, concept,  changeset, **kwargs):
         """ Add a new language entry.  It is assumed that this function is invoked from the DescriptionDB

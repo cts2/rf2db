@@ -28,12 +28,8 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
-
-
-from check_digit import generate_verhoeff
-from sctid import sctid
-
-
+from rf2db.utils.check_digit import generate_verhoeff
+from rf2db.utils.sctid import sctid
 
 MAYO_Namespace = 1000134
 CIMI_Namespace = 1000160
@@ -82,7 +78,7 @@ def main():
     parser.add_argument('-n', '--namespace', choices=['M','C'], help="(M)ayo, (C)imi", required=True)
     parser.add_argument('-s', '--start', type=int, help="Starting identifier", required=True)
     opts = parser.parse_args()
-    print sctid_generator(nsMap[opts.namespace], partitionMap[opts.partition], opts.start).next()
+    print(sctid_generator(nsMap[opts.namespace], partitionMap[opts.partition], opts.start).next())
 
 
 if __name__ == '__main__':

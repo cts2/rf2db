@@ -27,9 +27,14 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 import unittest
+import sys
 
-from SetConfig import setConfig
+from tests.SetConfig import setConfig
 from rf2db.utils.check_digit import *
+
+
+if sys.version_info.major > 2:
+    long = int
 
 
 class CheckDigitTestCase1(unittest.TestCase):

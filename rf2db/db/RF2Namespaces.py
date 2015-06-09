@@ -34,13 +34,13 @@ class DecodedNamespace():
     def __init__(self, sctid):
         sctid = int(sctid)
         self.checkdigit = sctid % 10
-        self.partition = (sctid / 10) % 100
-        if self.partition / 10:
-            self.namespace = (sctid / 1000) % 10000000
-            self.item = (sctid / 10000000000)
+        self.partition = (sctid // 10) % 100
+        if self.partition // 10:
+            self.namespace = (sctid // 1000) % 10000000
+            self.item = (sctid // 10000000000)
         else:
             self.namespace = 0
-            self.item = sctid / 1000
+            self.item = sctid // 1000
 
 class RF2Namespace():
     activeNamespaces = {}
@@ -78,4 +78,4 @@ class IDGenerator():
         return sctid_generator(namespace, partition, item+1)
 
     def next(self, partition):
-        return self._generators[partition].next()
+        return next(self._generators[partition])

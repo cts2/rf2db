@@ -42,6 +42,7 @@ from rf2db.utils.lfu_cache import lfu_cache, clear_caches
 from rf2db.utils.sctid_generator import *
 from rf2db.constants.RF2ValueSets import additionalRelationship, some, inferredRelationship, is_a, statedRelationship
 
+
 # Parameters for relationship file query
 rel_parms = ParameterDefinitionList(global_rf2_parms)
 rel_parms.rel = sctidparam()
@@ -147,7 +148,7 @@ class RelationshipDB(RF2FileWrapper):
         # remove all of the inactive duplicates.
         # Also note that we may be able skip Step 1: below -- it may be that canonical doesn't actually
         # reactivate anything except the errors
-        print "Removing relationship duplicates...",
+        print("Removing relationship duplicates...", end='')
         q = """ DELETE r1.* FROM %(tname)s r1, %(tname)s r2
             WHERE r1.effectiveTime=r2.effectiveTime AND r1.moduleid=r2.moduleid AND
                   r1.sourceId=r2.sourceId AND r1.destinationId=r2.destinationId AND
@@ -157,7 +158,7 @@ class RelationshipDB(RF2FileWrapper):
         db = self.connect()
         db.execute_query(q)
         db.commit()
-        print "done"
+        print("done")
 
     insert_stmt = "INSERT INTO %s (id, effectiveTime, active, moduleId, sourceId, " \
                   "destinationId, relationshipGroup, typeId, characteristicTypeId, modifierId, isCanonical, " \
@@ -173,7 +174,7 @@ class RelationshipDB(RF2FileWrapper):
 
         def __init__(self, tname, release, stmt):
             self.idGenerator = sctid_generator(MAYO_Namespace, sctid_generator.RELATIONSHIP, 0)
-            self.moduleId = self.idGenerator.next()
+            self.moduleId = next(self.idGenerator)
             self.effectiveTime = release
             self._stmt = stmt % tname
             self.active = 1
@@ -183,8 +184,9 @@ class RelationshipDB(RF2FileWrapper):
             self.rowstoadd = []
             self.rdb = RelationshipDB()
 
-        def addrec(self, (sourceId, typeId, destinationId, relationshipGroup)):
-            id = self.idGenerator.next()
+        def addrec(self, rec):
+            sourceId, typeId, destinationId, relationshipGroup = rec
+            id = next(self.idGenerator)
             self.rowstoadd += [self.addrow % dict(self.__dict__, **vars())]
             if len(self.rowstoadd) >= self.blocksize:
                 self.flush()
@@ -262,9 +264,7 @@ class RelationshipDB(RF2FileWrapper):
             return [infcount + statedcount]
 
 
-        rval = {k:v for k,v in map(lambda r:(rel_id(r), r),
-                                   map(lambda r: RF2Relationship(r),
-                                       self.connect().query(self._fname,
+        rval = {k:v for k,v in [(rel_id(r), r) for r in [RF2Relationship(r) for r in self.connect().query(self._fname,
                                                               filter_=build_filtr(filtr,
                                                                                   inferred=inferred,
                                                                                   stated=stated,
@@ -272,13 +272,13 @@ class RelationshipDB(RF2FileWrapper):
                                                               maxtoreturn=maxtoreturn,
                                                               stated=stated,
                                                               inferred=inferred,
-                                                              **kwargs)))} \
+                                                              **kwargs)]]} \
             if inferred else {}
         if stated:
             for r in self._srdb._getRecs(filtr, **kwargs):
                 rval[rel_id(r)] = r
 
-        return sorted(rval.values(), key=key)
+        return sorted(list(rval.values()), key=key)
 
 
     @lfu_cache()
@@ -305,10 +305,9 @@ class RelationshipDB(RF2FileWrapper):
         sources = self._srdb.getSourcesForTarget(targetId, stated=stated, inferred=inferred, **kwargs) if stated else set()
         if inferred:
             db = self.connect()
-            return sources.union(map(lambda r: RF2Relationship(r).sourceId,
-                db.query(self._fname,
+            return sources.union([RF2Relationship(r).sourceId for r in db.query(self._fname,
                          build_filtr("destinationId = '%s' " % targetId, **kwargs),
-                         **kwargs)))
+                         **kwargs)])
 
     @lfu_cache(maxsize=100)
     def read(self, rel=None, **kwargs):

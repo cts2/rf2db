@@ -29,7 +29,7 @@
 
 """ RF2 File Wrapper
 """
-from __future__ import print_function
+
 
 import os
 import sys
@@ -37,7 +37,6 @@ from time import gmtime, strftime
 
 from rf2db.db.RF2DBConnection import RF2DBConnection, cp_values, singleresultargs
 from rf2db.parameterparser.ParmParser import booleanparam, sctidparam, strparam
-from rf2db.utils.sctid_generator import sctid_generator
 from rf2db.db.RF2Namespaces import DecodedNamespace
 from rf2db.utils.lfu_cache import lfu_cache
 
@@ -91,7 +90,7 @@ class moduleidparam(sctidparam):
         if not val:
             return True
         if not self._mvdb:
-            from RF2ModuleVersionsFile import ModuleVersionsDB
+            from rf2db.db.RF2ModuleVersionsFile import ModuleVersionsDB
             self._mvdb = ModuleVersionsDB()
 
         return self._mvdb.validModuleids(val)
@@ -235,7 +234,8 @@ moduleId bigint(20) NOT NULL '''
         """
         db = self.connect()
         query = 'SELECT MAX(id) from %s WHERE (id %% 10000000000) div 1000 = %s' % (self._fname, namespace)
-        ns = db.execute(query).next()[0]
+        x = db.execute(query)
+        ns = x.next()[0]
         return DecodedNamespace(0 if ns is None else ns)
 
 
@@ -308,7 +308,7 @@ moduleId bigint(20) NOT NULL '''
             return "Changeset identifier must be supplied"
         if cls.tochangesetuuid(changeset):
             return None
-        return "Change set (%s) is not valid or has been committed" % changeset
+        return "Changeset (%s) is not valid or has been committed" % changeset
 
 
     @property

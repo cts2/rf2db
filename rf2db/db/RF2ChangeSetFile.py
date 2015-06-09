@@ -44,7 +44,6 @@ from rf2db.db.RF2RelationshipFile import RelationshipDB
 from rf2db.db.RF2LanguageFile import LanguageDB
 from rf2db.db.RF2SimpleReferencesetFile import SimpleReferencesetDB
 from rf2db.db.RF2ModuleDependencyFile import ModuleDependencyDB
-from rf2db.db.AllFiles import read_by_changeset
 from rf2db.utils.listutils import listify
 
 changeset_parms = ParameterDefinitionList(global_refset_parms)
@@ -96,7 +95,7 @@ def csorname(changeset, csname):
         changeset = ' '.join(changeset)
     if changeset and uuidre.match(changeset):
         return changeset, csname
-    return None, changeset
+    return None, changeset if changeset else csname
 
 
 class ChangeSetDB(RF2RefsetWrapper):
@@ -175,6 +174,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         @param kwargs: Contextual arguments
         @return: RF2ChangeSetReferenceEntry or None if changeset doesn't exist
         """
+        from rf2db.db.AllFiles import read_by_changeset
         dbrec = self.read(changeset, csname, **kwargs)
         if not dbrec:
             return None
@@ -185,7 +185,7 @@ class ChangeSetDB(RF2RefsetWrapper):
                                      filter_="referencedComponentId = '%s'" % changeset,
                                      changeset=changeset, **kwargs)
         detail_list = read_by_changeset(changeset)
-        for k, v in detail_list.items():
+        for k, v in list(detail_list.items()):
             details.__setattr__(k, v)
         return details
 
@@ -200,7 +200,7 @@ class ChangeSetDB(RF2RefsetWrapper):
         """
         dbrec = self.read(changeset, csname, **kwargs)
         if dbrec:
-            return "Changeset %s already exists" % (changeset if changeset else csname)
+            return "Changeset (%s) already exists" % (changeset if changeset else csname)
         fname = self._fname
         db = self.connect()
         guid = str(uuid.uuid4())

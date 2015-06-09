@@ -26,17 +26,18 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-import RF2ComplexMapFile, RF2ConceptFile, RF2DescriptionFile,  \
+from rf2db.db import RF2ComplexMapFile, RF2ConceptFile, RF2DescriptionFile,  \
     RF2DescriptionTextFile, RF2LanguageFile, RF2ModuleDependencyFile, RF2ModuleVersionsFile, RF2PnAndFSN, \
     RF2RelationshipFile, RF2SimpleMapFile, RF2SimpleReferencesetFile, RF2StatedRelationshipFile
-from RF2DBConnection import RF2DBConnection
+from rf2db.db.RF2DBConnection import RF2DBConnection
 
 # TODO: CannonicalCore not updated
 # TODO: RF2ModuleVersionsFile.ModuleVersionsDB, RF2PnAndFSN.PNandFSNDB
 # TODO: RF2TransitiveChildren.TransitiveChildrenDB, RF2TransitiveChildrenCanonical.TransitiveChildrenCanonicalDB
 # TODO: RF2TransitiveClosureCanonical.TransitiveClosureCanonicalDB,
 allfiles = [RF2ComplexMapFile.ComplexMapDB,
-            RF2ConceptFile.ConceptDB, RF2DescriptionFile.DescriptionDB, RF2DescriptionTextFile.DescriptionTextDB,
+            RF2ConceptFile.ConceptDB, RF2DescriptionFile.DescriptionDB,
+            RF2DescriptionTextFile.DescriptionTextDB,
             RF2LanguageFile.LanguageDB, RF2ModuleDependencyFile.ModuleDependencyDB,
             RF2RelationshipFile.RelationshipDB, RF2SimpleMapFile.SimpleMapDB,
             RF2SimpleReferencesetFile.SimpleReferencesetDB, RF2StatedRelationshipFile.StatedRelationshipDB,]

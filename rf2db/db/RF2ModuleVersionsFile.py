@@ -74,16 +74,16 @@ class ModuleVersionsDB(RF2FileWrapper):
     def loadTable(self, rf2file):
         for vt in self._versionTables:
             if not vt.hascontent():
-                print(vt._tname(), "is empty - load it first")
+                print((vt._tname(), "is empty - load it first"))
         for vt in self._versionTables:
             # print("Loading", vt.table, '...',end='')
-            print('Reading versions from %s ...' % vt.table)
+            print(('Reading versions from %s ...' % vt.table))
             db = self.connect()
             db.execute('INSERT IGNORE INTO %s (moduleId, effectiveTime) VALUES' % self._fname + \
                             ','.join(["("+ str(m) + "," +str(e) + ")" for (m,e) in vt.moduleVersions()]))
             db.commit()
         db = self.connect()
-        print "Loading moduleid view"
+        print("Loading moduleid view")
         db.execute(self.createModulesSTMT % self._d(mvtable=self._fname, desctable=DescriptionDB.fname(),
                                                     langtable=LanguageDB.fname(), acceptable=acceptable,
                                                     preferred=preferred, synonym=synonym))
@@ -91,7 +91,7 @@ class ModuleVersionsDB(RF2FileWrapper):
 
             
     def loadFile(self, fname):
-        print(self.table, "must be loaded from", ConceptDB.fname(), "and", DescriptionDB.fname(), "tables")
+        print((self.table, "must be loaded from", ConceptDB.fname(), "and", DescriptionDB.fname(), "tables"))
         
     def getVersions(self, moduleId):
         """ Return module id versions in descending order """

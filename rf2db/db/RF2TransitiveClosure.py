@@ -79,7 +79,7 @@ class Paths(object):
         """ Iterate over the entries in the map
         @return: parent, child, depth, isLeaf tuple
         """
-        for (k, v) in self._destmap.items():
+        for (k, v) in list(self._destmap.items()):
             yield self._parent, k, v[0], v[1]
         raise StopIteration()
 
@@ -93,7 +93,7 @@ def transitive_closure(g):
         gdict.setdefault(src, set()).add(dest)
 
     closure = set()
-    for src in gdict.iterkeys():
+    for src in gdict.keys():
         paths = Paths(src, gdict)
         closure |= set(p for p in paths.entries())
     return closure

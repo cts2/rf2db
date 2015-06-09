@@ -1,7 +1,7 @@
 # ../rf2db/schema/rf2.py
 # -*- coding: utf-8 -*-
 # PyXB bindings for NM:a62023a1e63ecb635c8d1a3482d1f64c6fb3e0f6
-# Generated 2015-01-06 15:11:26.101084 by PyXB version 1.2.4 using Python 2.7.8.final.0
+# Generated 2015-06-09 08:58:21.913541 by PyXB version 1.2.4 using Python 3.4.3.final.0
 # Namespace http://snomed.info/schema/rf2
 
 from __future__ import unicode_literals
@@ -15,7 +15,7 @@ import sys
 import pyxb.utils.six as _six
 
 # Unique identifier for bindings created at the same time
-_GenerationUID = pyxb.utils.utility.UniqueIdentifier('urn:uuid:9292824f-95e8-11e4-bccc-6c40088fdb3a')
+_GenerationUID = pyxb.utils.utility.UniqueIdentifier('urn:uuid:9665f4b0-0eaf-11e5-8f5a-6c40088fdb3a')
 
 # Version of PyXB used to generate the bindings
 _PyXBVersion = '1.2.4'
@@ -127,7 +127,7 @@ class Boolean (pyxb.binding.datatypes.int, pyxb.binding.basis.enumeration_mixin)
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'Boolean')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 34, 4)
     _Documentation = None
-Boolean._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=Boolean, enum_prefix=None)
+Boolean._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=Boolean)
 Boolean._CF_enumeration.addEnumeration(unicode_value='0', tag=None)
 Boolean._CF_enumeration.addEnumeration(unicode_value='1', tag=None)
 Boolean._InitializeFacetMap(Boolean._CF_enumeration)
@@ -155,7 +155,7 @@ class CompleteDirectory (pyxb.binding.datatypes.string, pyxb.binding.basis.enume
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'CompleteDirectory')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7543, 4)
     _Documentation = 'An indicator that determines whether a\n                \n                contains all of the qualifying entries or only some.\n            '
-CompleteDirectory._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=CompleteDirectory, enum_prefix=None)
+CompleteDirectory._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=CompleteDirectory)
 CompleteDirectory.COMPLETE = CompleteDirectory._CF_enumeration.addEnumeration(unicode_value='COMPLETE', tag='COMPLETE')
 CompleteDirectory.PARTIAL = CompleteDirectory._CF_enumeration.addEnumeration(unicode_value='PARTIAL', tag='PARTIAL')
 CompleteDirectory._InitializeFacetMap(CompleteDirectory._CF_enumeration)
@@ -169,7 +169,7 @@ class SortDirection (pyxb.binding.datatypes.string, pyxb.binding.basis.enumerati
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'SortDirection')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7568, 4)
     _Documentation = 'The collating order of a sort.'
-SortDirection._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=SortDirection, enum_prefix=None)
+SortDirection._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=SortDirection)
 SortDirection.ASCENDING = SortDirection._CF_enumeration.addEnumeration(unicode_value='ASCENDING', tag='ASCENDING')
 SortDirection.DESCENDING = SortDirection._CF_enumeration.addEnumeration(unicode_value='DESCENDING', tag='DESCENDING')
 SortDirection._InitializeFacetMap(SortDirection._CF_enumeration)
@@ -185,7 +185,7 @@ class ICD_10_map_category_value (SCTID, pyxb.binding.basis.enumeration_mixin):
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'ICD-10_map_category_value')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 65, 4)
     _Documentation = '\n                \n            '
-ICD_10_map_category_value._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=ICD_10_map_category_value, enum_prefix=None)
+ICD_10_map_category_value._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=ICD_10_map_category_value)
 ICD_10_map_category_value.n447635003 = ICD_10_map_category_value._CF_enumeration.addEnumeration(unicode_value='447635003', tag='n447635003')
 ICD_10_map_category_value.n447636002 = ICD_10_map_category_value._CF_enumeration.addEnumeration(unicode_value='447636002', tag='n447636002')
 ICD_10_map_category_value.n447637006 = ICD_10_map_category_value._CF_enumeration.addEnumeration(unicode_value='447637006', tag='n447637006')
@@ -207,7 +207,7 @@ class Module (SCTID, pyxb.binding.basis.enumeration_mixin):
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'Module')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 139, 4)
     _Documentation = '\n                \n            '
-Module._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=Module, enum_prefix=None)
+Module._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=Module)
 Module.n449079008 = Module._CF_enumeration.addEnumeration(unicode_value='449079008', tag='n449079008')
 Module.n449080006 = Module._CF_enumeration.addEnumeration(unicode_value='449080006', tag='n449080006')
 Module.n449081005 = Module._CF_enumeration.addEnumeration(unicode_value='449081005', tag='n449081005')
@@ -228,7 +228,7 @@ class Definition_status (SCTID, pyxb.binding.basis.enumeration_mixin):
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'Definition_status')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 201, 4)
     _Documentation = '\n                \n            '
-Definition_status._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=Definition_status, enum_prefix=None)
+Definition_status._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=Definition_status)
 Definition_status.n900000000000073002 = Definition_status._CF_enumeration.addEnumeration(unicode_value='900000000000073002', tag='n900000000000073002')
 Definition_status.n900000000000074008 = Definition_status._CF_enumeration.addEnumeration(unicode_value='900000000000074008', tag='n900000000000074008')
 Definition_status._InitializeFacetMap(Definition_status._CF_enumeration)
@@ -244,7 +244,7 @@ class Description_type (SCTID, pyxb.binding.basis.enumeration_mixin):
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'Description_type')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 236, 4)
     _Documentation = '\n                \n            '
-Description_type._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=Description_type, enum_prefix=None)
+Description_type._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=Description_type)
 Description_type.n900000000000003001 = Description_type._CF_enumeration.addEnumeration(unicode_value='900000000000003001', tag='n900000000000003001')
 Description_type.n900000000000013009 = Description_type._CF_enumeration.addEnumeration(unicode_value='900000000000013009', tag='n900000000000013009')
 Description_type.n900000000000550004 = Description_type._CF_enumeration.addEnumeration(unicode_value='900000000000550004', tag='n900000000000550004')
@@ -261,7 +261,7 @@ class Case_significance (SCTID, pyxb.binding.basis.enumeration_mixin):
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'Case_significance')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 274, 4)
     _Documentation = '\n                \n            '
-Case_significance._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=Case_significance, enum_prefix=None)
+Case_significance._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=Case_significance)
 Case_significance.n900000000000017005 = Case_significance._CF_enumeration.addEnumeration(unicode_value='900000000000017005', tag='n900000000000017005')
 Case_significance.n900000000000020002 = Case_significance._CF_enumeration.addEnumeration(unicode_value='900000000000020002', tag='n900000000000020002')
 Case_significance.n900000000000448009 = Case_significance._CF_enumeration.addEnumeration(unicode_value='900000000000448009', tag='n900000000000448009')
@@ -278,7 +278,7 @@ class Linkage_concept (SCTID, pyxb.binding.basis.enumeration_mixin):
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'Linkage_concept')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 312, 4)
     _Documentation = '\n                \n            '
-Linkage_concept._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=Linkage_concept, enum_prefix=None)
+Linkage_concept._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=Linkage_concept)
 Linkage_concept.n1241001 = Linkage_concept._CF_enumeration.addEnumeration(unicode_value='1241001', tag='n1241001')
 Linkage_concept.n5185003 = Linkage_concept._CF_enumeration.addEnumeration(unicode_value='5185003', tag='n5185003')
 Linkage_concept.n7196007 = Linkage_concept._CF_enumeration.addEnumeration(unicode_value='7196007', tag='n7196007')
@@ -1423,7 +1423,7 @@ class Characteristic_type (SCTID, pyxb.binding.basis.enumeration_mixin):
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'Characteristic_type')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 5994, 4)
     _Documentation = '\n                \n            '
-Characteristic_type._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=Characteristic_type, enum_prefix=None)
+Characteristic_type._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=Characteristic_type)
 Characteristic_type.n900000000000006009 = Characteristic_type._CF_enumeration.addEnumeration(unicode_value='900000000000006009', tag='n900000000000006009')
 Characteristic_type.n900000000000010007 = Characteristic_type._CF_enumeration.addEnumeration(unicode_value='900000000000010007', tag='n900000000000010007')
 Characteristic_type.n900000000000011006 = Characteristic_type._CF_enumeration.addEnumeration(unicode_value='900000000000011006', tag='n900000000000011006')
@@ -1442,7 +1442,7 @@ class Modifier (SCTID, pyxb.binding.basis.enumeration_mixin):
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'Modifier')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 6042, 4)
     _Documentation = '\n                \n            '
-Modifier._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=Modifier, enum_prefix=None)
+Modifier._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=Modifier)
 Modifier.n900000000000451002 = Modifier._CF_enumeration.addEnumeration(unicode_value='900000000000451002', tag='n900000000000451002')
 Modifier.n900000000000452009 = Modifier._CF_enumeration.addEnumeration(unicode_value='900000000000452009', tag='n900000000000452009')
 Modifier._InitializeFacetMap(Modifier._CF_enumeration)
@@ -1458,7 +1458,7 @@ class Identifier_scheme (SCTID, pyxb.binding.basis.enumeration_mixin):
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'Identifier_scheme')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 6075, 4)
     _Documentation = '\n                \n            '
-Identifier_scheme._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=Identifier_scheme, enum_prefix=None)
+Identifier_scheme._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=Identifier_scheme)
 Identifier_scheme.n900000000000002006 = Identifier_scheme._CF_enumeration.addEnumeration(unicode_value='900000000000002006', tag='n900000000000002006')
 Identifier_scheme.n900000000000294009 = Identifier_scheme._CF_enumeration.addEnumeration(unicode_value='900000000000294009', tag='n900000000000294009')
 Identifier_scheme._InitializeFacetMap(Identifier_scheme._CF_enumeration)
@@ -1474,7 +1474,7 @@ class Reference_set (SCTID, pyxb.binding.basis.enumeration_mixin):
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'Reference_set')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 6108, 4)
     _Documentation = '\n                \n            '
-Reference_set._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=Reference_set, enum_prefix=None)
+Reference_set._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=Reference_set)
 Reference_set.n446608001 = Reference_set._CF_enumeration.addEnumeration(unicode_value='446608001', tag='n446608001')
 Reference_set.n446609009 = Reference_set._CF_enumeration.addEnumeration(unicode_value='446609009', tag='n446609009')
 Reference_set.n447250001 = Reference_set._CF_enumeration.addEnumeration(unicode_value='447250001', tag='n447250001')
@@ -1556,7 +1556,7 @@ class Reference_set_attribute (SCTID, pyxb.binding.basis.enumeration_mixin):
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'Reference_set_attribute')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 6543, 4)
     _Documentation = '\n                \n            '
-Reference_set_attribute._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=Reference_set_attribute, enum_prefix=None)
+Reference_set_attribute._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=Reference_set_attribute)
 Reference_set_attribute.n447247004 = Reference_set_attribute._CF_enumeration.addEnumeration(unicode_value='447247004', tag='n447247004')
 Reference_set_attribute.n447255006 = Reference_set_attribute._CF_enumeration.addEnumeration(unicode_value='447255006', tag='n447255006')
 Reference_set_attribute.n447257003 = Reference_set_attribute._CF_enumeration.addEnumeration(unicode_value='447257003', tag='n447257003')
@@ -1669,7 +1669,7 @@ class Attribute_type (SCTID, pyxb.binding.basis.enumeration_mixin):
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'Attribute_type')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7108, 4)
     _Documentation = '\n                \n            '
-Attribute_type._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=Attribute_type, enum_prefix=None)
+Attribute_type._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=Attribute_type)
 Attribute_type.n900000000000460005 = Attribute_type._CF_enumeration.addEnumeration(unicode_value='900000000000460005', tag='n900000000000460005')
 Attribute_type.n900000000000461009 = Attribute_type._CF_enumeration.addEnumeration(unicode_value='900000000000461009', tag='n900000000000461009')
 Attribute_type.n900000000000462002 = Attribute_type._CF_enumeration.addEnumeration(unicode_value='900000000000462002', tag='n900000000000462002')
@@ -1702,7 +1702,7 @@ class Attribute_value (SCTID, pyxb.binding.basis.enumeration_mixin):
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'Attribute_value')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7230, 4)
     _Documentation = '\n                \n            '
-Attribute_value._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=Attribute_value, enum_prefix=None)
+Attribute_value._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=Attribute_value)
 Attribute_value.n450995009 = Attribute_value._CF_enumeration.addEnumeration(unicode_value='450995009', tag='n450995009')
 Attribute_value.n450996005 = Attribute_value._CF_enumeration.addEnumeration(unicode_value='450996005', tag='n450996005')
 Attribute_value.n450997001 = Attribute_value._CF_enumeration.addEnumeration(unicode_value='450997001', tag='n450997001')
@@ -1742,7 +1742,7 @@ class SNOMED_CT_source_code_to_target_map_code_correlation_value (SCTID, pyxb.bi
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'SNOMED_CT_source_code_to_target_map_code_correlation_value')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7397, 4)
     _Documentation = '\n                \n            '
-SNOMED_CT_source_code_to_target_map_code_correlation_value._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=SNOMED_CT_source_code_to_target_map_code_correlation_value, enum_prefix=None)
+SNOMED_CT_source_code_to_target_map_code_correlation_value._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=SNOMED_CT_source_code_to_target_map_code_correlation_value)
 SNOMED_CT_source_code_to_target_map_code_correlation_value.n447556008 = SNOMED_CT_source_code_to_target_map_code_correlation_value._CF_enumeration.addEnumeration(unicode_value='447556008', tag='n447556008')
 SNOMED_CT_source_code_to_target_map_code_correlation_value.n447557004 = SNOMED_CT_source_code_to_target_map_code_correlation_value._CF_enumeration.addEnumeration(unicode_value='447557004', tag='n447557004')
 SNOMED_CT_source_code_to_target_map_code_correlation_value.n447558009 = SNOMED_CT_source_code_to_target_map_code_correlation_value._CF_enumeration.addEnumeration(unicode_value='447558009', tag='n447558009')
@@ -1762,7 +1762,7 @@ class Acceptability (SCTID, pyxb.binding.basis.enumeration_mixin):
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'Acceptability')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7464, 4)
     _Documentation = '\n                \n            '
-Acceptability._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=Acceptability, enum_prefix=None)
+Acceptability._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=Acceptability)
 Acceptability.n900000000000548007 = Acceptability._CF_enumeration.addEnumeration(unicode_value='900000000000548007', tag='n900000000000548007')
 Acceptability.n900000000000549004 = Acceptability._CF_enumeration.addEnumeration(unicode_value='900000000000549004', tag='n900000000000549004')
 Acceptability._InitializeFacetMap(Acceptability._CF_enumeration)
@@ -1778,7 +1778,7 @@ class Description_format (SCTID, pyxb.binding.basis.enumeration_mixin):
     _ExpandedName = pyxb.namespace.ExpandedName(Namespace, 'Description_format')
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7497, 4)
     _Documentation = '\n                \n            '
-Description_format._CF_enumeration = pyxb.binding.facets.CF_enumeration(value_datatype=Description_format, enum_prefix=None)
+Description_format._CF_enumeration = pyxb.binding.facets.CF_enumeration(enum_prefix=None, value_datatype=Description_format)
 Description_format.n900000000000540000 = Description_format._CF_enumeration.addEnumeration(unicode_value='900000000000540000', tag='n900000000000540000')
 Description_format.n900000000000541001 = Description_format._CF_enumeration.addEnumeration(unicode_value='900000000000541001', tag='n900000000000541001')
 Description_format.n900000000000542008 = Description_format._CF_enumeration.addEnumeration(unicode_value='900000000000542008', tag='n900000000000542008')
@@ -1794,7 +1794,7 @@ class STD_ANON (Integer):
     _ExpandedName = None
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7791, 24)
     _Documentation = None
-STD_ANON._CF_minInclusive = pyxb.binding.facets.CF_minInclusive(value_datatype=STD_ANON, value=pyxb.binding.datatypes.int(0))
+STD_ANON._CF_minInclusive = pyxb.binding.facets.CF_minInclusive(value=pyxb.binding.datatypes.int(0), value_datatype=STD_ANON)
 STD_ANON._InitializeFacetMap(STD_ANON._CF_minInclusive)
 
 # Atomic simple type: [anonymous]
@@ -1805,7 +1805,7 @@ class STD_ANON_ (Integer):
     _ExpandedName = None
     _XSDLocation = pyxb.utils.utility.Location('/Users/mrf7578/Development/git/CTS2/rf2service/static/xsd/rf2.xsd', 7838, 24)
     _Documentation = None
-STD_ANON_._CF_minInclusive = pyxb.binding.facets.CF_minInclusive(value_datatype=STD_ANON_, value=pyxb.binding.datatypes.int(1))
+STD_ANON_._CF_minInclusive = pyxb.binding.facets.CF_minInclusive(value=pyxb.binding.datatypes.int(1), value_datatype=STD_ANON_)
 STD_ANON_._InitializeFacetMap(STD_ANON_._CF_minInclusive)
 
 # Complex type {http://snomed.info/schema/rf2}SCTIDorUUID with content type ELEMENT_ONLY

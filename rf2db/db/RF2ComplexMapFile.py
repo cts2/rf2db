@@ -78,7 +78,7 @@ class ComplexMapDB(RF2RefsetWrapper):
 
         # Copy the simple map file data across
         db = self.connect()
-        print "Importing simple map table"
+        print("Importing simple map table")
         db.execute("""INSERT IGNORE INTO %s (id, effectiveTime, active, moduleId, refsetId,
                                                  referencedComponentId, mapGroup, mapPriority, mapTarget)
                       SELECT id, effectiveTime, active, moduleId, refsetId,

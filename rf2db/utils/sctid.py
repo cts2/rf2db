@@ -27,7 +27,10 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 import sys
-import check_digit
+from rf2db.utils import check_digit
+
+if sys.version_info.major > 2:
+    long = int
 
 
 class sctid(object):
@@ -53,7 +56,6 @@ class sctid(object):
 
     def __eq__(self, that):
         return long(that) == self._value
-
 
     def __ne__(self, that):
         return long(that) != self._value

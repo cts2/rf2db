@@ -26,10 +26,14 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-
+import sys
 import re
+from functools import reduce
 
 from rf2db.utils.sctid import sctid
+
+if sys.version_info.major > 2:
+    basestring = str
 
 
 class ParameterDefinitionList(object):
@@ -62,7 +66,7 @@ class ParameterDefinitionList(object):
             return ','.join(k + ':' + repr(self.__dict__[k]) for k in self._orderedKeys())
 
         def nondefaulteditems(self):
-            return {k:self.__dict__[k] for k in self._orderedKeys() if not self.defaulted(k)}
+            return {k: self.__dict__[k] for k in self._orderedKeys() if not self.defaulted(k)}
 
         def _orderedKeys(self):
             """
@@ -81,12 +85,12 @@ class ParameterDefinitionList(object):
         def dict(self):
             return {k: self.__dict__[k] for k in self._orderedKeys()}
 
-
     def __init__(self, base=None, caseSensitive=False):
         """ Set up a collection of parameter parsers
         @param caseSensitive: Collection keys are case sensitive (e.g. 'isActive' is different than 'isactive')
         """
         self._caseSensitive = caseSensitive
+        self._splittable = False
         if base:
             self.add(base)
 
@@ -144,8 +148,7 @@ class ParameterDefinitionList(object):
         @return: tuple - (dictionary of invalid arguments, dictionary of valid or unparsed args)
         """
         invalidargs = {}
-        remainingargs = {i[0]: i[1] for i in
-                         map(lambda i: (i[0] if self._caseSensitive else i[0].lower(), i[1]), kwargs.items())}
+        remainingargs = {k if self._caseSensitive else k.lower(): v for k, v in kwargs.items()}
         for name, parser in self.definitions():
             v = remainingargs.pop(name, None)
             if v is not None and not parser.isValid(v):
@@ -202,7 +205,6 @@ class ParameterDefinition(object):
             raise ValueError("Default value: '%s' not valid" % default)
         self._default = default
 
-
     def _splitmaybe(self, val):
         return val.split() if self._splittable and isinstance(val, basestring) and ' ' in val else val
 
@@ -217,14 +219,19 @@ class ParameterDefinition(object):
     def isFixed(self):
         return self._fixed
 
+    def _value(self, val):
+        assert False, "Function should be overridden"
+
+    def _isValid(self, val):
+        assert False, "Function should be overridden"
+
     def value(self, val, name=""):
         if self.isValid(val) and not self._computed:
             val = self._splitmaybe(val)
             if isinstance(val, list):
-                return map(self._value, val)
+                return [self._value(v) for v in val]
             return self._value(val)
         raise ValueError("Invalid parameter value ('%s') for parameter %s" % (val, name))
-
 
     def hasDefault(self):
         return self._default is not None or not self._required
@@ -288,7 +295,7 @@ class strparam(ParameterDefinition):
                    (r'\r', r'\\r'),
                    (r'\t', r'\\t'),
                    (r'\x1a', r'\\Z'),
-    ]
+                   ]
     _sanitize = True
 
     def __init__(self, fixed=False, **args):
@@ -337,7 +344,6 @@ class enumparam(ParameterDefinition):
         self._casesensitive = casesensitive
         ParameterDefinition.__init__(self, "enum", **args)
 
-
     def possibleValues(self):
         return self._possvalues
 
@@ -373,4 +379,3 @@ class dateparam(ParameterDefinition):
     def _value(self, val):
         # TODO: add date time conversion
         return val
-

@@ -41,6 +41,10 @@ from ConfigManager.ConfigManager import ConfigManager
 from rf2db.utils.listutils import listify
 from rf2db.parameterparser.ParmParser import booleanparam
 
+if sys.version_info.major > 2:
+    basestr = str
+
+
 config_parms = ConfigArgs('dbparms',
                           [ConfigArg('host', help='MySQL DB Host', default='localhost'),
                            ConfigArg('port', help='MySQL DB Port'),
@@ -97,6 +101,9 @@ class RF2DBConnection(object):
         self._cursor = self._connection.cursor()
         self._cursor.execute("CREATE DATABASE IF NOT EXISTS %s" % dbname)
 
+    def __next__(self):
+        return self.next()
+
     def next(self):
         rval = self._cursor.fetchone()
         if not rval:
@@ -135,14 +142,14 @@ class RF2DBConnection(object):
         @return: Result of cursor.execute(stmt)
         """
         if booleanparam.v(db_values.trace, False):
-            print("===== %s" % stmt)
+            print(("===== %s" % stmt))
         try:
             self._connect()
             return func(self, stmt)
         except db.Error as e:
             self._disconnect()
             if retrycount == 0 and e.errno in (CR_SERVER_GONE_ERROR, CR_CONNECTION_ERROR, -1):
-                print >> sys.stderr, ("Database timeout error - reconnecting")
+                print("Database timeout error - reconnecting", file=sys.stderr)
                 return self._dosql(func, stmt, retrycount+1)
             else:
                 raise e
@@ -184,8 +191,8 @@ class RF2DBConnection(object):
         def __iter__(self):
             return self
 
-        def next(self):
-            t = self._db.next()
+        def __next__(self):
+            t = next(self._db)
             if t:
                 return RF2DBConnection.tabify(t)
             raise StopIteration
@@ -320,24 +327,21 @@ class RF2DBConnection(object):
         assert (len(rlist) < 2)
         return rlist[0] if len(rlist) else None
 
-
     @staticmethod
     def tweakFilter(filt):
         """ Adjust the filter to adjust for the fact that id and effectiveTime occur twice in the call """
         return reduce(lambda text, s_r: s_r[0].sub(s_r[1], text), sub_subs, filt)
 
-
     @staticmethod
     def tabify(tup):
         # the "decode" part has to do with the fact that some SQL db's won't return in utf8
         try:
-            return '\t'.join(map(lambda r: \
-                                     (r.decode('utf8') if booleanparam.v(cp_values.dodecode, False) else r) \
-                                         if isinstance(r, basestring) else str(r), tup)) if tup else None
+            return '\t'.join([r if isinstance(r, str) else
+                              bytearray.decode(r) if isinstance(r, bytearray)
+                              else str(r) for r in tup]) if tup else None
         except Exception as e:
-            print ("FAILING TUPLE:", tup)
+            print(("FAILING TUPLE:", tup))
             raise e
-
 
     def commit(self, disconnect=True):
         if self._connection:

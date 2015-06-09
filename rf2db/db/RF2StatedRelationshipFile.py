@@ -106,10 +106,10 @@ class StatedRelationshipDB(RF2FileWrapper):
                                                  filter_=canon_filtr(filtr, **kwargs),
                                                  maxtoreturn=maxtoreturn,
                                                  **kwargs))[0])
-        return map(lambda r:RF2Relationship(r), db.query(self._fname,
+        return [RF2Relationship(r) for r in db.query(self._fname,
                                                          filter_=canon_filtr(filtr, **kwargs),
                                                          maxtoreturn=maxtoreturn,
-                                                         **kwargs))
+                                                         **kwargs)]
 
     def getSourceRecs(self, sourceId, **kwargs):
         """ Return all relationship records with the given sourceId. """
@@ -125,9 +125,9 @@ class StatedRelationshipDB(RF2FileWrapper):
     def getSourcesForTarget(self, targetId, **kwargs):
         """ Return a list of sourceId's connected with the given targetId.  Inferred is ignored"""
         db = self.connect()
-        return set(map(lambda r: RF2Relationship(r).sourceId, db.query_p(self._fname,
+        return set([RF2Relationship(r).sourceId for r in db.query_p(self._fname,
                                                                          filter_=canon_filtr("destinationId = '%s' " % targetId, **kwargs),
-                                                                         **kwargs)))
+                                                                         **kwargs)])
     @classmethod
     def subjs(cls, db, changeset):
         """ Return all the unique subjects

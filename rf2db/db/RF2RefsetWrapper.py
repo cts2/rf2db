@@ -72,8 +72,8 @@ KEY component (referencedComponentId)'''
         # Note: LanguageDB must be local, as it inherits from this class
         self._known_refsets = self.valid_refsets(self._fname)
         from rf2db.db.RF2LanguageFile import LanguageDB
-        self._refset_names = {k: v[0] for k, v in LanguageDB().preferred_term_for_concepts(self._known_refsets,
-                                                                                           language=language).items()}
+        self._refset_names = {k: v[0] for k, v in list(LanguageDB().preferred_term_for_concepts(self._known_refsets,
+                                                                                           language=language).items())}
 
     def read(self, uuid=None, **kwargs):
         """

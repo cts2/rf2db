@@ -91,14 +91,14 @@ class PNandFSNDB(RF2FileWrapper):
         @param _: unused
         """
         if not cp_values.ss:
-            print "Index only works on snapshot files at the moment"
+            print("Index only works on snapshot files at the moment")
             return
 
         descdb = DescriptionDB()
         langdb = LanguageDB()
 
         if not (descdb.hascontent() and langdb.hascontent()):
-            print "Description and Language tables must be loaded before loading %s" % self._fname
+            print(("Description and Language tables must be loaded before loading %s" % self._fname))
             return
 
         db = self.connect()

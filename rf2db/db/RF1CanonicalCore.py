@@ -52,7 +52,7 @@ class CanonicalCoreDB(RF2FileWrapper):
         rdb = RelationshipDB()
         srdb = StatedRelationshipDB()
         if not rdb.hascontent() or not srdb.hascontent():
-            print("Relationship databases must be loaded before loading %s" % self._fname)
+            print(("Relationship databases must be loaded before loading %s" % self._fname))
             return
 
         super(CanonicalCoreDB, self).loadTable(rf2file)

@@ -27,6 +27,13 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 import collections
+import sys
+
+if sys.version_info.major > 2:
+    basestring = str
+
+def to_str(item):
+    return bytearray.decode(item) if isinstance(item, bytearray) else str(item)
 
 def listify(item, default=None, itemlen=0):
     """ 

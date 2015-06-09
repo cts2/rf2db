@@ -37,9 +37,7 @@ from rf2db.db.RF2ChangeSetFile import ChangeSetDB, add_changeset_parms, changese
 from rf2db.utils.sctid_generator import CIMI_Namespace
 
 
-from SetConfig import setConfig
-
-
+from tests.SetConfig import setConfig
 
 
 class NewConceptTestCase(unittest.TestCase):
@@ -55,34 +53,46 @@ class NewConceptTestCase(unittest.TestCase):
     def testNew1(self):
         sctid = RF2Namespace(CIMI_Namespace).nextConceptId()
         parms = new_concept_parms.parse(effectiveTime='20141131',
-                                         moduleId=str(cimiModule),
-                                         changeset=self.testChangeSet,
-                                         sctid=sctid)
+                                        moduleId=str(cimiModule),
+                                        changeset=self.testChangeSet,
+                                        sctid=sctid)
         dbrec = self.concdb.add(**parms.dict)
         # We would like to do the test below, but RF2Concept has a wrapper and, as such, evaluates as a function
         # self.assertTrue(isinstance(dbrec, RF2Concept))
-        self.assertIsNotNone(re.match(r'RF2Concept\(id:[0-9]+100016010[0-9], effectiveTime:20141131, active:1, moduleId:11000160102, definitionStatusId:900000000000074008\)', str(dbrec)))
+        self.assertIsNotNone(re.match(r'RF2Concept\(id:[0-9]+100016010[0-9], '
+                                      r'effectiveTime:20141131, '
+                                      r'active:1, moduleId:11000160102, '
+                                      r'definitionStatusId:900000000000074008\)',
+                                      str(dbrec)))
 
     def testNew2(self):
         parms = new_concept_parms.parse(sctid=RF2Namespace(CIMI_Namespace).nextConceptId(),
-                                       effectivetime='20141131',
-                                       moduleid=str(cimiModule),
-                                       definitionstatus='p',
-                                       changeset=self.testChangeSet)
+                                        effectivetime='20141131',
+                                        moduleid=str(cimiModule),
+                                        definitionstatus='p',
+                                        changeset=self.testChangeSet)
         dbrec = self.concdb.add(**parms.dict)
-        self.assertIsNotNone(re.match(r'RF2Concept\(id:[0-9]+100016010[0-9], effectiveTime:20141131, active:1, moduleId:11000160102, definitionStatusId:900000000000074008\)', str(dbrec)))
-
+        self.assertIsNotNone(re.match(r'RF2Concept\(id:[0-9]+100016010[0-9], '
+                                      r'effectiveTime:20141131, '
+                                      r'active:1, '
+                                      r'moduleId:11000160102, '
+                                      r'definitionStatusId:900000000000074008\)',
+                                      str(dbrec)))
 
     def testNew3(self):
         dbrec = self.concdb.add(**new_concept_parms.parse(changeset=self.testChangeSet).dict)
-        self.assertIsNotNone(re.match(r'RF2Concept\(id:[0-9]+100016010[0-9], effectiveTime:[0-9]{8}, active:1, moduleId:11000160102, definitionStatusId:900000000000074008\)', str(dbrec)))
+        self.assertIsNotNone(re.match(r'RF2Concept\(id:[0-9]+100016010[0-9], '
+                                      r'effectiveTime:[0-9]{8}, '
+                                      r'active:1, '
+                                      r'moduleId:11000160102, '
+                                      r'definitionStatusId:900000000000074008\)', str(dbrec)))
 
     def testProperRollback(self):
         parms = new_concept_parms.parse(sctid=RF2Namespace(CIMI_Namespace).nextConceptId(),
-                                       effectivetime='20141131',
-                                       moduleid=str(cimiModule),
-                                       definitionstatus='p',
-                                       changeset=self.testChangeSet)
+                                        effectivetime='20141131',
+                                        moduleid=str(cimiModule),
+                                        definitionstatus='p',
+                                        changeset=self.testChangeSet)
         dbrec = self.concdb.add(**parms.dict)
         self.tearDown()
         self.assertIsNone(self.csdb.read(self.testChangeSet))
@@ -93,4 +103,5 @@ class NewConceptTestCase(unittest.TestCase):
 
     def testInvalidChangeset(self):
         changeset = str(uuid.uuid4())
-        self.assertEqual('Change set (%s) is not valid or has been committed' % changeset, self.concdb.add(**new_concept_parms.parse(changeset=changeset).dict))
+        self.assertEqual('Changeset (%s) is not valid or has been committed' % changeset,
+                         self.concdb.add(**new_concept_parms.parse(changeset=changeset).dict))

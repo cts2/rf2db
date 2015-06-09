@@ -47,7 +47,7 @@ class testSCTID(unittest.TestCase):
         self.assertEqual(str(target), "999999999999999994")
         self.assertEqual(int(target), 999999999999999994)
         if sys.version_info.major < 3:
-            self.assertEqual(long(target), 999999999999999994L)
+            self.assertEqual(long(target), 999999999999999994)
 
 
 

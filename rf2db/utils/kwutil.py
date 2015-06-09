@@ -26,9 +26,12 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-
+import sys
 import collections
-import re
+from functools import reduce
+
+if sys.version_info.major > 2:
+    basestring = str
 
 def kwget(args, dicts, op = lambda x : x, default=None, ignoreCase=True):
     """ Function to pull a list of arguments from an ordered list of dictionaries.

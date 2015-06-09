@@ -101,7 +101,7 @@ class DescriptionTextDB(RF2FileWrapper):
 
 
     def loadFile(self):
-        print(self.table, "must be loaded from", ConceptDB.fname(), "and", DescriptionDB.fname(), "tables")
+        print((self.table, "must be loaded from", ConceptDB.fname(), "and", DescriptionDB.fname(), "tables"))
 
 
     @lfu_cache(100)

@@ -80,4 +80,4 @@ class TransitiveChildrenDB(RF2FileWrapper):
             query += " AND depth <= %s " % maxDepth
         db = RF2DBConnection()
         db.execute(query)
-        return db.next()
+        return next(db)

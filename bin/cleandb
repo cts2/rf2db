@@ -51,7 +51,7 @@ def yesno(prompt):
     a = None
     while a is None:
         try:
-            a = booleanparam().value(raw_input(prompt + ' [y/n]:'))
+            a = booleanparam().value(input(prompt + ' [y/n]:'))
         except ValueError:
             print('?')
     return a
@@ -69,7 +69,7 @@ def main(args):
     opts = parser.parse_args(args)
     db_values.set_configfile(opts.configfile)
     if opts.module and not sctidparam().isValid(opts.module):
-        print("Invalid module id: %s" % opts.module)
+        print(("Invalid module id: %s" % opts.module))
         exit(0)
 
     if opts.all and not opts.module:
@@ -86,7 +86,7 @@ def main(args):
         filtrs.append("moduleId = %s" % opts.module)
     filtr = ' AND '.join(filtrs)
     if opts.query:
-        print("DELETE * from {file} WHERE %s" % filtr)
+        print(("DELETE * from {file} WHERE %s" % filtr))
     else:
         # Transitive closure db has to remove everything in concept file
         tfn = TransitiveClosureDB.fname()
@@ -102,10 +102,10 @@ def main(args):
         db.commit()
         rval = delete(filtr)
         if nrecs:
-            print("Deleted %d %s records" % (nrecs, tfn))
-        for k, v in rval.items():
+            print(("Deleted %d %s records" % (nrecs, tfn)))
+        for k, v in list(rval.items()):
             if v:
-                print("Deleted %d %s records" % (v, k))
+                print(("Deleted %d %s records" % (v, k)))
         print("\nNOTE: You must restart the server to reset the identifier allocation records!")
 
 

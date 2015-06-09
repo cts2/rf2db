@@ -35,7 +35,7 @@ from rf2db.parsers.RF2Iterator import RF2ConceptList, iter_parms
 from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, ep_values, rf2_values
 from rf2db.db.RF2DBConnection import cp_values
 from rf2db.utils.lfu_cache import lfu_cache, clear_caches
-from rf2db.utils.listutils import listify
+from rf2db.utils.listutils import listify, to_str
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, intparam, enumparam, sctidparam
 from rf2db.constants.RF2ValueSets import primitive, defined
 
@@ -203,8 +203,9 @@ class ConceptDB(RF2FileWrapper):
         """
         cs = self.tochangesetuuid(changeset, **kwargs)
         if not cs:
+            return self.changeseterror(changeset)
             # TODO: re-add self.changeseterror
-            return "Changeset " + changeset + " is not valid"
+            # return "Changeset " + to_str(changeset) + " is not valid"
 
         db = self.connect()
         if not cid:

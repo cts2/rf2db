@@ -73,7 +73,7 @@ def clear_caches(clear_counts=False):
 def sum_tuples(t):
     if not t:
         return 0,
-    return reduce(lambda a, b: map(lambda e: e[0] + e[1], zip(a, b)), t, [0] * len(t[0]))
+    return functools.reduce(lambda a, b: list(map(lambda e: e[0] + e[1], zip(a, b))), t, [0] * len(t[0]))
 
 
 def cache_stats():
@@ -118,7 +118,7 @@ def lfu_cache(maxsize=100):
                 # need to add something to the cache, make room if necessary
                 if len(cache.cache) == cache.maxsize:
                     for k, _ in nsmallest(cache.maxsize // 10 or 1,
-                                            cache.use_count.iteritems(),
+                                            cache.use_count.items(),
                                             key=itemgetter(1)):
                         del cache.cache[k], cache.use_count[k]
                 cache.cache[key] = user_function(*args, **kwargs)
