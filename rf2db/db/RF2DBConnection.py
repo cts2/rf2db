@@ -26,6 +26,7 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
+from __future__ import print_function       # This shouldn't be needed but...
 
 """ SQL Table Connection package
 """
@@ -119,7 +120,6 @@ class RF2DBConnection(object):
             parms.pop('ss', None)
             self._connection = db.connect(**parms)
             self._connection.autocommit = True
-            # self._connection.set_character_set("utf8")
 
     def _disconnect(self):
         """ Close the database connection """
@@ -142,7 +142,7 @@ class RF2DBConnection(object):
         @return: Result of cursor.execute(stmt)
         """
         if booleanparam.v(db_values.trace, False):
-            print(("===== %s" % stmt))
+            print("===== %s" % stmt)
         try:
             self._connect()
             return func(self, stmt)
@@ -168,7 +168,7 @@ class RF2DBConnection(object):
         return self._dosql(lambda self, stmt: self._connection.cmd_query(stmt), stmt)
 
 
-    def execute(self, stmt, retrycount=0):
+    def execute(self, stmt):
         """ Execute stmt.  
         
         @param stmt:  The sql statement to execute
