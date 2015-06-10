@@ -29,7 +29,7 @@
 import unittest
 import sys
 
-from tests.SetConfig import setConfig
+from SetConfig import setConfig
 from rf2db.utils.check_digit import *
 
 

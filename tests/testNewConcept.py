@@ -37,7 +37,7 @@ from rf2db.db.RF2ChangeSetFile import ChangeSetDB, add_changeset_parms, changese
 from rf2db.utils.sctid_generator import CIMI_Namespace
 
 
-from tests.SetConfig import setConfig
+from SetConfig import setConfig
 
 
 class NewConceptTestCase(unittest.TestCase):

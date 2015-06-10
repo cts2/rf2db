@@ -100,6 +100,7 @@ class DescriptionDB(RF2FileWrapper):
         self._concDB = None
 
     hasrf2rec = True
+
     @classmethod
     def rf2rec(cls, *args, **kwargs):
         return RF2Description(*args, **kwargs)
@@ -173,9 +174,10 @@ class DescriptionDB(RF2FileWrapper):
         from rf2db.db.RF2LanguageFile import LanguageDB, language_map
         from rf2db.db.RF2PnAndFSN import PNandFSNDB
 
-        if not self.changesetisvalid(changeset):
+        cs = self.tochangesetuuid(changeset, **kwargs)
+        if not cs:
             return self.changeseterror(changeset)
-        if not self.validconcept(concept, changeset, **kwargs):
+        if not self.validconcept(concept, cs, **kwargs):
             return "Unrecognized concept identifier: %s" % concept
         term = term.strip()
         if not term:
@@ -194,10 +196,10 @@ class DescriptionDB(RF2FileWrapper):
         db.execute_query("INSERT INTO %(fname)s (id, effectiveTime, active, moduleId, "
                          "conceptId, languageCode, typeId, term, caseSignificanceId, changeset, locked) "
                          "VALUES (%(descid)s, %(effectivetime)s, 1, %(moduleid)s, "
-                         "%(concept)s, '%(language)s', %(typeid)s, '%(term)s', %(csig)s, '%(changeset)s', 1 )" % vars())
+                         "%(concept)s, '%(language)s', %(typeid)s, '%(term)s', %(csig)s, '%(cs)s', 1 )" % vars())
         db.commit()
         DescriptionTextDB().add(descid=descid, effectivetime=effectivetime, moduleid=moduleid, concept=concept,
-                                language=language, typeid=typeid, term=term, csig=csig, changeset=changeset, **kwargs)
+                                language=language, typeid=typeid, term=term, csig=csig, changeset=cs, **kwargs)
         if type == 'f' or type == 'p':
             PNandFSNDB().updatepnfsn(concept, language, term if type == 'f' else None, term if type == 'p' else None)
         if (type == 'p' or type == 's') and language in 'en':
@@ -209,7 +211,7 @@ class DescriptionDB(RF2FileWrapper):
             else:
                 success = LanguageDB().add(db, effectivetime, moduleid, language, descid, acc, concept,  changeset, **kwargs)
         clear_caches()
-        return self.read(descid, changeset=changeset, **kwargs)
+        return self.read(descid, changeset=cs, **kwargs)
 
     # TODO: allow case significance add and update
     def update(self, desc, changeset=None, language=None, type=None, term=None, **kwargs):
@@ -222,8 +224,10 @@ class DescriptionDB(RF2FileWrapper):
         @param kwargs: context
         @return: new record if update successful, otherwise an error message.
         """
-        if not self.changesetisvalid(changeset):
+        csuri = self.tochangesetuuid(changeset, **kwargs)
+        if not csuri:
             return self.changeseterror(changeset)
+        changeset = csuri
         current_value = self.read(desc, changeset=changeset, **kwargs)
         if not current_value:
             return "UnknownEntity - description not found"
@@ -259,9 +263,10 @@ class DescriptionDB(RF2FileWrapper):
         @param kwargs: context
         @return: None if success otherwise an error message
         """
-        if not self.changesetisvalid(changeset):
+        csuri = self.tochangesetuuid(changeset, **kwargs)
+        if not csuri:
             return self.changeseterror(changeset)
-
+        changeset = csuri
         # delete is idempotent, so if we can't find it or it is already gone claim success
         kwargs['active'] = 0        # read even if inactive
         current_value = self.read(desc, **kwargs)

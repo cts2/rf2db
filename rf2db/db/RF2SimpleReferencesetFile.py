@@ -130,8 +130,10 @@ class SimpleReferencesetDB(RF2RefsetWrapper):
                children=False, leafonly=False, **kwargs):
 
         # Make sure the change set is open and editable
-        if not self.changesetisvalid(changeset):
+        csuri = self.tochangesetuuid(changeset, **kwargs)
+        if not csuri:
             return self.changeseterror(changeset)
+        changeset = csuri
 
         # Make sure that the refset is a valid refset and is editable
         cdb = ConceptDB()
@@ -173,8 +175,11 @@ class SimpleReferencesetDB(RF2RefsetWrapper):
 
     def delete(self, changeset=None, refset=None, **kwargs):
         # Make sure the change set is open and editable
-        if not self.changesetisvalid(changeset):
+
+        csuri = self.tochangesetuuid(changeset, **kwargs)
+        if not csuri:
             return self.changeseterror(changeset)
+        changeset = csuri
 
         # Make sure that the refset is a valid refset and is editable
         cdb = ConceptDB()

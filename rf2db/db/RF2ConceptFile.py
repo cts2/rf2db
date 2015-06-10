@@ -114,8 +114,10 @@ class ConceptDB(RF2FileWrapper):
         @param kwargs: context
         @return: new record if update successful, otherwise an error message.
         """
-        if not self.changesetisvalid(changeset):
+        csuri = self.tochangesetuuid(changeset, **kwargs)
+        if not csuri:
             return self.changeseterror(changeset)
+        changeset = csuri
         current_value = self.read(cid, changeset=changeset, **kwargs)
         if not current_value:
             return "UnknownEntity - concept not found"
@@ -137,8 +139,8 @@ class ConceptDB(RF2FileWrapper):
         # Don't update effective time if nothing will change (PUT is idempotent)
         if not current_value.locked:
             if current_value.changeset != changeset or \
-                            current_value.isPrimitive and definitionstatus == 'f' or \
-                            current_value.isFullyDefined and definitionstatus == 'p':
+               current_value.isPrimitive and definitionstatus == 'f' or \
+               current_value.isFullyDefined and definitionstatus == 'p':
                 if cp_values.ss:
                     return "Concept: Cannot update an existing snapshot record"
                 else:
@@ -166,8 +168,10 @@ class ConceptDB(RF2FileWrapper):
         @param kwargs: context
         @return: None if success otherwise an error message
         """
-        if not self.changesetisvalid(changeset):
+        csuri = self.tochangesetuuid(changeset, **kwargs)
+        if not csuri:
             return self.changeseterror(changeset)
+        changeset = csuri
 
         # delete is idempotent, so if we can't find it or it is already gone claim success
         kwargs['active'] = 0  # read even if inactive
@@ -204,8 +208,6 @@ class ConceptDB(RF2FileWrapper):
         cs = self.tochangesetuuid(changeset, **kwargs)
         if not cs:
             return self.changeseterror(changeset)
-            # TODO: re-add self.changeseterror
-            # return "Changeset " + to_str(changeset) + " is not valid"
 
         db = self.connect()
         if not cid:

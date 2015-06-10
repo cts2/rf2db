@@ -374,13 +374,18 @@ class RelationshipDB(RF2FileWrapper):
         """
         from rf2db.db.RF2ChangeSetFile import csorname
 
-        changeset, csname = csorname(changeset, csname)
+        csuri = self.tochangesetuuid(changeset, **kwargs)
+        if not csuri:
+            return self.changeseterror(changeset)
+        changeset = csuri
         # The source concept must already exist and be defined in this changeset
         if self.invalid_add_reason(source, target, predicate, changeset, **kwargs):
             return None
         effectivetime, moduleid = self.effectivetime_and_moduleid(effectivetime, moduleid)
-        if not self.changesetisvalid(changeset):
+        csuri = self.tochangesetuuid(changeset, **kwargs)
+        if not csuri:
             return self.changeseterror(changeset)
+        changeset = csuri
         db = RelationshipDB().connect()
         rid = self.newrelationshipid()
         self._doadd(db, StatedRelationshipDB.fname(), rid, effectivetime, 1, moduleid, source,

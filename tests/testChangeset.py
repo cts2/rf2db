@@ -34,8 +34,8 @@ from rf2db.db.RF2ChangeSetFile import ChangeSetDB, add_changeset_parms, validate
 from rf2db.db.RF2FileCommon import ep_values
 from rf2db.constants.RF2ValueSets import changeSetRefSet
 from rf2db.db.RF2ConceptFile import ConceptDB
-from tests.SetConfig import setConfig
-from tests.ClearConfig import clearConfig
+from SetConfig import setConfig
+from ClearConfig import clearConfig
 
 # NOTE: If you start getting Duplicate entry errors below, the database hasn't been cleaned up.  What we really need
 #       to do is to create a testing module identifier that we can strip with impunity but, for the moment, the

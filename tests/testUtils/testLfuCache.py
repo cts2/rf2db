@@ -29,11 +29,11 @@
 
 import unittest
 
-from tests.SetConfig import setConfig
+from SetConfig import setConfig
 from rf2db.utils.lfu_cache import lfu_cache, clear_caches, cache_stats
 
 
-class Foo():
+class Foo:
     side_effect = "State 1"
 
     @lfu_cache(maxsize=10)
