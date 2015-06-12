@@ -79,9 +79,11 @@ class ModuleVersionsDB(RF2FileWrapper):
             # print("Loading", vt.table, '...',end='')
             print(('Reading versions from %s ...' % vt.table))
             db = self.connect()
-            db.execute('INSERT IGNORE INTO %s (moduleId, effectiveTime) VALUES' % self._fname + \
-                            ','.join(["("+ str(m) + "," +str(e) + ")" for (m,e) in vt.moduleVersions()]))
-            db.commit()
+            mvs = list(vt.moduleVersions())
+            if mvs:
+                db.execute('INSERT IGNORE INTO %s (moduleId, effectiveTime) VALUES' % self._fname + \
+                            ','.join(["("+ str(m) + "," +str(e) + ")" for (m, e) in mvs]))
+                db.commit()
         db = self.connect()
         print("Loading moduleid view")
         db.execute(self.createModulesSTMT % self._d(mvtable=self._fname, desctable=DescriptionDB.fname(),
