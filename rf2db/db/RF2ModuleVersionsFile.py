@@ -91,7 +91,6 @@ class ModuleVersionsDB(RF2FileWrapper):
                                                     preferred=preferred, synonym=synonym))
         db.commit()
 
-            
     def loadFile(self, fname):
         print((self.table, "must be loaded from", ConceptDB.fname(), "and", DescriptionDB.fname(), "tables"))
         
