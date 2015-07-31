@@ -38,7 +38,7 @@ from rf2db.utils import urlutil
 #    maxtoreturn - maximum values to return in a list. 0 we're just doing a count. Default: 100
 #    page - starting page number.  Return begins at entry C{page * maxtoreturn}.  Default: 0
 #    locked - if True, only return locked records. (Must be accompanied by a changeset id)
-#    sort - list of columns to sort by
+#    sort - list of columns to sort by  "None" means don't sort at all
 # TODO: the default on maxtoreturn needs to be pulled from the rf2 parameter set
 iter_parms = ParameterDefinitionList()
 iter_parms.order = enumparam(['asc', 'desc'], default='asc')
