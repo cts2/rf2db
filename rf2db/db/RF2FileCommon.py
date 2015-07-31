@@ -180,7 +180,6 @@ moduleId bigint(20) NOT NULL '''
             db.close()
         return self._hascontents
 
-
     def numrecs(self):
         """ Return the number of records in the table
         @return: Number of records in the table
@@ -210,7 +209,6 @@ moduleId bigint(20) NOT NULL '''
         db.execute(self._loadSTMT % vars())
         db.commit()
 
-
     def dropTable(self):
         """ Drop the table
         """
@@ -225,7 +223,6 @@ moduleId bigint(20) NOT NULL '''
         db.execute("TRUNCATE TABLE %s" % self._fname)
         db.commit()
 
-
     def getMaxId(self, namespace):
         """ Return the highest identifier value in the table for the supplied namespace.
         This is only meaningful on core tables, not refsets...
@@ -237,7 +234,6 @@ moduleId bigint(20) NOT NULL '''
         x = db.execute(query)
         ns = x.next()[0]
         return DecodedNamespace(0 if ns is None else ns)
-
 
     def moduleVersions(self):
         """ Return a set of module identifiers and versions from the file.
@@ -272,12 +268,12 @@ moduleId bigint(20) NOT NULL '''
     @classmethod
     def _rollback(cls, db, changeset, **_):
         fname = cls.fname()
-        return db.execute_query("DELETE FROM %(fname)s WHERE changeset = '%(changeset)s' AND locked=1" % vars())
+        return db._execute_query("DELETE FROM %(fname)s WHERE changeset = '%(changeset)s' AND locked=1" % vars())
 
     @classmethod
     def _commit(cls, db, changeset, **_):
         fname = cls.fname()
-        return db.execute_query("UPDATE %(fname)s SET locked=0 WHERE changeset = '%(changeset)s'" % vars())
+        return db._execute_query("UPDATE %(fname)s SET locked=0 WHERE changeset = '%(changeset)s'" % vars())
 
     @classmethod
     def tochangesetuuid(cls, csname_id_or_uuid, **kwargs):
@@ -309,7 +305,6 @@ moduleId bigint(20) NOT NULL '''
         if cls.tochangesetuuid(changeset):
             return None
         return "Changeset (%s) is not valid or has been committed" % changeset
-
 
     @property
     def _fname(self):
@@ -351,7 +346,8 @@ moduleId bigint(20) NOT NULL '''
         reldir = ('Snapshot' if cp_values.ss else 'Full') if not self.isRF1File else ''
         if rf2_values.fileloc:
             # Pre 2015 release format
-            base = os.path.join(rf2_values.fileloc, 'RF1Release' if self.isRF1File else 'RF2Release', reldir, self.directory)
+            base = os.path.join(rf2_values.fileloc, 'RF1Release' if self.isRF1File else 'RF2Release',
+                                reldir, self.directory)
             # Post 2015 release format -- release is in the base path
             # TODO: add the RF1 link
             if not os.path.exists(base):
