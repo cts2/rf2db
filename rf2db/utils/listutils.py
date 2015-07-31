@@ -26,14 +26,17 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
+from collections import Iterable
 import collections
 import sys
 
 if sys.version_info.major > 2:
     basestring = str
 
+
 def to_str(item):
     return bytearray.decode(item) if isinstance(item, bytearray) else str(item)
+
 
 def listify(item, default=None, itemlen=0):
     """ 
@@ -48,14 +51,16 @@ def listify(item, default=None, itemlen=0):
     @param itemlen: minimum number of elements to return.
     @type itemlen: int
     """
-    if not item:
+    if item is None:
         item = default
-    if not isinstance(item, (list, tuple)):
+    if not isinstance(item, Iterable) or isinstance(item, basestring):
         item = [item]
     return list(item) + ([default] * max(itemlen - len(item), 0))
 
+
 def isList(possible_list):
     return isinstance(possible_list, collections.Iterable) and not isinstance(possible_list, basestring)
+
 
 def flatten(possible_list):
     """ Flatten a list by one level.
@@ -92,4 +97,3 @@ def flatten(possible_list):
             yield pl
 
     return list(flatten_(possible_list)) if isList(possible_list) else possible_list
-
