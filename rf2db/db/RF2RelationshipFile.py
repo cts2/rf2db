@@ -128,6 +128,7 @@ class RelationshipDB(RF2FileWrapper):
         RF2FileWrapper.__init__(self, *args, **kwargs)
 
     hasrf2rec = True
+
     @classmethod
     def rf2rec(cls, *args, **kwargs):
         return RF2Relationship(*args, **kwargs)
@@ -167,7 +168,6 @@ class RelationshipDB(RF2FileWrapper):
     addrow = "(%(id)s, %(effectiveTime)s, %(active)s, %(moduleId)s, %(sourceId)s, \
                  %(destinationId)s, %(relationshipGroup)s, %(typeId)s, %(characteristicTypeId)s, \
                  %(modifierId)s, %(isCanonical)s , '%(changeset)s', %(locked)s)"
-
 
     class _BlockWriter(object):
         blocksize = 1000
@@ -263,8 +263,7 @@ class RelationshipDB(RF2FileWrapper):
             # TODO: the count is not accurate unless we subtract out both inferred and stated...
             return [infcount + statedcount]
 
-
-        rval = {k:v for k,v in [(rel_id(r), r) for r in [RF2Relationship(r) for r in self.connect().query(self._fname,
+        rval = {k: v for k, v in [(rel_id(r), r) for r in [RF2Relationship(r) for r in self.connect().query(self._fname,
                                                               filter_=build_filtr(filtr,
                                                                                   inferred=inferred,
                                                                                   stated=stated,
@@ -372,7 +371,6 @@ class RelationshipDB(RF2FileWrapper):
         @param kwargs: context
         @return: new relationship record or error string
         """
-        from rf2db.db.RF2ChangeSetFile import csorname
 
         csuri = self.tochangesetuuid(changeset, **kwargs)
         if not csuri:
