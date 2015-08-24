@@ -268,12 +268,12 @@ moduleId bigint(20) NOT NULL '''
     @classmethod
     def _rollback(cls, db, changeset, **_):
         fname = cls.fname()
-        return db._execute_query("DELETE FROM %(fname)s WHERE changeset = '%(changeset)s' AND locked=1" % vars())
+        return db.execute_query("DELETE FROM %(fname)s WHERE changeset = '%(changeset)s' AND locked=1" % vars())
 
     @classmethod
     def _commit(cls, db, changeset, **_):
         fname = cls.fname()
-        return db._execute_query("UPDATE %(fname)s SET locked=0 WHERE changeset = '%(changeset)s'" % vars())
+        return db.execute_query("UPDATE %(fname)s SET locked=0 WHERE changeset = '%(changeset)s'" % vars())
 
     @classmethod
     def tochangesetuuid(cls, csname_id_or_uuid, **kwargs):

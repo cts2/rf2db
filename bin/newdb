@@ -37,7 +37,7 @@ sys.path.append(os.path.join(_curdir, '..'))
 # TODO: Make this into a package
 sys.path.append(os.path.join(_curdir, '..', '..', 'ConfigManager'))
 
-from rf2db.db.RF2DBConnection import config_parms, cp_values, RF2DBConnection
+from rf2db.db.RF2DBConnection import config_parms, debug_parms, cp_values, db_values, RF2DBConnection
 
 helpargs = ['-h', '-?']
 
@@ -58,6 +58,7 @@ def main(argv):
     # Can't do a lot more if there isn't configuration file
     if len(argv) == 0 or (len(argv) == 1 and argv[0] in helpargs):
         config_parms.add_to_parser(parser)
+        debug_parms.add_to_parser(parser)
         parser.parse_args(argv)
         return
 
@@ -68,6 +69,7 @@ def main(argv):
     # Open the existing configuration file so we know what the defaults should be
     cp_values.set_configfile(fileopt.configfile)
     config_parms.add_to_parser(parser, cp_values)
+    debug_parms.add_to_parser(parser, db_values)
 
     opts = parser.parse_args(argv)
 

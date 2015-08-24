@@ -82,7 +82,7 @@ class LanguageDB(RF2RefsetWrapper):
     updateSTMT = """UPDATE %(table)s l
         INNER JOIN %(desctbl)s d
         ON d.id = l.referencedcomponentid
-        SET l.conceptid = d.conceptid"""
+        SET l.conceptid = d.conceptid WHERE l.conceptid is Null"""
 
 
     def __init__(self, *args, **kwargs):

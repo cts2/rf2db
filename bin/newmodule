@@ -58,7 +58,7 @@ from rf2db.constants.RF2ValueSets import primitive, fsn, synonym, insensitive, m
     snomedCTcore, moduleDependencyRefset, changeSetRefSet
 
 
-class NamespaceIdentifiers():
+class NamespaceIdentifiers:
     """ Generate the set of identifiers needed to bootstrap the database.
     1) The module identifier
     2) Two description ids -- one for fsn and one for preferred name
@@ -79,6 +79,7 @@ class NamespaceIdentifiers():
 def execute_with_commit(db, stmt):
     db.execute_query(stmt)
     db.commit()
+
 
 def validate_parameters(opts):
     """ Validate the incoming parameters
@@ -261,7 +262,7 @@ def create_moduledependency(db, effectivetime, moduleid, changeset):
         et = metaeffectivetime
         execute_with_commit(db, query % vars())
     else:
-        print("Unable to get SNOMED CT Core and Model Component effective times", file=sys.stdeff)
+        print("Unable to get SNOMED CT Core and Model Component effective times", file=sys.stderr)
 
 
 def delete_moduledependency(db, moduleid):
@@ -293,7 +294,6 @@ def create_changeset(db, effectivetime, moduleid, changeset, csname, owner='', d
              "VALUES ('%(refsetentryid)s', %(effectivetime)s, 1, %(moduleid)s, %(refsetid)s, "
              "'%(changeset)s', '%(csname)s', '%(owner)s', '%(description)s', 0, '%(changeset)s', 1)")
     execute_with_commit(db, query % vars())
-
 
 
 def delete_changeset(db, moduleid):
@@ -356,14 +356,14 @@ def delete_entries(opts, moduleid):
     delete_changeset(db, moduleid)
 
 
-
 def main():
     """
-    Add or remove a module identifier for a namespace to a database.  The target database must already exist and (ideally) be
-    loaded using the rf2db module.
+    Add or remove a module identifier for a namespace to a database.  The target database
+    must already exist and (ideally) be loaded using the rf2db module.
 
     Sample invocation:
-    python newmodule -n 100160 -r 20141231 -c ../../rf2service/settings.conf -o CIMI --desc "Adding CIMI module" CIMI Module
+    python newmodule -n 100160 -r 20141231 -c ../../rf2service/settings.conf
+                -o CIMI --desc "Adding CIMI module" CIMI Module
     """
     parser = argparse.ArgumentParser(
         description="SNOMED CT Module Bootstrap.  Add or remove a module identifier from a RF2 database")

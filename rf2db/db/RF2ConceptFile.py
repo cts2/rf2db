@@ -32,10 +32,10 @@
 
 from rf2db.parsers.RF2BaseParser import RF2Concept
 from rf2db.parsers.RF2Iterator import RF2ConceptList, iter_parms
-from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, ep_values, rf2_values
+from rf2db.db.RF2FileCommon import RF2FileWrapper, global_rf2_parms, rf2_values
 from rf2db.db.RF2DBConnection import cp_values
 from rf2db.utils.lfu_cache import lfu_cache, clear_caches
-from rf2db.utils.listutils import listify, to_str
+from rf2db.utils.listutils import listify
 from rf2db.parameterparser.ParmParser import ParameterDefinitionList, intparam, enumparam, sctidparam
 from rf2db.constants.RF2ValueSets import primitive, defined
 
@@ -160,7 +160,6 @@ class ConceptDB(RF2FileWrapper):
             else:
                 return "Concept: Record is locked under a different changeset"
 
-
     def delete(self, cid, changeset=None, **kwargs):
         """ Delete or deactivate a concept
         @param cid: concept identifier
@@ -224,11 +223,22 @@ class ConceptDB(RF2FileWrapper):
         clear_caches()
         return self.read(cid, changeset=cs, **kwargs)
 
-    def getAllConcepts(self, active=1, order='asc', sort=None, page=0, maxtoreturn=None, after=0,
-                       changeset=None, moduleid=None, locked=False, **kwargs):
+    def buildQuery(self, active=1, order='asc', sort=None, page=0, maxtoreturn=None, after=0,
+                   changeset=None, moduleid=None, locked=False, filtr=None,
+                   id_only=False, **kwargs):
         """
-        Read a number of concept records
-        @param parmlist: parsed parameter list
+        :param active: Query active only or all
+        :param order: Sort order. 'asc', 'desc'.  If None, don't sort
+        :param sort: Additional sort keys. Last key is id
+        :param page: start page in maxtoreturn units
+        :param maxtoreturn: maximum number to return.  0 means return count, -1 means return everything
+        :param after: id to start after
+        :param changeset: include this changeset name or uuid if present
+        :param moduleid: restrict query to this module
+        :param locked: if true, return only locked records
+        :param and_filter: additional SQL filter
+        :param id_only: True means only select ids
+        :return:
         """
         if changeset:
             changeset = self.tochangesetuuid(changeset, active=active, **kwargs)
@@ -241,8 +251,7 @@ class ConceptDB(RF2FileWrapper):
             raise Exception('FULL table not supported for complete concept list')
 
         start = (page * maxtoreturn) if maxtoreturn > 0 else 0
-
-        query = 'SELECT %s FROM %s' % ('*' if maxtoreturn != 0 else 'count(*)', self._fname)
+        query = 'SELECT %s FROM %s' % ('id' if id_only else 'count(id)' if maxtoreturn == 0 else '*', self._fname)
         query += ' WHERE %s ' % ('active=1' if active else 'TRUE')
 
         if locked and not changeset:
@@ -257,18 +266,30 @@ class ConceptDB(RF2FileWrapper):
             query += ' AND id > %s' % after
         if moduleid:
             query += ' AND ' + ' AND '.join(['moduleid = %s' % m for m in listify(moduleid)])
-        query += ' ORDER BY '
-        if sort:
-            query += ", ".join(("%s " % s + order) for s in listify(sort)) + ", "
-        query += ' id %s' % order
+        if filtr:
+            query += ' AND (' + filtr + ')'
+        if maxtoreturn != 0 and (sort is None or sort.lower() != 'none'):
+            query += ' ORDER BY '
+            if sort:
+                query += ", ".join(("%s " % s + order) for s in listify(sort)) + ", "
+            query += ' id %s' % order
         if maxtoreturn > 0:
             query += ' LIMIT %s' % (maxtoreturn + 1)
         if start > 0:
             query += ' OFFSET %s' % start
+        return query
+
+    def getAllConcepts(self, maxtoreturn=None, **kwargs):
+        """
+        Read a number of concept records
+        @param parmlist: parsed parameter list
+        @param as_iter: True means leave the result unresolved
+        """
+        query = self.buildQuery(maxtoreturn=maxtoreturn, **kwargs)
         db = self.connect()
         db.execute(query)
-        return [RF2Concept(c) for c in db.ResultsGenerator(db)] if maxtoreturn else list(
-            db.ResultsGenerator(db))
+        return [RF2Concept(c) for c in db.ResultsGenerator(db)] if maxtoreturn else \
+               list(db.ResultsGenerator(db))
 
     @classmethod
     def refsettype(cls, parms):

@@ -56,11 +56,12 @@ def yesno(prompt):
             print('?')
     return a
 
+
 def main(args):
-    """ Load a set of RF2 tables into an existing database.  The configuration is maintained with the <i>newdb</i>
-    utility, although it can be edited manually.
+    """ Remove locked records and/or records in a specific module from the database.
     """
-    parser = argparse.ArgumentParser(description="Clean records out of a database")
+    parser = argparse.ArgumentParser(description="Remove locked records and/or records for a specified"
+                                                 " module from the database")
     parser.add_argument('configfile', help="Configuration file location")
     parser.add_argument('-a', '--all', help="Include unlocked records", action='store_true')
     parser.add_argument('-m', '--module', type=int, help="Restrict to supplied module id")
@@ -98,7 +99,7 @@ def main(args):
         if not opts.all:
             query += "AND t.locked=1"
 
-        nrecs=db.execute_query(query)['affected_rows']
+        nrecs = db.execute_query(query)['affected_rows']
         db.commit()
         rval = delete(filtr)
         if nrecs:
@@ -107,9 +108,6 @@ def main(args):
             if v:
                 print(("Deleted %d %s records" % (v, k)))
         print("\nNOTE: You must restart the server to reset the identifier allocation records!")
-
-
-
 
 if __name__ == '__main__':
     main(sys.argv[1:])
